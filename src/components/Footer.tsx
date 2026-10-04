@@ -1,0 +1,12 @@
+import { useWorkspace } from '../context/WorkspaceContext';
+import React from 'react';
+
+export const Footer: React.FC = () => {
+  const { workspace } = useWorkspace();
+  return (
+    <footer className="fixed bottom-4 left-0 right-0 text-center text-xs sm:text-sm z-50 pointer-events-auto">
+      <p>FAZET • {workspace.name} • {workspace.schoolLabel}</p>
+      <p>Powered by <a href="https://github.com/fr6382211-svg/taskflow-school" target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">FAZET</a> | Licensed under CPAL-1.0</p>
+    </footer>
+  );
+};

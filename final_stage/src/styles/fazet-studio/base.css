@@ -1,0 +1,156 @@
+/* ==========================================================================
+   FAZET DESIGN SYSTEM - BASE TOKENS & CSS VARIABLES
+   Semua warna, radius, jarak, dan bayangan lewat token --tf-*
+   ========================================================================== */
+
+.app-shell {
+  /* Skala Jarak (4, 8, 12, 16, 24, 32, 48) */
+  --tf-space-1: 4px;
+  --tf-space-2: 8px;
+  --tf-space-3: 12px;
+  --tf-space-4: 16px;
+  --tf-space-5: 24px;
+  --tf-space-6: 32px;
+  --tf-space-7: 48px;
+
+  /* Skala Tipografi (11, 12, 13, 14, 16, 20, 28, 40) */
+  --tf-text-2xs: 11px;
+  --tf-text-xs: 12px;
+  --tf-text-sm: 13px;
+  --tf-text-base: 14px;
+  --tf-text-md: 16px;
+  --tf-text-lg: 20px;
+  --tf-text-xl: 28px;
+  --tf-text-2xl: 40px;
+
+  /* Font Families */
+  --tf-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --tf-font-serif: 'Fraunces', Georgia, serif;
+  --tf-font-mono: 'JetBrains Mono', monospace;
+
+  /* Radius Skala */
+  --tf-radius-xs: 4px;
+  --tf-radius-sm: 8px;
+  --tf-radius-md: 12px;
+  --tf-radius-lg: 16px;
+  --tf-radius-xl: 24px;
+  --tf-radius-full: 9999px;
+  --tf-radius-card: var(--tf-radius-lg);
+
+  /* Motion Tokens */
+  --tf-dur-fast: 150ms;
+  --tf-dur-base: 200ms;
+  --tf-dur-slow: 350ms;
+  --tf-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --tf-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Target Sentuh Minimum */
+  --tf-touch-min: 44px;
+
+  /* Elevasi - Mode Terang (Default) */
+  --tf-shadow-flat: 0 0 0 1px var(--tf-border);
+  --tf-shadow-raised: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.04), 0 0 0 1px var(--tf-border);
+  --tf-shadow-floating: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04), 0 0 0 1px var(--tf-border);
+
+  /* Workspace Colors */
+  --tf-fathur: #4f46e5;
+  --tf-fathur-subtle: rgba(79, 70, 229, 0.12);
+  --tf-mazet: #e11d48;
+  --tf-mazet-subtle: rgba(225, 29, 72, 0.12);
+  --tf-lopp: #db2777;
+
+  /* Status Tokens */
+  --tf-success: #16a34a;
+  --tf-success-bg: rgba(22, 163, 74, 0.1);
+  --tf-warning: #d97706;
+  --tf-warning-bg: rgba(217, 119, 6, 0.1);
+  --tf-danger: #dc2626;
+  --tf-danger-bg: rgba(220, 38, 38, 0.1);
+  --tf-info: #0284c7;
+  --tf-info-bg: rgba(2, 132, 199, 0.1);
+
+  /* Safe Area Insets (Capacitor/Mobile) */
+  --tf-sat: env(safe-area-inset-top, 0px);
+  --tf-sab: env(safe-area-inset-bottom, 0px);
+  --tf-sal: env(safe-area-inset-left, 0px);
+  --tf-sar: env(safe-area-inset-right, 0px);
+}
+
+/* Elevasi - Mode Gelap */
+html.dark .app-shell {
+  --tf-shadow-flat: 0 0 0 1px var(--tf-border);
+  --tf-shadow-raised: 0 2px 6px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px var(--tf-border);
+  --tf-shadow-floating: 0 16px 36px 0 rgba(0, 0, 0, 0.6), 0 0 0 1px var(--tf-border);
+}
+
+/* ==========================================================================
+   ATURAN KERAS 4: REDUCE MOTION
+   Semua animasi mati bila html.reduce-motion aktif atau preferensi sistem
+   ========================================================================== */
+html.reduce-motion .app-shell *,
+html.reduce-motion .app-shell *::before,
+html.reduce-motion .app-shell *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *,
+  .app-shell *::before,
+  .app-shell *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   ATURAN KERAS 5: FOKUS KEYBOARD SELALU TERLIHAT
+   ========================================================================== */
+.app-shell :focus-visible {
+  outline: 2px solid var(--tf-primary);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   RESET DAN DASAR
+   ========================================================================== */
+.app-shell {
+  font-family: var(--tf-font-sans);
+  background-color: var(--tf-bg-base);
+  color: var(--tf-text-primary);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  transition: background-color var(--tf-dur-base) var(--tf-ease), color var(--tf-dur-base) var(--tf-ease);
+}
+
+/* Tabular figures for numbers */
+.app-shell .tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skip link aksesibilitas */
+.app-shell .skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: var(--tf-primary);
+  color: #ffffff;
+  padding: var(--tf-space-2) var(--tf-space-4);
+  border-radius: var(--tf-radius-sm);
+  z-index: 9999;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top var(--tf-dur-fast) var(--tf-ease);
+}
+
+.app-shell .skip-to-content:focus {
+  top: 16px;
+}

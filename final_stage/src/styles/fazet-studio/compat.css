@@ -1,0 +1,186 @@
+/* FAZET Studio compatibility layer: apply the prototype's visual language to the existing app. */
+
+.app-shell {
+  isolation: isolate;
+  --tf-bg: var(--tf-bg-base);
+  --tf-surface: var(--tf-bg-surface);
+  --tf-card: var(--tf-bg-surface);
+  --tf-surface-2: var(--tf-bg-subtle);
+  --tf-border: var(--tf-border);
+  --tf-text: var(--tf-text-primary);
+  --tf-muted: var(--tf-text-muted);
+  --tf-ink: var(--tf-text-primary);
+  --tf-ink-muted: var(--tf-text-muted);
+  --tf-rule: var(--tf-border);
+  --tf-accent-hover: var(--tf-primary-hover);
+  --tf-accent-soft: var(--tf-primary-subtle);
+  --tf-on-accent: #fff;
+  --tf-radius: var(--tf-radius-card);
+  font-family: var(--tf-font-sans);
+  color: var(--tf-text-primary);
+  background: var(--tf-bg-base);
+  min-height: 100dvh;
+  transition: background-color var(--tf-dur-base) var(--tf-ease), color var(--tf-dur-base) var(--tf-ease);
+}
+
+html.dark .app-shell { --tf-on-accent: #fff; }
+
+.app-shell[data-tf-font="small"] { font-size: 94%; }
+.app-shell[data-tf-font="normal"] { font-size: 100%; }
+.app-shell[data-tf-font="large"] { font-size: 108%; }
+
+.app-shell[data-tf-handedness="left"] { --tf-side-order: -1; }
+.app-shell[data-tf-handedness="right"] { --tf-side-order: 1; }
+
+.app-shell .bg-white,
+.app-shell .bg-white\/95,
+.app-shell .bg-white\/90,
+.app-shell .bg-white\/88,
+.app-shell .bg-white\/80,
+.app-shell .bg-white\/70 { background-color: var(--tf-bg-surface) !important; }
+.app-shell .bg-slate-50,
+.app-shell .bg-slate-100 { background-color: var(--tf-bg-subtle) !important; }
+.app-shell .bg-slate-200 { background-color: color-mix(in srgb, var(--tf-bg-subtle) 80%, var(--tf-border)) !important; }
+.app-shell .text-slate-950,
+.app-shell .text-slate-900,
+.app-shell .text-slate-800 { color: var(--tf-text-primary) !important; }
+.app-shell .text-slate-700,
+.app-shell .text-slate-600 { color: var(--tf-text-secondary) !important; }
+.app-shell .text-slate-500,
+.app-shell .text-slate-400,
+.app-shell .text-slate-300 { color: var(--tf-text-muted) !important; }
+.app-shell .border-slate-100,
+.app-shell .border-slate-200,
+.app-shell .border-slate-300 { border-color: var(--tf-border) !important; }
+.app-shell .hover\:bg-slate-50:hover,
+.app-shell .hover\:bg-slate-100:hover { background-color: var(--tf-bg-subtle) !important; }
+.app-shell .shadow-xl,
+.app-shell .shadow-2xl { box-shadow: var(--tf-shadow-floating) !important; }
+.app-shell .input {
+  background: var(--tf-bg-subtle) !important;
+  color: var(--tf-text-primary) !important;
+  border-color: var(--tf-border) !important;
+}
+.app-shell .input:focus { border-color: var(--tf-primary) !important; box-shadow: 0 0 0 3px var(--tf-ring) !important; }
+.app-shell .label { color: var(--tf-text-muted) !important; }
+
+.app-shell .editorial-button {
+  border-radius: var(--tf-radius-md) !important;
+  box-shadow: none;
+}
+.app-shell .editorial-button--dark,
+.app-shell .btn-glow.editorial-button--dark { background: var(--tf-primary) !important; color: #fff !important; }
+.app-shell .editorial-button--outline { background: var(--tf-bg-surface) !important; color: var(--tf-primary) !important; border-color: var(--tf-primary) !important; }
+.app-shell .editorial-button--ghost { background: transparent !important; color: var(--tf-text-secondary) !important; border-color: var(--tf-border) !important; }
+.app-shell .editorial-button--danger { color: var(--tf-danger) !important; border-color: color-mix(in srgb, var(--tf-danger) 40%, var(--tf-border)) !important; }
+
+/* Existing app cards are restyled to the Studio card geometry. */
+.app-shell .card-premium,
+.app-shell .rounded-2xl.border,
+.app-shell .rounded-3xl.border {
+  border-color: var(--tf-border) !important;
+  background: var(--tf-bg-surface) !important;
+  box-shadow: var(--tf-shadow-raised) !important;
+}
+.app-shell .card-premium { border-radius: var(--tf-radius-card) !important; }
+
+/* Existing shell chrome adopts the prototype's paper-panel/sidebar language. */
+.app-shell .tf-header {
+  background: color-mix(in srgb, var(--tf-bg-surface) 92%, transparent) !important;
+  border-bottom: 1px solid var(--tf-border) !important;
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--tf-text-primary) 4%, transparent);
+  backdrop-filter: blur(16px);
+}
+.app-shell .tf-btn-ghost,
+.app-shell .tf-icon-btn {
+  background: var(--tf-bg-surface) !important;
+  color: var(--tf-text-secondary) !important;
+  border-color: var(--tf-border) !important;
+  border-radius: var(--tf-radius-sm) !important;
+}
+.app-shell .tf-btn-ghost:hover,
+.app-shell .tf-icon-btn:hover { background: var(--tf-bg-subtle) !important; color: var(--tf-text-primary) !important; }
+.app-shell .tf-avatar { background: var(--tf-primary) !important; color: #fff !important; border-radius: var(--tf-radius-md) !important; }
+.app-shell .tf-card { background: var(--tf-bg-surface) !important; border-color: var(--tf-border) !important; box-shadow: var(--tf-shadow-raised); }
+.app-shell .tf-nav-item { color: var(--tf-text-muted); }
+.app-shell .tf-nav-item:hover { background: var(--tf-bg-subtle); color: var(--tf-text-primary); }
+.app-shell .tf-nav-item.is-active { background: var(--tf-primary-subtle); color: var(--tf-text-primary); }
+.app-shell .tf-nav-item.is-active::before { background: var(--tf-primary); }
+
+/* Sidebar geometry mirrors the design prototype. */
+.app-shell .fazet-sidebar__rail {
+  background: var(--tf-bg-surface) !important;
+  border-color: var(--tf-border) !important;
+  box-shadow: var(--tf-shadow-raised) !important;
+}
+.app-shell .fazet-sidebar__workspace { border-color: var(--tf-border); }
+.app-shell .fazet-sidebar__bottom { border-color: var(--tf-border); background: var(--tf-bg-subtle); }
+.app-shell .fazet-profile-switcher,
+.app-shell .fazet-workspace-switch,
+.app-shell .fazet-sidebar-toggle,
+.app-shell .fazet-signout { border-color: var(--tf-border); color: var(--tf-text-secondary); }
+.app-shell .fazet-workspace-mark { background: var(--tf-primary-subtle); color: var(--tf-primary); }
+.app-shell .fazet-workspace-switch.is-active { background: var(--tf-primary-subtle); color: var(--tf-primary); border-color: var(--tf-primary); }
+
+/* Mobile dock. */
+@media (max-width: 1023px) {
+  .app-shell .mobile-nav {
+    display: flex;
+    background: color-mix(in srgb, var(--tf-bg-surface) 94%, transparent) !important;
+    border-top: 1px solid var(--tf-border) !important;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 -12px 32px color-mix(in srgb, var(--tf-text-primary) 8%, transparent) !important;
+    padding-bottom: calc(.45rem + env(safe-area-inset-bottom));
+  }
+  .app-shell .mobile-nav__item { color: var(--tf-text-muted) !important; border-radius: var(--tf-radius-md); }
+  .app-shell .mobile-nav__item.is-active { color: var(--tf-primary) !important; background: var(--tf-primary-subtle) !important; }
+}
+
+/* Workspace color stays visible even when a theme uses a very different accent. */
+.app-shell[data-workspace="fathur"] { --tf-fathur: #4f46e5; --tf-fathur-subtle: rgba(79,70,229,.12); }
+.app-shell[data-workspace="mazet"] { --tf-mazet: #e11d48; --tf-mazet-subtle: rgba(225,29,72,.12); }
+
+/* Dashboard prototype cards. */
+.app-shell .studio-page { width: 100%; max-width: 1280px; margin: 0 auto; padding-bottom: 72px; }
+.app-shell .studio-page-title { font-family: var(--tf-display-font); letter-spacing: -0.02em; font-size: clamp(1.55rem, 3vw, 2.3rem); font-weight: 600; color: var(--tf-text-primary); }
+.app-shell .studio-eyebrow { display:flex; align-items:center; gap:7px; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--tf-text-muted); }
+.app-shell .studio-card { border:1px solid var(--tf-border); background:var(--tf-bg-surface); border-radius:var(--tf-radius-card); box-shadow:var(--tf-shadow-raised); }
+.app-shell .studio-card--soft { background:var(--tf-bg-subtle); }
+.app-shell .studio-card--accent { background: linear-gradient(135deg, var(--tf-primary-subtle), var(--tf-bg-surface)); }
+.app-shell .studio-divider { height:1px; background:var(--tf-border); }
+.app-shell .studio-action { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:0 .9rem; border-radius:var(--tf-radius-md); background:var(--tf-primary); color:#fff; font-size:12px; font-weight:700; transition:transform var(--tf-dur-fast) var(--tf-ease), opacity var(--tf-dur-fast) var(--tf-ease); }
+.app-shell .studio-action:hover { opacity:.94; transform:translateY(-1px); }
+.app-shell .studio-action--soft { background:var(--tf-primary-subtle); color:var(--tf-primary); }
+
+/* Hide the old live status when it would compete with the prototype chrome. */
+.app-shell[data-tf-live-bar="false"] .live-statusbar { display:none !important; }
+
+/* Sidebar modes */
+@media (min-width: 1024px) {
+  .app-shell[data-tf-sidebar="hidden"] .fazet-sidebar { display:none !important; }
+  .app-shell[data-tf-sidebar="collapsed"] .fazet-sidebar { width:82px; flex-basis:82px; }
+  .app-shell[data-tf-sidebar="collapsed"] .fazet-sidebar__label,
+  .app-shell[data-tf-sidebar="collapsed"] .fazet-sidebar__workspace > div:not(.fazet-workspace-mark),
+  .app-shell[data-tf-sidebar="collapsed"] .fazet-profile-switcher > div:not(.fazet-profile-switcher .flex),
+  .app-shell[data-tf-sidebar="collapsed"] .fazet-workspace-switch,
+  .app-shell[data-tf-sidebar="collapsed"] .fazet-signout span { display:none !important; }
+  .app-shell[data-tf-sidebar="collapsed"] .fazet-sidebar__rail { border-radius:18px; }
+}
+
+/* Handedness affects floating controls and FAB only; never text direction. */
+.app-shell[data-tf-handedness="left"] .fazet-floating-action,
+.app-shell[data-tf-handedness="left"] .task-floating-action { left: 18px !important; right:auto !important; }
+.app-shell[data-tf-handedness="right"] .fazet-floating-action,
+.app-shell[data-tf-handedness="right"] .task-floating-action { right: 18px; }
+
+/* Keep login untouched: all Studio selectors begin at .app-shell. */
+
+/* Studio mobile navigation mode */
+@media (max-width: 1023px) {
+  .app-shell[data-tf-mobile-nav="drawer"] .mobile-nav {
+    display: none !important;
+  }
+  .app-shell[data-tf-mobile-nav="bottom"] .mobile-nav {
+    display: flex !important;
+  }
+}

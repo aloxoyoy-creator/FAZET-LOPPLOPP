@@ -1,0 +1,305 @@
+/* ==========================================================================
+   FAZET THEMES - 6 TEMA DASHBOARD
+   Setiap tema memiliki versi Terang dan Gelap (html.dark)
+   1. paper-ink
+   2. midnight-study
+   3. sakura-diary
+   4. lopp-duo
+   5. matcha-focus
+   6. mono-minimal
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. PAPER-INK (Krem kertas, teks hijau tinta, aksen merah pena, judul serif)
+   -------------------------------------------------------------------------- */
+.app-shell[data-tf-theme="paper-ink"] {
+  --tf-bg-base: #f9f6f0;
+  --tf-bg-surface: #ffffff;
+  --tf-bg-subtle: #f2eee5;
+  --tf-bg-elevated: #ffffff;
+  --tf-text-primary: #123329;
+  --tf-text-secondary: #2d5548;
+  --tf-text-muted: #6b877c;
+  --tf-border: #e3ded1;
+  --tf-border-subtle: #eeeae0;
+  --tf-primary: #bf3626; /* Merah pena stempel */
+  --tf-primary-hover: #a12b1d;
+  --tf-primary-subtle: rgba(191, 54, 38, 0.12);
+  --tf-accent: #1e5241; /* Hijau tinta */
+  --tf-accent-subtle: rgba(30, 82, 65, 0.12);
+  --tf-ring: rgba(191, 54, 38, 0.25);
+  --tf-radius-card: 14px;
+  --tf-display-font: var(--tf-font-serif);
+}
+
+html.dark .app-shell[data-tf-theme="paper-ink"] {
+  --tf-bg-base: #101915;
+  --tf-bg-surface: #17241e;
+  --tf-bg-subtle: #1e2e27;
+  --tf-bg-elevated: #22352c;
+  --tf-text-primary: #ebf2ee;
+  --tf-text-secondary: #b0c9be;
+  --tf-text-muted: #749486;
+  --tf-border: #293d34;
+  --tf-border-subtle: #203129;
+  --tf-primary: #e05341;
+  --tf-primary-hover: #f06755;
+  --tf-primary-subtle: rgba(224, 83, 65, 0.18);
+  --tf-accent: #48a584;
+  --tf-accent-subtle: rgba(72, 165, 132, 0.18);
+  --tf-ring: rgba(224, 83, 65, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   2. MIDNIGHT-STUDY (Biru-ungu malam, aksen ungu lembut, jam glow, bintang)
+   -------------------------------------------------------------------------- */
+.app-shell[data-tf-theme="midnight-study"] {
+  --tf-bg-base: #f0f3fa;
+  --tf-bg-surface: #ffffff;
+  --tf-bg-subtle: #e5eaf5;
+  --tf-bg-elevated: #ffffff;
+  --tf-text-primary: #12182c;
+  --tf-text-secondary: #3b4668;
+  --tf-text-muted: #707ca1;
+  --tf-border: #d4dceb;
+  --tf-border-subtle: #e4eaf3;
+  --tf-primary: #6366f1; /* Indigo lembut */
+  --tf-primary-hover: #4f46e5;
+  --tf-primary-subtle: rgba(99, 102, 241, 0.12);
+  --tf-accent: #a855f7; /* Ungu bintang */
+  --tf-accent-subtle: rgba(168, 85, 247, 0.12);
+  --tf-ring: rgba(99, 102, 241, 0.25);
+  --tf-radius-card: 16px;
+  --tf-display-font: var(--tf-font-sans);
+}
+
+html.dark .app-shell[data-tf-theme="midnight-study"] {
+  --tf-bg-base: #0b0f19;
+  --tf-bg-surface: #121726;
+  --tf-bg-subtle: #192033;
+  --tf-bg-elevated: #1e263d;
+  --tf-text-primary: #f1f4fd;
+  --tf-text-secondary: #a9b5d4;
+  --tf-text-muted: #6e7d9e;
+  --tf-border: #222c45;
+  --tf-border-subtle: #192135;
+  --tf-primary: #818cf8;
+  --tf-primary-hover: #9ca3af;
+  --tf-primary-subtle: rgba(129, 140, 248, 0.18);
+  --tf-accent: #c084fc;
+  --tf-accent-subtle: rgba(192, 132, 252, 0.18);
+  --tf-ring: rgba(129, 140, 248, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   3. SAKURA-DIARY (Pink pastel + putih susu, sudut bulat manis, diary)
+   -------------------------------------------------------------------------- */
+.app-shell[data-tf-theme="sakura-diary"] {
+  --tf-bg-base: #fdf5f7;
+  --tf-bg-surface: #ffffff;
+  --tf-bg-subtle: #fae8ed;
+  --tf-bg-elevated: #ffffff;
+  --tf-text-primary: #4a212e;
+  --tf-text-secondary: #7e3e52;
+  --tf-text-muted: #a86d80;
+  --tf-border: #f4d0dc;
+  --tf-border-subtle: #fae4ec;
+  --tf-primary: #e11d48; /* Sakura Rose */
+  --tf-primary-hover: #be123c;
+  --tf-primary-subtle: rgba(225, 29, 72, 0.12);
+  --tf-accent: #f43f5e;
+  --tf-accent-subtle: rgba(244, 63, 94, 0.12);
+  --tf-ring: rgba(225, 29, 72, 0.25);
+  --tf-radius-card: 22px; /* Ekstra bulat manis */
+  --tf-display-font: var(--tf-font-sans);
+}
+
+html.dark .app-shell[data-tf-theme="sakura-diary"] {
+  --tf-bg-base: #170d12;
+  --tf-bg-surface: #22141a;
+  --tf-bg-subtle: #2e1c24;
+  --tf-bg-elevated: #3b232e;
+  --tf-text-primary: #fce7ef;
+  --tf-text-secondary: #e6a8bc;
+  --tf-text-muted: #a66a7e;
+  --tf-border: #3f222f;
+  --tf-border-subtle: #2f1923;
+  --tf-primary: #fb7185;
+  --tf-primary-hover: #fda4af;
+  --tf-primary-subtle: rgba(251, 113, 133, 0.2);
+  --tf-accent: #f472b6;
+  --tf-accent-subtle: rgba(244, 114, 182, 0.2);
+  --tf-ring: rgba(251, 113, 133, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   4. LOPP-DUO (Gradien Indigo Fathur ke Rose Mazet, adaptif workspace)
+   -------------------------------------------------------------------------- */
+.app-shell[data-tf-theme="lopp-duo"] {
+  --tf-bg-base: #f8fafc;
+  --tf-bg-surface: #ffffff;
+  --tf-bg-subtle: #f1f5f9;
+  --tf-bg-elevated: #ffffff;
+  --tf-text-primary: #0f172a;
+  --tf-text-secondary: #334155;
+  --tf-text-muted: #64748b;
+  --tf-border: #e2e8f0;
+  --tf-border-subtle: #f1f5f9;
+  --tf-primary: #4f46e5;
+  --tf-primary-hover: #4338ca;
+  --tf-primary-subtle: rgba(79, 70, 229, 0.12);
+  --tf-accent: #e11d48;
+  --tf-accent-subtle: rgba(225, 29, 72, 0.12);
+  --tf-ring: rgba(79, 70, 229, 0.25);
+  --tf-radius-card: 16px;
+  --tf-duo-gradient: linear-gradient(135deg, #4f46e5 0%, #db2777 50%, #e11d48 100%);
+  --tf-display-font: var(--tf-font-sans);
+}
+
+html.dark .app-shell[data-tf-theme="lopp-duo"] {
+  --tf-bg-base: #090d16;
+  --tf-bg-surface: #101624;
+  --tf-bg-subtle: #172033;
+  --tf-bg-elevated: #1e2942;
+  --tf-text-primary: #f8fafc;
+  --tf-text-secondary: #94a3b8;
+  --tf-text-muted: #64748b;
+  --tf-border: #1e293b;
+  --tf-border-subtle: #151d2c;
+  --tf-primary: #6366f1;
+  --tf-primary-hover: #818cf8;
+  --tf-primary-subtle: rgba(99, 102, 241, 0.2);
+  --tf-accent: #fb7185;
+  --tf-accent-subtle: rgba(251, 113, 133, 0.2);
+  --tf-ring: rgba(99, 102, 241, 0.35);
+  --tf-duo-gradient: linear-gradient(135deg, #6366f1 0%, #ec4899 50%, #f43f5e 100%);
+}
+
+/* --------------------------------------------------------------------------
+   5. MATCHA-FOCUS (Matcha + putih + cokelat muda, aurora tenang, streak besar)
+   -------------------------------------------------------------------------- */
+.app-shell[data-tf-theme="matcha-focus"] {
+  --tf-bg-base: #f4f7f4;
+  --tf-bg-surface: #ffffff;
+  --tf-bg-subtle: #e8efe8;
+  --tf-bg-elevated: #ffffff;
+  --tf-text-primary: #1c2e22;
+  --tf-text-secondary: #3b5243;
+  --tf-text-muted: #6c8574;
+  --tf-border: #d4e0d6;
+  --tf-border-subtle: #e3ede5;
+  --tf-primary: #2d6a4f; /* Teh Matcha dalam */
+  --tf-primary-hover: #1b4332;
+  --tf-primary-subtle: rgba(45, 106, 79, 0.12);
+  --tf-accent: #936639; /* Cokelat kayu hangat */
+  --tf-accent-subtle: rgba(147, 102, 57, 0.12);
+  --tf-ring: rgba(45, 106, 79, 0.25);
+  --tf-radius-card: 16px;
+  --tf-display-font: var(--tf-font-sans);
+}
+
+html.dark .app-shell[data-tf-theme="matcha-focus"] {
+  --tf-bg-base: #0f1712;
+  --tf-bg-surface: #16221b;
+  --tf-bg-subtle: #1e2d24;
+  --tf-bg-elevated: #24362b;
+  --tf-text-primary: #eef5f0;
+  --tf-text-secondary: #a3c2ac;
+  --tf-text-muted: #6c8a74;
+  --tf-border: #27382d;
+  --tf-border-subtle: #1b2920;
+  --tf-primary: #52b788;
+  --tf-primary-hover: #74c69d;
+  --tf-primary-subtle: rgba(82, 183, 136, 0.2);
+  --tf-accent: #d4a373;
+  --tf-accent-subtle: rgba(212, 163, 115, 0.2);
+  --tf-ring: rgba(82, 183, 136, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   6. MONO-MINIMAL (Hitam-putih tajam, tanpa bayangan lunak, kepadatan tinggi)
+   -------------------------------------------------------------------------- */
+.app-shell[data-tf-theme="mono-minimal"] {
+  --tf-bg-base: #ffffff;
+  --tf-bg-surface: #ffffff;
+  --tf-bg-subtle: #f5f5f5;
+  --tf-bg-elevated: #ffffff;
+  --tf-text-primary: #000000;
+  --tf-text-secondary: #333333;
+  --tf-text-muted: #666666;
+  --tf-border: #000000;
+  --tf-border-subtle: #d0d0d0;
+  --tf-primary: #000000;
+  --tf-primary-hover: #222222;
+  --tf-primary-subtle: rgba(0, 0, 0, 0.08);
+  --tf-accent: #000000;
+  --tf-accent-subtle: rgba(0, 0, 0, 0.08);
+  --tf-ring: rgba(0, 0, 0, 0.3);
+  --tf-radius-card: 4px; /* Sangat tajam dan minimalis */
+  --tf-radius-sm: 2px;
+  --tf-radius-md: 4px;
+  --tf-radius-lg: 6px;
+  --tf-shadow-flat: 0 0 0 1px #000000;
+  --tf-shadow-raised: 2px 2px 0 0 #000000, 0 0 0 1px #000000;
+  --tf-shadow-floating: 4px 4px 0 0 #000000, 0 0 0 1px #000000;
+  --tf-display-font: var(--tf-font-mono);
+}
+
+html.dark .app-shell[data-tf-theme="mono-minimal"] {
+  --tf-bg-base: #000000;
+  --tf-bg-surface: #0a0a0a;
+  --tf-bg-subtle: #141414;
+  --tf-bg-elevated: #1a1a1a;
+  --tf-text-primary: #ffffff;
+  --tf-text-secondary: #cccccc;
+  --tf-text-muted: #888888;
+  --tf-border: #ffffff;
+  --tf-border-subtle: #333333;
+  --tf-primary: #ffffff;
+  --tf-primary-hover: #e0e0e0;
+  --tf-primary-subtle: rgba(255, 255, 255, 0.12);
+  --tf-accent: #ffffff;
+  --tf-accent-subtle: rgba(255, 255, 255, 0.12);
+  --tf-ring: rgba(255, 255, 255, 0.4);
+  --tf-shadow-flat: 0 0 0 1px #ffffff;
+  --tf-shadow-raised: 2px 2px 0 0 #ffffff, 0 0 0 1px #ffffff;
+  --tf-shadow-floating: 4px 4px 0 0 #ffffff, 0 0 0 1px #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   THEME AMBIENT EFFECTS (Grain, Glow, Aurora, Stars)
+   Dibuat murni dengan CSS tanpa asset eksternal
+   -------------------------------------------------------------------------- */
+.app-shell[data-tf-theme="paper-ink"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 0);
+  background-size: 16px 16px;
+  z-index: 1;
+}
+
+.app-shell[data-tf-theme="midnight-study"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 100px 150px, rgba(168, 85, 247, 0.4), rgba(0, 0, 0, 0)),
+    radial-gradient(1.5px 1.5px at 250px 80px, rgba(129, 140, 248, 0.5), rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 380px 220px, rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0));
+  background-size: 400px 400px;
+  z-index: 1;
+}
+
+.app-shell[data-tf-theme="matcha-focus"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 10% 20%, rgba(45, 106, 79, 0.03) 0%, transparent 40%),
+              radial-gradient(circle at 90% 80%, rgba(147, 102, 57, 0.03) 0%, transparent 40%);
+  z-index: 1;
+}

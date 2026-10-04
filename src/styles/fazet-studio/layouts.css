@@ -1,0 +1,222 @@
+/* ==========================================================================
+   FAZET DASHBOARD LAYOUTS - 4 MODE LAYOUT
+   1. [data-tf-layout="focus"]    - Romantis khusus Fathur & Mazet, countdown + perjalanan + My Minee
+   2. [data-tf-layout="bento"]    - Bento grid multi-ukuran, kartu reorderable
+   3. [data-tf-layout="timeline"] - Sumbu waktu vertikal 24h + penanda "Sekarang"
+   4. [data-tf-layout="duo"]      - Dua kolom Fathur | Mazet + Kartu Bersama di tengah
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   LAYOUT 1: FOKUS (Default)
+   Satu kolom lebar terpusat (max-w-3xl)
+   -------------------------------------------------------------------------- */
+.dashboard-layout-focus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tf-space-4);
+  max-width: 48rem; /* ~768px */
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.dashboard-layout-focus .card-clock-agenda {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   LAYOUT 2: BENTO (Grid Asimetris Kartu Modern)
+   Desktop: 12-kolom grid dinamis. Mobile: 1 kolom rapi.
+   -------------------------------------------------------------------------- */
+.dashboard-layout-bento {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--tf-space-4);
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .dashboard-layout-bento {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  
+  .bento-span-6 { grid-column: span 6; }
+  .bento-span-4 { grid-column: span 4; }
+  .bento-span-3 { grid-column: span 3; }
+  .bento-span-2 { grid-column: span 2; }
+}
+
+@media (min-width: 1200px) {
+  .dashboard-layout-bento {
+    grid-template-columns: repeat(12, 1fr);
+  }
+  
+  .bento-span-12 { grid-column: span 12; }
+  .bento-span-8  { grid-column: span 8; }
+  .bento-span-7  { grid-column: span 7; }
+  .bento-span-6  { grid-column: span 6; }
+  .bento-span-5  { grid-column: span 5; }
+  .bento-span-4  { grid-column: span 4; }
+  .bento-span-3  { grid-column: span 3; }
+}
+
+/* --------------------------------------------------------------------------
+   LAYOUT 3: TIMELINE (Sumbu Waktu Vertikal)
+   Garis waktu vertikal dari pagi ke malam dengan penanda "SEKARANG"
+   -------------------------------------------------------------------------- */
+.dashboard-layout-timeline {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--tf-space-6);
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-layout-timeline {
+    grid-template-columns: 1fr 340px;
+    align-items: start;
+  }
+}
+
+.timeline-track {
+  position: relative;
+  padding-left: 56px;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--tf-border);
+}
+
+.timeline-now-marker {
+  position: absolute;
+  left: 17px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--tf-radius-full);
+  background-color: var(--tf-primary);
+  box-shadow: 0 0 0 4px var(--tf-primary-subtle);
+  z-index: 10;
+  transform: translateY(-50%);
+  transition: top var(--tf-dur-base) var(--tf-ease);
+}
+
+/* --------------------------------------------------------------------------
+   LAYOUT 4: DUO (Kolom Ganda Fathur | Bersama | Mazet)
+   Desktop: 2 kolom utama dengan kartu bersama di tengah.
+   Mobile / Layar sempit: Berubah menjadi Tab interaktif!
+   -------------------------------------------------------------------------- */
+.dashboard-layout-duo-desktop {
+  display: grid;
+  grid-template-columns: 1fr 380px 1fr;
+  gap: var(--tf-space-5);
+  width: 100%;
+  align-items: start;
+}
+
+@media (max-width: 1199px) {
+  .dashboard-layout-duo-desktop {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Kolom Workspace Styling */
+.duo-column-fathur {
+  border-top: 3px solid var(--tf-fathur);
+  padding-top: var(--tf-space-3);
+}
+
+.duo-column-mazet {
+  border-top: 3px solid var(--tf-mazet);
+  padding-top: var(--tf-space-3);
+}
+
+.duo-column-shared {
+  border-top: 3px solid var(--tf-lopp);
+  padding-top: var(--tf-space-3);
+}
+
+/* --------------------------------------------------------------------------
+   LAYOUT 1 REFRAME: ROMANTIS (Focus preference id remains `focus` for BC)
+   -------------------------------------------------------------------------- */
+.dashboard-layout-romantic {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tf-space-4);
+  width: 100%;
+}
+
+.romantic-hero {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 12% 20%, color-mix(in srgb, var(--tf-primary) 12%, transparent), transparent 38%),
+    radial-gradient(circle at 90% 15%, color-mix(in srgb, var(--tf-accent) 12%, transparent), transparent 34%),
+    var(--tf-bg-surface);
+}
+
+.romantic-hero__glow {
+  position: absolute;
+  inset: -10% -5%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 28% 40%, color-mix(in srgb, var(--tf-primary) 10%, transparent), transparent 34%),
+    radial-gradient(circle at 82% 65%, color-mix(in srgb, var(--tf-accent) 9%, transparent), transparent 36%);
+  filter: blur(28px);
+  opacity: .8;
+  z-index: -1;
+}
+
+.romantic-avatar {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--tf-border);
+  background: var(--tf-bg-surface);
+  color: var(--tf-text-primary);
+  font-weight: 900;
+  box-shadow: var(--tf-shadow-raised);
+}
+
+.romantic-avatar--fathur { box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--tf-fathur) 18%, transparent), var(--tf-shadow-raised); }
+.romantic-avatar--mazet { box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--tf-mazet) 18%, transparent), var(--tf-shadow-raised); }
+.romantic-heart { color: var(--tf-primary); }
+.romantic-script { font-family: var(--tf-font-serif); font-style: italic; color: var(--tf-primary); }
+
+.romantic-stat,
+.romantic-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid var(--tf-border);
+  border-radius: var(--tf-radius-md);
+  background: color-mix(in srgb, var(--tf-bg-surface) 82%, var(--tf-primary-subtle));
+}
+
+.romantic-stat strong,
+.romantic-countdown strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.romantic-stat span,
+.romantic-countdown span { margin-top: 2px; font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--tf-text-muted); }
+
+.romantic-birthday-card { position: relative; overflow: hidden; }
+.romantic-birthday-card::after { content: ''; position: absolute; width: 120px; height: 120px; right: -45px; top: -45px; border-radius: 50%; background: var(--tf-primary-subtle); pointer-events: none; }
+.romantic-birthday-chip { display:flex; flex-direction:column; align-items:center; justify-content:center; width:72px; height:72px; border-radius:50%; background:var(--tf-primary-subtle); color:var(--tf-primary); font-size:1.5rem; font-weight:900; font-variant-numeric:tabular-nums; }
+.romantic-birthday-chip span { font-size:9px; text-transform:uppercase; letter-spacing:.12em; }
+.romantic-date-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--tf-border-subtle); font-size:11px; }
+.romantic-date-row:last-child { border-bottom:0; }
+.romantic-date-row span { color:var(--tf-text-muted); }
+.romantic-date-row strong { text-align:right; color:var(--tf-text-primary); }
+
+@media (max-width: 640px) {
+  .romantic-avatar { width: 46px; height: 46px; }
+  .romantic-birthday-chip { width: 64px; height: 64px; font-size: 1.2rem; }
+}

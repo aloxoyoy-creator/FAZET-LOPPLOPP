@@ -1,0 +1,65 @@
+html, body, #root { min-height: 100%; }
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+}
+#root { min-height: 100dvh; }
+
+.app-shell {
+  min-height: 100dvh !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+.app-shell > .min-w-0 {
+  min-height: 100dvh;
+  height: auto !important;
+  overflow: visible !important;
+}
+.app-shell main {
+  min-height: calc(100dvh - var(--tf-header-h, 64px));
+  height: auto !important;
+  overflow: visible !important;
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
+}
+.app-shell .tf-header { position: sticky; top: 0; }
+
+.tf-shell[data-workspace="fathur"] {
+  --tf-accent: #2563eb;
+  --tf-accent-hover: #1d4ed8;
+  --tf-accent-soft: rgba(37, 99, 235, 0.13);
+}
+.tf-shell[data-workspace="mazet"] {
+  --tf-accent: #8b5cf6;
+  --tf-accent-hover: #7c3aed;
+  --tf-accent-soft: rgba(139, 92, 246, 0.14);
+}
+
+.hub-dashboard { width: 100%; }
+[data-fazet-workspace-banner] { backdrop-filter: blur(18px); }
+
+@media (max-width: 1023px) {
+  .app-shell main { padding-inline: 12px !important; }
+}
+@media (max-width: 639px) {
+  .app-shell main { padding-inline: 10px !important; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hub-dashboard > * {
+    animation: fazet-enter .38s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .hub-dashboard > *:nth-child(2) { animation-delay: 35ms; }
+  .hub-dashboard > *:nth-child(3) { animation-delay: 65ms; }
+  .hub-dashboard > *:nth-child(4) { animation-delay: 95ms; }
+}
+@keyframes fazet-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
