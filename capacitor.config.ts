@@ -4,14 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.fathur.schoolhub',
   appName: 'FAZETT LOPP LOPP',
   webDir: 'dist',
-  ...(process.env.VITE_APP_URL?.trim()
-    ? {
-        server: {
-          url: process.env.VITE_APP_URL.trim(),
-          cleartext: false,
-        },
-      }
-    : {}),
+  server: {
+    url: 'https://fazet-lopplopp.vercel.app',
+    cleartext: true,
+  },
   android: {
     allowMixedContent: false,
     // Native app feel: no white flash / browser chrome while the WebView boots.
