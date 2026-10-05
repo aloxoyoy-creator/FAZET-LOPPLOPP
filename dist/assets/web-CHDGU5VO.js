@@ -1,1 +1,0 @@
-import{ba as n}from"./index-DmUR5wQw.js";import"./vendor-radix-ViPoBAW5.js";import"./vendor-router-DzlE2aDD.js";import"./vendor-supabase-Pf0Abwmk.js";class p extends n{async show(e){}async hide(e){}}export{p as SplashScreenWeb};

@@ -114,63 +114,59 @@ export default function JadwalSholat() {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-      gap: '16px',
-      justifyContent: 'center',
-      fontFamily: 'sans-serif'
-    }}>
-      {data.map((item, index) => {
-        if (item.error) {
-          return (
-            <div key={index} className="p-4 border border-red-500/30 bg-red-500/10 text-red-500 rounded-xl">
-              Gagal memuat jadwal untuk {item.kota}
-            </div>
-          );
-        }
-        
-        const t = item.timings;
-        return (
-          <div key={index} className="bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] rounded-2xl p-5 shadow-sm transition-all hover:shadow-md relative overflow-hidden">
-            <div className="absolute top-0 right-0">
-              <span className={`text-[10px] font-bold px-2 py-1 rounded-bl-lg text-white ${item.sumber === 'MyQuran' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
-                API {item.sumber}
-              </span>
-            </div>
-
-            <h3 className="m-0 text-center text-lg font-bold text-blue-600 dark:text-blue-400 mb-1 mt-2">{item.kota}</h3>
-            <p className="m-0 text-center text-xs text-[var(--tf-text-muted)] mb-4">{item.date}</p>
+    <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto w-full">
+      <table className="w-full min-w-[600px] border-collapse text-sm">
+        <thead>
+          <tr>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Kota</th>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Imsak</th>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Subuh</th>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Dzuhur</th>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Ashar</th>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Maghrib</th>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Isya</th>
+            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Sumber API</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item, index) => {
+            if (item.error) {
+              return (
+                <tr key={index} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800 text-red-500 font-bold" colSpan={8}>
+                    Gagal memuat jadwal untuk {item.kota}
+                  </td>
+                </tr>
+              );
+            }
             
-            <div className="space-y-2">
-              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
-                <span>Imsak</span> <b className="text-[var(--tf-text-primary)]">{t.Imsak}</b>
-              </div>
-              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
-                <span>Subuh</span> <b className="text-[var(--tf-text-primary)]">{t.Fajr}</b>
-              </div>
-              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
-                <span>Dzuhur</span> <b className="text-[var(--tf-text-primary)]">{t.Dhuhr}</b>
-              </div>
-              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
-                <span>Ashar</span> <b className="text-[var(--tf-text-primary)]">{t.Asr}</b>
-              </div>
-              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
-                <span>Maghrib</span> <b className="text-[var(--tf-text-primary)]">{t.Maghrib}</b>
-              </div>
-              <div className="flex justify-between items-center pt-1 text-sm text-[var(--tf-text-secondary)]">
-                <span>Isya</span> <b className="text-[var(--tf-text-primary)]">{t.Isha}</b>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+            return (
+              <tr key={index} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800 font-bold text-slate-800 dark:text-slate-200">
+                  {item.kota}
+                </td>
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Imsak}</td>
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Fajr}</td>
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Dhuhr}</td>
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Asr}</td>
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Maghrib}</td>
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Isha}</td>
+                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">
+                  <span className={`text-[0.75rem] px-2.5 py-1 rounded-full text-white font-medium ${item.sumber === 'MyQuran' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                    {item.sumber}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
