@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import JadwalSholat from '../components/widgets/JadwalSholat';
+import CountdownTKA from '../components/widgets/CountdownTKA';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useSchedule } from '../hooks/useSchedule';
@@ -448,15 +449,18 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="mb-6 space-y-4">
+        <CountdownTKA />
+        <div>
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)]">Jadwal Sholat & Waktu Beribadah</h3>
+          <JadwalSholat />
+        </div>
+      </div>
+
       {layout === 'focus' && RomanticView()}
       {layout === 'bento' && BentoView()}
       {layout === 'timeline' && TimelineView()}
       {layout === 'duo' && <div className="space-y-5">{ClockHero()}{StatStrip()}{DuoSummary()}<div className="grid gap-4 lg:grid-cols-2">{AgendaCard()}{TaskCard()}</div><div className="grid gap-4 md:grid-cols-2"><DigitalIdCardBanner /></div>{QuickActions()}</div>}
-
-      <div className="mt-8 mb-4">
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)]">Jadwal Sholat & Waktu Beribadah</h3>
-        <JadwalSholat />
-      </div>
 
       <div className="mb-8">
         <MineePreviewCard />

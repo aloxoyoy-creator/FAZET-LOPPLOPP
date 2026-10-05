@@ -393,7 +393,7 @@ export default function AppShell({ children }: AppShellProps) {
 
   return (
     <div
-      className="tf-shell app-shell marginalia-theme flex min-h-dvh"
+      className="tf-shell app-shell marginalia-theme flex min-h-dvh" style={{ paddingTop: "env(safe-area-inset-top)" }}
       data-workspace={workspaceId}
       data-tf-theme={studioPrefs.dashboardTheme}
       data-tf-layout={studioPrefs.dashboardLayout}
