@@ -61,7 +61,7 @@ export default function VerifyEmail() {
   }
 
   return (
-    <AuthLayout eyebrow="Email verification">
+    <AuthLayout title="Verifikasi Email" subtitle="Konfirmasi alamat email Anda untuk melanjutkan." eyebrow="Email verification">
       <div className="mb-7">
         <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-xl">
           {success ? <CheckCircle2 size={23} /> : <Mail size={23} />}

@@ -58,7 +58,7 @@ export default function Register() {
 
   if (registeredEmail) {
     return (
-      <AuthLayout eyebrow="Verify your email">
+      <AuthLayout title="Verifikasi Email" subtitle="Silakan cek kotak masuk email Anda." eyebrow="Verify your email">
         <div className="mb-7">
           <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 text-white shadow-xl">
             <Mail size={23} />
@@ -98,7 +98,7 @@ export default function Register() {
   }
 
   return (
-    <AuthLayout eyebrow="Create your workspace">
+    <AuthLayout title="Daftar Akun Baru" subtitle="Bergabunglah dengan FAZET sekarang juga." eyebrow="Create your workspace">
       <div className="mb-7">
         <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-xl shadow-blue-900/10">
           <GraduationCap size={23} />
