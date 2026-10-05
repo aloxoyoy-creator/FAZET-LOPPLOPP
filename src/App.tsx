@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AppConfigProvider, useAppConfig } from './context/AppConfigContext';
 import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 import AnimatedBackground from './components/ui/AnimatedBackground';
@@ -31,6 +31,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminTasks = lazy(() => import('./pages/admin/AdminTasks'));
 const AdminSchedule = lazy(() => import('./pages/admin/AdminSchedule'));
+const AdminTutoring = lazy(() => import('./pages/admin/AdminTutoring'));
 const AdminSubjects = lazy(() => import('./pages/admin/AdminSubjects'));
 const AdminTeachers = lazy(() => import('./pages/admin/AdminTeachers'));
 const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements'));
@@ -152,6 +153,7 @@ export default function App() {
             <Route path="/admin/tasks" element={<AdminRoute><Page><AdminTasks /></Page></AdminRoute>} />
             <Route path="/admin/task-workspace" element={<AdminRoute><Page><AdminTaskWorkspace /></Page></AdminRoute>} />
             <Route path="/admin/schedule" element={<AdminRoute><Page><AdminSchedule /></Page></AdminRoute>} />
+            <Route path="/admin/tutoring-schedule" element={<AdminRoute><Page><AdminTutoring /></Page></AdminRoute>} />
             <Route path="/admin/subjects" element={<AdminRoute><Page><AdminSubjects /></Page></AdminRoute>} />
             <Route path="/admin/teachers" element={<AdminRoute><Page><AdminTeachers /></Page></AdminRoute>} />
             <Route path="/admin/announcements" element={<AdminRoute><Page><AdminAnnouncements /></Page></AdminRoute>} />

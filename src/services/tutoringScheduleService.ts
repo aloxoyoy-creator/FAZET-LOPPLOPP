@@ -137,3 +137,41 @@ export async function loadFathurTutoringSchedule(): Promise<TutoringScheduleItem
   if (error) throw error;
   return [];
 }
+
+export async function createTutoringSchedule(data: Omit<TutoringScheduleItem, 'id' | 'source'>) {
+  const { error } = await supabase.from('fathur_tutoring_schedule').insert([{
+    workspace_id: data.workspaceId,
+    class_name: data.className,
+    week_number: data.weekNumber,
+    day_name: data.dayName,
+    schedule_date: data.scheduleDate,
+    day_status: data.dayStatus,
+    start_time_label: data.startTimeLabel,
+    subject_code: data.subjectCode,
+    subject_name: data.subjectName,
+    activity_type: data.activityType,
+  }]);
+  if (error) throw error;
+}
+
+export async function updateTutoringSchedule(id: string, data: Partial<Omit<TutoringScheduleItem, 'id' | 'source'>>) {
+  const updates: Record<string, any> = {};
+  if (data.workspaceId !== undefined) updates.workspace_id = data.workspaceId;
+  if (data.className !== undefined) updates.class_name = data.className;
+  if (data.weekNumber !== undefined) updates.week_number = data.weekNumber;
+  if (data.dayName !== undefined) updates.day_name = data.dayName;
+  if (data.scheduleDate !== undefined) updates.schedule_date = data.scheduleDate;
+  if (data.dayStatus !== undefined) updates.day_status = data.dayStatus;
+  if (data.startTimeLabel !== undefined) updates.start_time_label = data.startTimeLabel;
+  if (data.subjectCode !== undefined) updates.subject_code = data.subjectCode;
+  if (data.subjectName !== undefined) updates.subject_name = data.subjectName;
+  if (data.activityType !== undefined) updates.activity_type = data.activityType;
+
+  const { error } = await supabase.from('fathur_tutoring_schedule').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteTutoringSchedule(id: string) {
+  const { error } = await supabase.from('fathur_tutoring_schedule').delete().eq('id', id);
+  if (error) throw error;
+}

@@ -45,6 +45,7 @@ const TOOL_GROUPS: { title: string; items: { to: string; label: string; Icon: Ic
   ] },
   { title: 'Akademik & Konten', items: [
     { to: '/admin/schedule', label: 'Jadwal Sekolah', Icon: Clock3 },
+    { to: '/admin/tutoring-schedule', label: 'Jadwal Les (Fathur)', Icon: BookOpen },
     { to: '/admin/tasks', label: 'Tugas', Icon: Gauge },
     { to: '/admin/task-workspace', label: 'Task Workspace', Icon: Database },
     { to: '/admin/subjects', label: 'Mata Pelajaran', Icon: BookOpen },

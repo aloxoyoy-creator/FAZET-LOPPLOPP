@@ -1,50 +1,105 @@
 import React, { useState, useEffect } from 'react';
 
-const kotaMap: Record<string, string> = {
-  'Tuban': '1628',
-  'Tasikmalaya': '1227', // Kota Tasikmalaya
-  'Ciamis': '1205'
+const targetCities = ['Ciamis', 'Tasikmalaya', 'Tuban'];
+
+type JadwalData = {
+  kota: string;
+  date: string;
+  timings: {
+    Imsak: string;
+    Fajr: string;
+    Dhuhr: string;
+    Asr: string;
+    Maghrib: string;
+    Isha: string;
+  };
+  sumber: string;
+  error?: boolean;
 };
 
 export default function JadwalSholat() {
-  const [data, setData] = useState<{kota: string, date: string, timings: any, error?: boolean}[]>([]);
+  const [data, setData] = useState<JadwalData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
+    
     const fetchJadwal = async () => {
-      const results = [];
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
+      const results: JadwalData[] = [];
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
 
-      for (const [kota, id] of Object.entries(kotaMap)) {
+      for (const kota of targetCities) {
         try {
-          const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${id}/${year}/${month}/${day}`);
-          const result = await res.json();
-          if (active && result.status) {
+          // LANGKAH 1: Coba API Utama (MyQuran - Kemenag)
+          const searchRes = await fetch(`https://api.myquran.com/v2/sholat/kota/cari/${kota}`);
+          const searchData = await searchRes.json();
+          
+          if (!searchData.status || searchData.data.length === 0) {
+            throw new Error(`Kota ${kota} tidak ditemukan di MyQuran`);
+          }
+          const cityId = searchData.data[0].id;
+
+          const jadwalRes = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${cityId}/${year}/${month}/${day}`);
+          const jadwalData = await jadwalRes.json();
+          const jadwal = jadwalData.data.jadwal;
+
+          if (active) {
             results.push({
               kota,
-              date: result.data.jadwal.tanggal,
+              date: jadwal.tanggal,
               timings: {
-                Imsak: result.data.jadwal.imsak,
-                Fajr: result.data.jadwal.subuh,
-                Dhuhr: result.data.jadwal.dzuhur,
-                Asr: result.data.jadwal.ashar,
-                Maghrib: result.data.jadwal.maghrib,
-                Isha: result.data.jadwal.isya,
-              }
+                Imsak: jadwal.imsak,
+                Fajr: jadwal.subuh,
+                Dhuhr: jadwal.dzuhur,
+                Asr: jadwal.ashar,
+                Maghrib: jadwal.maghrib,
+                Isha: jadwal.isya,
+              },
+              sumber: 'MyQuran'
             });
-          } else if (active) {
-            results.push({ kota, date: '', timings: null, error: true });
           }
-        } catch (e) {
-          if (active) {
-            results.push({ kota, date: '', timings: null, error: true });
+        } catch (error) {
+          console.warn(`MyQuran gagal untuk ${kota}. Beralih ke API Aladhan...`, error);
+          
+          try {
+            // LANGKAH 2: Fallback ke API Cadangan (Aladhan - Global)
+            const aladhanRes = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${kota}&country=Indonesia&method=11`);
+            const aladhanData = await aladhanRes.json();
+            const timings = aladhanData.data.timings;
+            const aladhanDate = aladhanData.data.date.readable;
+
+            if (active) {
+              results.push({
+                kota,
+                date: aladhanDate,
+                timings: {
+                  Imsak: timings.Imsak.split(' ')[0],
+                  Fajr: timings.Fajr.split(' ')[0],
+                  Dhuhr: timings.Dhuhr.split(' ')[0],
+                  Asr: timings.Asr.split(' ')[0],
+                  Maghrib: timings.Maghrib.split(' ')[0],
+                  Isha: timings.Isha.split(' ')[0],
+                },
+                sumber: 'Aladhan'
+              });
+            }
+          } catch (fallbackError) {
+            if (active) {
+              results.push({
+                kota,
+                date: '',
+                timings: { Imsak: '', Fajr: '', Dhuhr: '', Asr: '', Maghrib: '', Isha: '' },
+                sumber: 'Error',
+                error: true
+              });
+            }
           }
         }
       }
+      
       if (active) {
         setData(results);
         setLoading(false);
@@ -83,8 +138,14 @@ export default function JadwalSholat() {
         
         const t = item.timings;
         return (
-          <div key={index} className="bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
-            <h3 className="m-0 text-center text-lg font-bold text-blue-600 dark:text-blue-400 mb-1">{item.kota}</h3>
+          <div key={index} className="bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] rounded-2xl p-5 shadow-sm transition-all hover:shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0">
+              <span className={`text-[10px] font-bold px-2 py-1 rounded-bl-lg text-white ${item.sumber === 'MyQuran' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                API {item.sumber}
+              </span>
+            </div>
+
+            <h3 className="m-0 text-center text-lg font-bold text-blue-600 dark:text-blue-400 mb-1 mt-2">{item.kota}</h3>
             <p className="m-0 text-center text-xs text-[var(--tf-text-muted)] mb-4">{item.date}</p>
             
             <div className="space-y-2">
