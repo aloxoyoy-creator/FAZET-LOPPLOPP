@@ -1,172 +1,153 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { fetchJadwalKota } from '../../utils/jadwalSholat';
+import { Clock } from 'lucide-react';
 
-const targetCities = ['Ciamis', 'Tasikmalaya', 'Tuban'];
+const CITIES = ['Ciamis', 'Tasikmalaya', 'Tuban'];
 
-type JadwalData = {
-  kota: string;
-  date: string;
-  timings: {
-    Imsak: string;
-    Fajr: string;
-    Dhuhr: string;
-    Asr: string;
-    Maghrib: string;
-    Isha: string;
-  };
-  sumber: string;
-  error?: boolean;
-};
+function parseTime(timeStr: string) {
+  if (!timeStr || timeStr === '-') return new Date(0);
+  const [h, m] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  return date;
+}
 
-export default function JadwalSholat() {
-  const [data, setData] = useState<JadwalData[]>([]);
-  const [loading, setLoading] = useState(true);
+function formatDuration(diffMs: number) {
+  if (diffMs <= 0) return 'Sekarang';
+  const h = Math.floor(diffMs / (1000 * 60 * 60));
+  const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+  
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+export default function JadwalSholatTable() {
+  const [jadwal, setJadwal] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [nextPrayer, setNextPrayer] = useState<{ name: string, time: Date } | null>(null);
+  const [countdown, setCountdown] = useState<string>('--:--:--');
 
   useEffect(() => {
-    let active = true;
-    
-    const fetchJadwal = async () => {
-      const results: JadwalData[] = [];
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-
-      for (const kota of targetCities) {
-        try {
-          // LANGKAH 1: Coba API Utama (MyQuran - Kemenag)
-          const searchRes = await fetch(`https://api.myquran.com/v2/sholat/kota/cari/${kota}`);
-          const searchData = await searchRes.json();
-          
-          if (!searchData.status || searchData.data.length === 0) {
-            throw new Error(`Kota ${kota} tidak ditemukan di MyQuran`);
-          }
-          const cityId = searchData.data[0].id;
-
-          const jadwalRes = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${cityId}/${year}/${month}/${day}`);
-          const jadwalData = await jadwalRes.json();
-          const jadwal = jadwalData.data.jadwal;
-
-          if (active) {
-            results.push({
-              kota,
-              date: jadwal.tanggal,
-              timings: {
-                Imsak: jadwal.imsak,
-                Fajr: jadwal.subuh,
-                Dhuhr: jadwal.dzuhur,
-                Asr: jadwal.ashar,
-                Maghrib: jadwal.maghrib,
-                Isha: jadwal.isya,
-              },
-              sumber: 'MyQuran'
-            });
-          }
-        } catch (error) {
-          console.warn(`MyQuran gagal untuk ${kota}. Beralih ke API Aladhan...`, error);
-          
-          try {
-            // LANGKAH 2: Fallback ke API Cadangan (Aladhan - Global)
-            const aladhanRes = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${kota}&country=Indonesia&method=11`);
-            const aladhanData = await aladhanRes.json();
-            const timings = aladhanData.data.timings;
-            const aladhanDate = aladhanData.data.date.readable;
-
-            if (active) {
-              results.push({
-                kota,
-                date: aladhanDate,
-                timings: {
-                  Imsak: timings.Imsak.split(' ')[0],
-                  Fajr: timings.Fajr.split(' ')[0],
-                  Dhuhr: timings.Dhuhr.split(' ')[0],
-                  Asr: timings.Asr.split(' ')[0],
-                  Maghrib: timings.Maghrib.split(' ')[0],
-                  Isha: timings.Isha.split(' ')[0],
-                },
-                sumber: 'Aladhan'
-              });
-            }
-          } catch (fallbackError) {
-            if (active) {
-              results.push({
-                kota,
-                date: '',
-                timings: { Imsak: '', Fajr: '', Dhuhr: '', Asr: '', Maghrib: '', Isha: '' },
-                sumber: 'Error',
-                error: true
-              });
-            }
-          }
-        }
+    async function loadData() {
+      try {
+        const results = await Promise.all(CITIES.map(city => fetchJadwalKota(city)));
+        setJadwal(results);
+      } catch (error) {
+        console.error("Terjadi kesalahan saat memuat data:", error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      if (active) {
-        setData(results);
-        setLoading(false);
-      }
-    };
+    }
     
-    void fetchJadwal();
-    
-    return () => { active = false; };
+    void loadData();
   }, []);
 
-  if (loading) {
+  useEffect(() => {
+    if (jadwal.length === 0 || isLoading) return;
+
+    // Gunakan kota pertama sebagai patokan (Ciamis)
+    const refJadwal = jadwal[0];
+    if (!refJadwal || refJadwal.sumber === 'Error') return;
+
+    const calculateNext = () => {
+      const now = new Date();
+      const times = [
+        { name: 'Imsak', time: parseTime(refJadwal.imsak) },
+        { name: 'Subuh', time: parseTime(refJadwal.subuh) },
+        { name: 'Dzuhur', time: parseTime(refJadwal.dzuhur) },
+        { name: 'Ashar', time: parseTime(refJadwal.ashar) },
+        { name: 'Maghrib', time: parseTime(refJadwal.maghrib) },
+        { name: 'Isya', time: parseTime(refJadwal.isya) }
+      ];
+
+      let next = null;
+      for (const t of times) {
+        if (t.time > now) {
+          next = t;
+          break;
+        }
+      }
+
+      // Jika semua sudah lewat, berarti Imsak besok
+      if (!next) {
+        const tomorrowImsak = parseTime(refJadwal.imsak);
+        tomorrowImsak.setDate(tomorrowImsak.getDate() + 1);
+        next = { name: 'Imsak', time: tomorrowImsak };
+      }
+
+      setNextPrayer(next);
+      setCountdown(formatDuration(next.time.getTime() - now.getTime()));
+    };
+
+    calculateNext();
+    const interval = setInterval(calculateNext, 1000);
+    return () => clearInterval(interval);
+  }, [jadwal, isLoading]);
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+      <div className="flex justify-center items-center h-32 text-slate-500 font-medium animate-pulse">
+        Memuat jadwal sholat...
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto w-full">
-      <table className="w-full min-w-[600px] border-collapse text-sm">
-        <thead>
-          <tr>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Kota</th>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Imsak</th>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Subuh</th>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Dzuhur</th>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Ashar</th>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Maghrib</th>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Isya</th>
-            <th className="bg-emerald-600 text-white font-semibold p-3 text-center border-b border-emerald-700">Sumber API</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, index) => {
-            if (item.error) {
-              return (
-                <tr key={index} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800 text-red-500 font-bold" colSpan={8}>
-                    Gagal memuat jadwal untuk {item.kota}
-                  </td>
-                </tr>
-              );
-            }
-            
-            return (
-              <tr key={index} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800 font-bold text-slate-800 dark:text-slate-200">
-                  {item.kota}
-                </td>
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Imsak}</td>
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Fajr}</td>
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Dhuhr}</td>
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Asr}</td>
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Maghrib}</td>
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">{item.timings.Isha}</td>
-                <td className="p-3 text-center border-b border-slate-200 dark:border-slate-800">
-                  <span className={`text-[0.75rem] px-2.5 py-1 rounded-full text-white font-medium ${item.sumber === 'MyQuran' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
-                    {item.sumber}
+    <div className="max-w-4xl mx-auto my-6 p-5 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+      <h2 className="text-xl font-bold text-center text-slate-800 dark:text-slate-100 mb-2">Jadwal Sholat Hari Ini</h2>
+      
+      {/* Penghitung Waktu Mundur */}
+      {nextPrayer && (
+        <div className="flex flex-col items-center justify-center bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 p-4 rounded-xl mb-6 border border-emerald-100 dark:border-emerald-800/50">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock size={16} />
+            <span className="text-sm font-semibold uppercase tracking-wider">Menuju Waktu {nextPrayer.name}</span>
+          </div>
+          <div className="text-3xl font-black font-mono tracking-tight">{countdown}</div>
+          <div className="text-xs opacity-70 mt-1">Berdasarkan waktu {jadwal[0]?.kota}</div>
+        </div>
+      )}
+      
+      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+        <table className="w-full text-sm text-left whitespace-nowrap">
+          <thead className="text-xs text-white uppercase bg-emerald-600">
+            <tr>
+              <th className="px-6 py-3">Kota</th>
+              <th className="px-4 py-3">Imsak</th>
+              <th className="px-4 py-3">Subuh</th>
+              <th className="px-4 py-3">Dzuhur</th>
+              <th className="px-4 py-3">Ashar</th>
+              <th className="px-4 py-3">Maghrib</th>
+              <th className="px-4 py-3">Isya</th>
+              <th className="px-6 py-3 text-center">Status API</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            {jadwal.map((data, index) => (
+              <tr key={index} className="hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors bg-white dark:bg-slate-900">
+                <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{data.kota}</td>
+                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.imsak}</td>
+                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.subuh}</td>
+                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.dzuhur}</td>
+                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.ashar}</td>
+                <td className="px-4 py-4 font-bold text-emerald-700 dark:text-emerald-400">{data.maghrib}</td>
+                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.isya}</td>
+                <td className="px-6 py-4 text-center">
+                  <span className={`px-2.5 py-1 text-[0.7rem] uppercase tracking-wider font-bold rounded-full ${
+                    data.sumber === 'MyQuran' 
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200' 
+                      : data.sumber === 'Aladhan'
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                  }`}>
+                    {data.sumber}
                   </span>
                 </td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
