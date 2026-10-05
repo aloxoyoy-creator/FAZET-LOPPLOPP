@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-const kotaList = ['Tuban', 'Tasikmalaya', 'Ciamis'];
+const kotaMap: Record<string, string> = {
+  'Tuban': '1628',
+  'Tasikmalaya': '1227', // Kota Tasikmalaya
+  'Ciamis': '1205'
+};
 
 export default function JadwalSholat() {
   const [data, setData] = useState<{kota: string, date: string, timings: any, error?: boolean}[]>([]);
@@ -10,23 +14,30 @@ export default function JadwalSholat() {
     let active = true;
     const fetchJadwal = async () => {
       const results = [];
-      for (const kota of kotaList) {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+
+      for (const [kota, id] of Object.entries(kotaMap)) {
         try {
-          const res = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${kota}&country=Indonesia&method=11`);
+          const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${id}/${year}/${month}/${day}`);
           const result = await res.json();
-          if (active) {
+          if (active && result.status) {
             results.push({
               kota,
-              date: result.data.date.readable,
+              date: result.data.jadwal.tanggal,
               timings: {
-                Imsak: result.data.timings.Imsak.split(' ')[0],
-                Fajr: result.data.timings.Fajr.split(' ')[0],
-                Dhuhr: result.data.timings.Dhuhr.split(' ')[0],
-                Asr: result.data.timings.Asr.split(' ')[0],
-                Maghrib: result.data.timings.Maghrib.split(' ')[0],
-                Isha: result.data.timings.Isha.split(' ')[0],
+                Imsak: result.data.jadwal.imsak,
+                Fajr: result.data.jadwal.subuh,
+                Dhuhr: result.data.jadwal.dzuhur,
+                Asr: result.data.jadwal.ashar,
+                Maghrib: result.data.jadwal.maghrib,
+                Isha: result.data.jadwal.isya,
               }
             });
+          } else if (active) {
+            results.push({ kota, date: '', timings: null, error: true });
           }
         } catch (e) {
           if (active) {
@@ -46,58 +57,55 @@ export default function JadwalSholat() {
   }, []);
 
   if (loading) {
-    return <p style={{ textAlign: 'center', color: '#888' }}>Memuat jadwal sholat...</p>;
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
     <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '15px',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+      gap: '16px',
       justifyContent: 'center',
       fontFamily: 'sans-serif'
     }}>
       {data.map((item, index) => {
         if (item.error) {
           return (
-            <div key={index} style={{ padding: '15px', border: '1px solid red', color: 'red', borderRadius: '8px' }}>
-              Gagal memuat {item.kota}
+            <div key={index} className="p-4 border border-red-500/30 bg-red-500/10 text-red-500 rounded-xl">
+              Gagal memuat jadwal untuk {item.kota}
             </div>
           );
         }
         
         const t = item.timings;
         return (
-          <div key={index} style={{
-            background: '#fff',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            padding: '15px',
-            width: '100%',
-            maxWidth: '280px',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-            color: '#333' // Ensure text is visible even in dark mode for this widget
-          }}>
-            <h3 style={{ margin: '0 0 10px 0', textAlign: 'center', color: '#2980b9', fontSize: '18px', fontWeight: 'bold' }}>{item.kota}</h3>
-            <p style={{ margin: '0 0 15px 0', textAlign: 'center', fontSize: '12px', color: '#777' }}>{item.date}</p>
+          <div key={index} className="bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
+            <h3 className="m-0 text-center text-lg font-bold text-blue-600 dark:text-blue-400 mb-1">{item.kota}</h3>
+            <p className="m-0 text-center text-xs text-[var(--tf-text-muted)] mb-4">{item.date}</p>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #eee', padding: '5px 0', fontSize: '14px' }}>
-              <span>Imsak</span> <b>{t.Imsak}</b>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #eee', padding: '5px 0', fontSize: '14px' }}>
-              <span>Subuh</span> <b>{t.Fajr}</b>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #eee', padding: '5px 0', fontSize: '14px' }}>
-              <span>Dzuhur</span> <b>{t.Dhuhr}</b>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #eee', padding: '5px 0', fontSize: '14px' }}>
-              <span>Ashar</span> <b>{t.Asr}</b>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #eee', padding: '5px 0', fontSize: '14px' }}>
-              <span>Maghrib</span> <b>{t.Maghrib}</b>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '14px' }}>
-              <span>Isya</span> <b>{t.Isha}</b>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
+                <span>Imsak</span> <b className="text-[var(--tf-text-primary)]">{t.Imsak}</b>
+              </div>
+              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
+                <span>Subuh</span> <b className="text-[var(--tf-text-primary)]">{t.Fajr}</b>
+              </div>
+              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
+                <span>Dzuhur</span> <b className="text-[var(--tf-text-primary)]">{t.Dhuhr}</b>
+              </div>
+              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
+                <span>Ashar</span> <b className="text-[var(--tf-text-primary)]">{t.Asr}</b>
+              </div>
+              <div className="flex justify-between items-center border-b border-[var(--tf-border)] pb-2 text-sm text-[var(--tf-text-secondary)]">
+                <span>Maghrib</span> <b className="text-[var(--tf-text-primary)]">{t.Maghrib}</b>
+              </div>
+              <div className="flex justify-between items-center pt-1 text-sm text-[var(--tf-text-secondary)]">
+                <span>Isya</span> <b className="text-[var(--tf-text-primary)]">{t.Isha}</b>
+              </div>
             </div>
           </div>
         );
