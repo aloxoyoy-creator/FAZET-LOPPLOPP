@@ -134,7 +134,9 @@ export default function JadwalSholatTable() {
                 <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.isya}</td>
                 <td className="px-6 py-4 text-center">
                   <span className={`px-2.5 py-1 text-[0.7rem] uppercase tracking-wider font-bold rounded-full ${
-                    data.sumber === 'MyQuran' 
+                    data.sumber === 'Adhan (Offline)'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' 
+                      : data.sumber === 'MyQuran' 
                       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200' 
                       : data.sumber === 'Aladhan'
                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
