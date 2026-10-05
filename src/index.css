@@ -1024,3 +1024,10 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+
+
+/* Enable text selection for native app */
+body, .tf-shell {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}

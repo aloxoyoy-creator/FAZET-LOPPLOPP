@@ -582,7 +582,7 @@ export default function AppShell({ children }: AppShellProps) {
             }
           }}
         >
-          <aside className="tf-shell flex h-full w-[min(90vw,360px)] flex-col p-4">
+          <aside className="tf-shell flex h-full w-[min(90vw,360px)] flex-col p-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="tf-display text-lg">
