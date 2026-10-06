@@ -2,106 +2,61 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { friendlyError } from '../lib/errors';
-import { Mail, Lock, ArrowRight, Building2, Briefcase, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Building2, Briefcase, Zap, AlertCircle } from 'lucide-react';
 
 export function AuthLayout({
   children,
   title,
-  subtitle,
-  eyebrow
+  subtitle
 }: {
   children: ReactNode;
   title: string;
   subtitle?: string;
-  eyebrow?: string;
 }) {
   return (
-    <div className="min-h-screen flex w-full bg-[#f8f9fa] text-slate-900 font-sans selection:bg-blue-200">
-      {/* Left Panel - Modern Enterprise Branding */}
-      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-slate-900">
-        {/* Animated gradient mesh background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 z-0"></div>
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay z-0"></div>
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent z-10"></div>
-        <div className="absolute -left-[20%] -top-[20%] w-[140%] h-[140%] bg-gradient-radial from-blue-500/20 to-transparent opacity-50 blur-3xl z-10 pointer-events-none"></div>
-
-        <div className="relative z-20 flex flex-col justify-between p-16 h-full w-full">
-          <div>
-            <div className="inline-flex items-center gap-3 p-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl mb-12">
-              <img 
-                src="/brand/fathur-school-hub-crest.png" 
-                alt="FAZET Logo" 
-                className="h-10 w-10 rounded-xl"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement?.classList.add('hidden');
-                }}
-              />
-              <span className="text-white font-bold tracking-wider">FAZET SYSTEMS</span>
+    <div className="min-h-screen flex w-full bg-[#f4f7f6] text-slate-800 font-sans selection:bg-indigo-200">
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-24">
+        <div className="mx-auto w-full max-w-sm lg:max-w-md">
+          {/* Logo & Branding */}
+          <div className="flex items-center gap-3 mb-10">
+            <div className="bg-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-600/20">
+              <Zap className="w-6 h-6 text-white" />
             </div>
-            
-            <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight mb-6 tracking-tight">
-              Platform Manajemen <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-                Terpadu & Cerdas
-              </span>
-            </h1>
-            
-            <p className="text-slate-300 text-lg max-w-md leading-relaxed font-medium">
-              Akses ruang kerja eksklusif Anda dengan aman. Dirancang khusus untuk menunjang efisiensi harian.
-            </p>
+            <span className="text-2xl font-black tracking-tight text-slate-900">Fazet.</span>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 text-slate-300 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-sm max-w-md">
-              <div className="bg-emerald-500/20 p-2 rounded-lg">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-white text-sm">Versi 2.0 Total Redesign</p>
-                <p className="text-xs opacity-80 mt-0.5">Antarmuka baru yang lebih cepat dan responsif.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-slate-300 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-sm max-w-md">
-              <div className="bg-blue-500/20 p-2 rounded-lg">
-                <Sparkles className="w-5 h-5 text-blue-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-white text-sm">Sinkronisasi Cloud Real-time</p>
-                <p className="text-xs opacity-80 mt-0.5">Semua data Anda tersimpan aman dan terenkripsi.</p>
-              </div>
-            </div>
+          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-slate-500 font-medium text-base mb-8">
+              {subtitle}
+            </p>
+          )}
+
+          <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+            {children}
+          </div>
+          
+          <div className="mt-8 text-center">
+            <p className="text-xs font-semibold text-slate-400">
+              Made with ❤️ for {new Date().getFullYear()}
+            </p>
           </div>
         </div>
       </div>
-
-      {/* Right Panel - Form */}
-      <div className="w-full lg:w-[55%] flex flex-col items-center justify-center p-6 sm:p-12 relative bg-white">
+      
+      {/* Right Decorative Panel */}
+      <div className="hidden lg:block relative w-0 flex-1 bg-indigo-50 overflow-hidden">
+        {/* Soft casual shapes */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
         
-        <div className="w-full max-w-[420px] relative z-10">
-          <div className="lg:hidden flex justify-center mb-10">
-            <div className="inline-flex items-center gap-3 p-3 bg-slate-900 rounded-2xl shadow-xl">
-              <img 
-                src="/brand/fathur-school-hub-crest.png" 
-                alt="FAZET Logo" 
-                className="h-10 w-10 rounded-xl"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-              <span className="text-white font-bold tracking-wider pr-2">FAZET SYSTEMS</span>
-            </div>
-          </div>
-
-          <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">{title}</h2>
-            {subtitle && <p className="text-slate-500 text-sm font-medium">{subtitle}</p>}
-          </div>
-
-          {children}
-
-          <div className="mt-12 text-center lg:text-left">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-              &copy; {new Date().getFullYear()} FAZET Systems
-            </p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-20 z-10 text-center">
+          <div className="bg-white/40 backdrop-blur-xl border border-white/60 p-12 rounded-[3rem] shadow-2xl max-w-lg">
+            <h3 className="text-3xl font-black text-slate-800 mb-4 leading-tight">Mulai atur harimu <br/> lebih terstruktur.</h3>
+            <p className="text-slate-600 font-medium text-lg">Platform belajar dan manajemen waktu yang dibuat khusus untuk membuat rutinitasmu lebih menyenangkan.</p>
           </div>
         </div>
       </div>
@@ -148,7 +103,7 @@ export function FazetLoginPage({
         setMessage('Instruksi pemulihan telah dikirim ke email Anda.');
       }
     } catch (err: any) {
-      setError(friendlyError(err) || err.message || 'Otentikasi gagal. Silakan periksa kredensial Anda.');
+      setError(friendlyError(err) || err.message || 'Ups, login gagal! Cek lagi email atau password kamu ya.');
     } finally {
       setLoading(false);
     }
@@ -156,48 +111,50 @@ export function FazetLoginPage({
 
   return (
     <AuthLayout 
-      title={view === 'login' ? 'Masuk ke Akun' : 'Lupa Kata Sandi'}
-      subtitle={view === 'login' ? 'Silakan masukkan kredensial Anda untuk melanjutkan.' : 'Masukkan email Anda untuk menerima tautan reset.'}
+      title={view === 'login' ? 'Hai, Selamat Datang! 👋' : 'Lupa Password?'}
+      subtitle={view === 'login' ? 'Pilih profil kamu dan masukkan kredensial untuk masuk.' : 'Tenang, kami akan mengirimkan tautan reset ke emailmu.'}
     >
       <form className="space-y-6" onSubmit={handleSubmit}>
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 text-sm p-4 rounded-r-lg flex items-start gap-3 animate-in fade-in">
-            <p className="font-medium">{error}</p>
+          <div className="bg-red-50 text-red-600 text-sm font-semibold p-4 rounded-2xl flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p>{error}</p>
           </div>
         )}
         {message && (
-          <div className="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-sm p-4 rounded-r-lg flex items-start gap-3 animate-in fade-in">
-            <p className="font-medium">{message}</p>
+          <div className="bg-emerald-50 text-emerald-600 text-sm font-semibold p-4 rounded-2xl flex items-center gap-3">
+            <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 text-emerald-600 font-black">✓</div>
+            <p>{message}</p>
           </div>
         )}
         
         <div className="space-y-3">
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-            Lingkungan Kerja (Workspace)
+          <label className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
+            Siapa yang sedang login?
           </label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setWorkspace('fathur')}
-              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-bold transition-all duration-300 border-2 ${
                 workspace === 'fathur' 
-                  ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-sm' 
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                  ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-md' 
+                  : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100'
               }`}
             >
-              <Briefcase className={`w-4 h-4 ${workspace === 'fathur' ? 'text-blue-600' : 'text-slate-400'}`} />
+              <Briefcase className={`w-4 h-4 ${workspace === 'fathur' ? 'text-indigo-600' : 'text-slate-400'}`} />
               Fathur
             </button>
             <button
               type="button"
               onClick={() => setWorkspace('mazet')}
-              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-bold transition-all duration-300 border-2 ${
                 workspace === 'mazet' 
-                  ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm' 
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                  ? 'bg-pink-50 border-pink-500 text-pink-600 shadow-md' 
+                  : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100'
               }`}
             >
-              <Building2 className={`w-4 h-4 ${workspace === 'mazet' ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <Building2 className={`w-4 h-4 ${workspace === 'mazet' ? 'text-pink-500' : 'text-slate-400'}`} />
               Mazet
             </button>
           </div>
@@ -205,12 +162,12 @@ export function FazetLoginPage({
 
         <div className="space-y-5">
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-              Alamat Surel
+            <label htmlFor="email" className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
+              Email Kamu
             </label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
               </div>
               <input
                 id="email"
@@ -220,8 +177,8 @@ export function FazetLoginPage({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:ring-0 focus:border-blue-600 transition-all sm:text-sm font-medium"
-                placeholder="nama@email.com"
+                className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all text-sm font-semibold"
+                placeholder="halo@fazet.com"
               />
             </div>
           </div>
@@ -229,20 +186,20 @@ export function FazetLoginPage({
           {view === 'login' && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-                  Kata Sandi
+                <label htmlFor="password" className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
+                  Password
                 </label>
                 <button 
                   type="button" 
                   onClick={() => setView('forgot')}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
                 >
-                  Lupa Sandi?
+                  Lupa?
                 </button>
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                  <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                 </div>
                 <input
                   id="password"
@@ -252,7 +209,7 @@ export function FazetLoginPage({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:ring-0 focus:border-blue-600 transition-all sm:text-sm font-medium"
+                  className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all text-sm font-semibold"
                   placeholder="••••••••"
                 />
               </div>
@@ -263,13 +220,13 @@ export function FazetLoginPage({
         <button
           type="submit"
           disabled={loading}
-          className="group relative w-full flex justify-center items-center gap-2 py-4 px-4 rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/20 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg overflow-hidden"
+          className="group relative w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-600/30 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] hover:-translate-y-0.5 active:translate-y-0"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>
-              {view === 'login' ? 'Masuk ke Dasbor' : 'Kirim Tautan Pemulihan'}
+              {view === 'login' ? 'Gas Masuk!' : 'Kirim Link Reset'}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </>
           )}
@@ -280,9 +237,9 @@ export function FazetLoginPage({
             <button 
               type="button" 
               onClick={() => setView('login')}
-              className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors"
+              className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
             >
-              &larr; Kembali ke Login
+              &larr; Balik ke Login
             </button>
           </div>
         )}

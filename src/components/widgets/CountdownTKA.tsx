@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, GraduationCap } from 'lucide-react';
+import { Calendar, GraduationCap, Flame } from 'lucide-react';
 
 export default function CountdownTKA() {
   const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
-
+  
   useEffect(() => {
-    // 26 Oktober (Current Year) or 2026 based on context
     const targetDate = new Date(2026, 9, 26, 0, 0, 0).getTime();
 
     const interval = setInterval(() => {
@@ -29,41 +28,49 @@ export default function CountdownTKA() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-blue-600 to-indigo-700 p-5 shadow-lg text-white flex flex-col sm:flex-row items-center justify-between mb-8 overflow-hidden relative transition-all hover:shadow-xl dark:border-slate-800">
-      <GraduationCap className="absolute -right-4 -bottom-4 text-white/10 pointer-events-none" size={120} />
+    <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-xl mb-8 group">
+      {/* Dynamic Background Effects */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-indigo-500/20 to-purple-600/20 pointer-events-none mix-blend-screen" />
+      <div className="absolute -top-[50%] -left-[10%] w-[50%] h-[150%] bg-blue-500/30 blur-[100px] pointer-events-none rounded-full" />
+      <div className="absolute -bottom-[50%] -right-[10%] w-[50%] h-[150%] bg-purple-500/30 blur-[100px] pointer-events-none rounded-full" />
       
-      <div className="relative z-10 w-full sm:w-auto text-center sm:text-left mb-4 sm:mb-0">
-        <h3 className="flex items-center justify-center sm:justify-start gap-2 text-xl font-bold mb-1">
-          <Calendar size={22} className="text-blue-200" /> Menuju TKA (26 Oktober)
-        </h3>
-        <p className="text-blue-100 text-sm font-medium">Persiapkan dirimu dengan maksimal!</p>
-      </div>
-
-      <div className="relative z-10 flex gap-2 sm:gap-3 text-center font-mono">
-        {timeLeft ? (
-          <>
-            <div className="flex flex-col items-center bg-white/20 rounded-lg p-2 min-w-[60px] sm:min-w-[70px] backdrop-blur-sm border border-white/10 shadow-inner">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight">{timeLeft.days}</span>
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-blue-100">Hari</span>
-            </div>
-            <div className="flex flex-col items-center bg-white/20 rounded-lg p-2 min-w-[60px] sm:min-w-[70px] backdrop-blur-sm border border-white/10 shadow-inner">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight">{timeLeft.hours.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-blue-100">Jam</span>
-            </div>
-            <div className="flex flex-col items-center bg-white/20 rounded-lg p-2 min-w-[60px] sm:min-w-[70px] backdrop-blur-sm border border-white/10 shadow-inner">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-blue-100">Menit</span>
-            </div>
-            <div className="flex flex-col items-center bg-white/20 rounded-lg p-2 min-w-[60px] sm:min-w-[70px] backdrop-blur-sm border border-white/10 shadow-inner">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-blue-100">Detik</span>
-            </div>
-          </>
-        ) : (
-          <div className="text-xl font-bold bg-white/20 rounded-lg p-3 backdrop-blur-sm border border-white/10">
-            Semangat Ujian TKA!
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-6 sm:p-8 gap-6">
+        
+        {/* Left Section */}
+        <div className="flex-1 text-center md:text-left">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 text-[10px] font-bold uppercase tracking-widest mb-4">
+            <Flame size={12} className="text-orange-400" /> Event Penting
           </div>
-        )}
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 mb-2">
+            Tes Kemampuan Akademik
+          </h2>
+          <p className="text-slate-400 text-sm font-medium flex items-center justify-center md:justify-start gap-2">
+            <Calendar size={16} /> 26 Oktober 2026
+          </p>
+        </div>
+
+        {/* Right Section / Countdown Grid */}
+        <div className="flex gap-3 sm:gap-4 font-mono w-full md:w-auto justify-center">
+          {timeLeft ? (
+            <>
+              {[
+                { label: 'Hari', value: timeLeft.days },
+                { label: 'Jam', value: timeLeft.hours.toString().padStart(2, '0') },
+                { label: 'Menit', value: timeLeft.minutes.toString().padStart(2, '0') },
+                { label: 'Detik', value: timeLeft.seconds.toString().padStart(2, '0') },
+              ].map((item, idx) => (
+                <div key={idx} className="flex flex-col items-center justify-center bg-white/5 backdrop-blur-md rounded-2xl p-3 min-w-[70px] sm:min-w-[80px] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] transition-transform hover:-translate-y-1">
+                  <div className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-1">{item.value}</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">{item.label}</div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl text-white font-bold text-lg shadow-lg border border-white/20 animate-pulse">
+              Sedang Berlangsung / Selesai!
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

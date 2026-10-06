@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchJadwalKota } from '../../utils/jadwalSholat';
-import { Clock } from 'lucide-react';
+import { Clock, MapPin, Sparkles } from 'lucide-react';
 
 const CITIES = ['Ciamis', 'Tasikmalaya', 'Tuban'];
 
@@ -18,14 +18,16 @@ function formatDuration(diffMs: number) {
   const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   const s = Math.floor((diffMs % (1000 * 60)) / 1000);
   
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  if (h > 0) return `${h}j ${m}m ${s}d`;
+  return `${m}m ${s}d`;
 }
 
-export default function JadwalSholatTable() {
+type NextPrayer = { name: string; time: Date; remainingMs: number };
+
+export default function JadwalSholatCards() {
   const [jadwal, setJadwal] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [nextPrayer, setNextPrayer] = useState<{ name: string, time: Date } | null>(null);
-  const [countdown, setCountdown] = useState<string>('--:--:--');
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     async function loadData() {
@@ -33,122 +35,129 @@ export default function JadwalSholatTable() {
         const results = await Promise.all(CITIES.map(city => fetchJadwalKota(city)));
         setJadwal(results);
       } catch (error) {
-        console.error("Terjadi kesalahan saat memuat data:", error);
+        console.error("Error memuat jadwal sholat:", error);
       } finally {
         setIsLoading(false);
       }
     }
-    
     void loadData();
   }, []);
 
   useEffect(() => {
-    if (jadwal.length === 0 || isLoading) return;
-
-    // Gunakan kota pertama sebagai patokan (Ciamis)
-    const refJadwal = jadwal[0];
-    if (!refJadwal || refJadwal.sumber === 'Error') return;
-
-    const calculateNext = () => {
-      const now = new Date();
-      const times = [
-        { name: 'Imsak', time: parseTime(refJadwal.imsak) },
-        { name: 'Subuh', time: parseTime(refJadwal.subuh) },
-        { name: 'Dzuhur', time: parseTime(refJadwal.dzuhur) },
-        { name: 'Ashar', time: parseTime(refJadwal.ashar) },
-        { name: 'Maghrib', time: parseTime(refJadwal.maghrib) },
-        { name: 'Isya', time: parseTime(refJadwal.isya) }
-      ];
-
-      let next = null;
-      for (const t of times) {
-        if (t.time > now) {
-          next = t;
-          break;
-        }
-      }
-
-      // Jika semua sudah lewat, berarti Imsak besok
-      if (!next) {
-        const tomorrowImsak = parseTime(refJadwal.imsak);
-        tomorrowImsak.setDate(tomorrowImsak.getDate() + 1);
-        next = { name: 'Imsak', time: tomorrowImsak };
-      }
-
-      setNextPrayer(next);
-      setCountdown(formatDuration(next.time.getTime() - now.getTime()));
-    };
-
-    calculateNext();
-    const interval = setInterval(calculateNext, 1000);
+    const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
-  }, [jadwal, isLoading]);
+  }, []);
+
+  const getNextPrayer = (j: any): NextPrayer | null => {
+    if (!j || j.sumber === 'Error') return null;
+    const times = [
+      { name: 'Imsak', time: parseTime(j.imsak) },
+      { name: 'Subuh', time: parseTime(j.subuh) },
+      { name: 'Dzuhur', time: parseTime(j.dzuhur) },
+      { name: 'Ashar', time: parseTime(j.ashar) },
+      { name: 'Maghrib', time: parseTime(j.maghrib) },
+      { name: 'Isya', time: parseTime(j.isya) }
+    ];
+
+    let next = null;
+    for (const t of times) {
+      if (t.time > now) {
+        next = t;
+        break;
+      }
+    }
+
+    if (!next) {
+      const tomorrowImsak = parseTime(j.imsak);
+      tomorrowImsak.setDate(tomorrowImsak.getDate() + 1);
+      next = { name: 'Imsak', time: tomorrowImsak };
+    }
+
+    return { ...next, remainingMs: next.time.getTime() - now.getTime() };
+  };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-32 text-slate-500 font-medium animate-pulse">
-        Memuat jadwal sholat...
+      <div className="flex justify-center items-center h-40 text-slate-500 font-medium animate-pulse">
+        <Sparkles className="w-5 h-5 mr-2 animate-spin" /> Menyiapkan jadwal sholat...
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto my-6 p-5 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-      <h2 className="text-xl font-bold text-center text-slate-800 dark:text-slate-100 mb-2">Jadwal Sholat Hari Ini</h2>
-      
-      {/* Penghitung Waktu Mundur */}
-      {nextPrayer && (
-        <div className="flex flex-col items-center justify-center bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 p-4 rounded-xl mb-6 border border-emerald-100 dark:border-emerald-800/50">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock size={16} />
-            <span className="text-sm font-semibold uppercase tracking-wider">Menuju Waktu {nextPrayer.name}</span>
-          </div>
-          <div className="text-3xl font-black font-mono tracking-tight">{countdown}</div>
-          <div className="text-xs opacity-70 mt-1">Berdasarkan waktu {jadwal[0]?.kota}</div>
-        </div>
-      )}
-      
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
-        <table className="w-full text-sm text-left whitespace-nowrap">
-          <thead className="text-xs text-white uppercase bg-emerald-600">
-            <tr>
-              <th className="px-6 py-3">Kota</th>
-              <th className="px-4 py-3">Imsak</th>
-              <th className="px-4 py-3">Subuh</th>
-              <th className="px-4 py-3">Dzuhur</th>
-              <th className="px-4 py-3">Ashar</th>
-              <th className="px-4 py-3">Maghrib</th>
-              <th className="px-4 py-3">Isya</th>
-              <th className="px-6 py-3 text-center">Status API</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-            {jadwal.map((data, index) => (
-              <tr key={index} className="hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors bg-white dark:bg-slate-900">
-                <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{data.kota}</td>
-                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.imsak}</td>
-                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.subuh}</td>
-                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.dzuhur}</td>
-                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.ashar}</td>
-                <td className="px-4 py-4 font-bold text-emerald-700 dark:text-emerald-400">{data.maghrib}</td>
-                <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{data.isya}</td>
-                <td className="px-6 py-4 text-center">
-                  <span className={`px-2.5 py-1 text-[0.7rem] uppercase tracking-wider font-bold rounded-full ${
-                    data.sumber === 'Adhan (Offline)'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' 
-                      : data.sumber === 'MyQuran' 
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200' 
-                      : data.sumber === 'Aladhan'
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                  }`}>
-                    {data.sumber}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="w-full my-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {jadwal.map((data, idx) => {
+          const next = getNextPrayer(data);
+          
+          if (data.error || data.sumber === 'Error') {
+            return (
+              <div key={idx} className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 border border-red-100 dark:border-red-900/50 flex items-center justify-center text-red-500">
+                Gagal memuat jadwal untuk {data.kota}
+              </div>
+            );
+          }
+
+          return (
+            <div key={idx} className="bg-white dark:bg-[#0f1219] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+              {/* Decorative gradient blob */}
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-emerald-400/10 blur-3xl rounded-full pointer-events-none group-hover:bg-emerald-400/20 transition-all duration-500"></div>
+
+              <div className="flex justify-between items-start mb-6 relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-xl text-emerald-600 dark:text-emerald-400">
+                    <MapPin size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-lg leading-tight">{data.kota}</h3>
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mt-0.5">{data.sumber}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Countdown Banner per City */}
+              {next && (
+                <div className="mb-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center text-center">
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">
+                    Menuju {next.name}
+                  </div>
+                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                    {formatDuration(next.remainingMs)}
+                  </div>
+                </div>
+              )}
+
+              {/* Grid Waktu */}
+              <div className="grid grid-cols-3 gap-3 relative z-10">
+                {[
+                  { label: 'Subuh', time: data.subuh },
+                  { label: 'Dzuhur', time: data.dzuhur },
+                  { label: 'Ashar', time: data.ashar },
+                  { label: 'Maghrib', time: data.maghrib },
+                  { label: 'Isya', time: data.isya },
+                  { label: 'Imsak', time: data.imsak }
+                ].map((sholat) => {
+                  const isNext = next?.name === sholat.label;
+                  return (
+                    <div 
+                      key={sholat.label} 
+                      className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all ${
+                        isNext 
+                          ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 scale-105 transform' 
+                          : 'bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className={`text-[11px] font-bold uppercase tracking-wider mb-1 ${isNext ? 'text-emerald-50' : 'text-slate-400 dark:text-slate-500'}`}>
+                        {sholat.label}
+                      </span>
+                      <span className="font-black text-sm">{sholat.time}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
