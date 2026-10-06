@@ -37,6 +37,7 @@ export default function MobileNav() {
   const extra = (isAdmin ? [...more, { to: '/admin', label: 'Admin Center', icon: Settings }, { to: '/admin/control', label: 'Kontrol Aplikasi', icon: Settings }, { to: '/admin/digital-cards', label: 'Kartu Digital', icon: IdCard }] : more).filter((i) => isPathEnabled(i.to));
   
   const raportMenu = { to: '/raport', label: 'Nilai Rapot', icon: Award };
+  const RaportIcon = raportMenu.icon;
   const isMoreActive = extra.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)) || location.pathname.startsWith('/raport');
 
   return <>
@@ -50,7 +51,7 @@ export default function MobileNav() {
         <div>
           <div className="mb-2 px-2 py-1 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Akademik</div>
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { setOpen(false); navigate(raportMenu.to); }} className="flex items-center gap-3 rounded-2xl border border-slate-100 px-3 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-900"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-300"><raportMenu.icon size={17} /></span><span>{raportMenu.label}</span></button>
+            <button type="button" onClick={() => { setOpen(false); navigate(raportMenu.to); }} className="flex items-center gap-3 rounded-2xl border border-slate-100 px-3 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-900"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-300"><RaportIcon size={17} /></span><span>{raportMenu.label}</span></button>
           </div>
         </div>
 
