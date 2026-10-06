@@ -1,7 +1,7 @@
 import { useAppConfig } from '../../context/AppConfigContext';
 import { useEffect, useMemo, useRef, useState, type ComponentType, type KeyboardEvent } from 'react';
 import {
-  Activity, BarChart3, Bell, BookOpen, CalendarClock, CalendarDays, ChevronDown, ClipboardList, FolderOpen,
+  Activity, Award, BarChart3, Bell, BookOpen, CalendarClock, CalendarDays, ChevronDown, ClipboardList, FolderOpen,
   GraduationCap, Heart, IdCard, KeyRound, ListChecks, LogOut, Megaphone, MessageCircle, MonitorPlay,
   PanelLeftClose, PanelLeftOpen, Pin, PinOff, Search, Settings, ShieldAlert, ShieldCheck, Sparkles,
   StickyNote, Table2, Timer, TrendingUp, Tv, UserRound, Users, Clock3,
@@ -31,6 +31,7 @@ const GROUPS: NavGroup[] = [
     id: 'study', label: 'Belajar', items: [
       { to: '/schedule', label: 'Jadwal Sekolah', icon: CalendarClock },
       { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
+      { to: '/raport', label: 'Nilai Rapot', icon: Award },
       { to: '/calendar', label: 'Academic Timeline', icon: CalendarDays },
       { to: '/tasks', label: 'Tugas', icon: ClipboardList },
       { to: '/notes', label: 'Catatan', icon: StickyNote },

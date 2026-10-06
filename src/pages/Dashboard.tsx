@@ -3,6 +3,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
+  Award,
   BarChart3,
   Bell,
   BookOpen,
@@ -334,8 +335,8 @@ export default function Dashboard() {
   const QuickActions = () => (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {[
-        ['/notes', 'Catatan', StickyNote], ['/focus', 'Focus Mode', Timer], ['/timebox', 'TimeBox', Clock3], ['/mediabox', 'MediaBox', Tv],
-        ['/ai', 'FAZET AI', Sparkles], ['/chat', 'Chat', MessageCircle], ['/search', 'Cari', Search], ['/notifications', 'Notifikasi', Bell],
+        ['/raport', 'Nilai Rapot', Award], ['/notes', 'Catatan', StickyNote], ['/focus', 'Focus Mode', Timer], ['/timebox', 'TimeBox', Clock3],
+        ['/mediabox', 'MediaBox', Tv], ['/ai', 'FAZET AI', Sparkles], ['/chat', 'Chat', MessageCircle], ['/search', 'Cari', Search],
       ].map(([to, label, Icon]) => <Link key={to as string} to={to as string} className="studio-card group flex min-h-[72px] items-center gap-3 p-3.5 hover:-translate-y-0.5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)] text-[var(--tf-text-secondary)] group-hover:text-[var(--tf-primary)]"><Icon size={17} /></span><span className="text-xs font-semibold text-[var(--tf-text-primary)]">{label as string}</span></Link>)}</div>
   );
 

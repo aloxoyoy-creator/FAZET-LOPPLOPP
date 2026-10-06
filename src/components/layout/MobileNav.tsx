@@ -1,5 +1,5 @@
 import { useAppConfig } from '../../context/AppConfigContext';
-import { CalendarClock, CalendarDays, ClipboardList, GraduationCap, Heart, MessageCircle, MoreHorizontal, Settings, Sparkles, UserRound, StickyNote, Timer, BarChart3, Search, Bell, ShieldAlert, Clock3, Tv, IdCard } from 'lucide-react';
+import { Award, CalendarClock, CalendarDays, ClipboardList, GraduationCap, Heart, MessageCircle, MoreHorizontal, Settings, Sparkles, UserRound, StickyNote, Timer, BarChart3, Search, Bell, ShieldAlert, Clock3, Tv, IdCard } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +15,7 @@ const more = [
   { to: '/ai', label: 'FAZET AI', icon: Sparkles },
   { to: '/my-minee', label: 'My Minee', icon: Heart },
   { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
+  { to: '/raport', label: 'Nilai Rapot', icon: Award },
   { to: '/calendar', label: 'Timeline', icon: CalendarDays },
   { to: '/notes', label: 'Catatan', icon: StickyNote },
   { to: '/focus', label: 'Focus Mode', icon: Timer },

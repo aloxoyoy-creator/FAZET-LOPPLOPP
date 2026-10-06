@@ -18,6 +18,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "my-minee", label: "My Minee", paths: ["/my-minee"] },
   { id: "schedule", label: "Jadwal Sekolah", paths: ["/schedule"] },
   { id: "tutoring", label: "Jadwal Les", paths: ["/tutoring"] },
+  { id: "raport", label: "Nilai Rapot", paths: ["/raport", "/rapor"] },
   { id: "calendar", label: "Academic Timeline", paths: ["/calendar"] },
   { id: "tasks", label: "Tugas", paths: ["/tasks"] },
   { id: "notes", label: "Catatan", paths: ["/notes"] },

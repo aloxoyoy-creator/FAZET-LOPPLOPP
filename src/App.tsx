@@ -20,6 +20,7 @@ const Tasks = lazy(() => import('./pages/Tasks'));
 const TaskDetail = lazy(() => import('./pages/TaskDetail'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const Tutoring = lazy(() => import('./pages/Tutoring'));
+const Raport = lazy(() => import('./pages/Raport'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -123,6 +124,8 @@ export default function App() {
             <Route path="/notes/:id" element={<ProtectedRoute><Page><Notes /></Page></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Page><Schedule /></Page></ProtectedRoute>} />
             <Route path="/tutoring" element={<ProtectedRoute><Page><Tutoring /></Page></ProtectedRoute>} />
+            <Route path="/raport" element={<ProtectedRoute><Page><Raport /></Page></ProtectedRoute>} />
+            <Route path="/rapor" element={<Navigate to="/raport" replace />} />
             <Route path="/calendar" element={<ProtectedRoute><Page><Calendar /></Page></ProtectedRoute>} />
             <Route path="/ai" element={<ProtectedRoute><Page><AiAssistant /></Page></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Page><Profile /></Page></ProtectedRoute>} />
