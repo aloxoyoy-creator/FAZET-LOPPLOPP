@@ -9,6 +9,7 @@ const primary = [
   { to: '/chat', label: 'Chat', icon: MessageCircle },
   { to: '/tasks', label: 'Tugas', icon: ClipboardList },
   { to: '/schedule', label: 'Jadwal', icon: CalendarClock },
+  { to: '/raport', label: 'Rapot', icon: Award },
 ] as const;
 
 const more = [
@@ -36,9 +37,7 @@ export default function MobileNav() {
   const { isPathEnabled } = useAppConfig();
   const extra = (isAdmin ? [...more, { to: '/admin', label: 'Admin Center', icon: Settings }, { to: '/admin/control', label: 'Kontrol Aplikasi', icon: Settings }, { to: '/admin/digital-cards', label: 'Kartu Digital', icon: IdCard }] : more).filter((i) => isPathEnabled(i.to));
   
-  const raportMenu = { to: '/raport', label: 'Nilai Rapot', icon: Award };
-  const RaportIcon = raportMenu.icon;
-  const isMoreActive = extra.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)) || location.pathname.startsWith('/raport');
+  const isMoreActive = extra.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
 
   return <>
     <nav className="mobile-nav safe-bottom" aria-label="Navigasi utama seluler">
@@ -47,13 +46,6 @@ export default function MobileNav() {
     </nav>
     {open && <div className="fixed inset-0 z-[70] bg-slate-950/40 backdrop-blur-sm lg:hidden" onMouseDown={(event) => { if (event.currentTarget === event.target) setOpen(false); }}>
       <div className="absolute inset-x-3 bottom-[calc(68px+env(safe-area-inset-bottom))] max-h-[72dvh] overflow-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-slate-800 dark:bg-slate-950 flex flex-col gap-4">
-        
-        <div>
-          <div className="mb-2 px-2 py-1 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Akademik</div>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { setOpen(false); navigate(raportMenu.to); }} className="flex items-center gap-3 rounded-2xl border border-slate-100 px-3 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-900"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-300"><RaportIcon size={17} /></span><span>{raportMenu.label}</span></button>
-          </div>
-        </div>
 
         <div>
           <div className="mb-2 px-2 py-1 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Ruang pribadi</div>
