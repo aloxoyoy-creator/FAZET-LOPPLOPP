@@ -7,11 +7,13 @@ import { Mail, Lock, ArrowRight, Building2, Briefcase, Zap, AlertCircle } from '
 export function AuthLayout({
   children,
   title,
-  subtitle
+  subtitle,
+  eyebrow
 }: {
   children: ReactNode;
   title: string;
   subtitle?: string;
+  eyebrow?: string;
 }) {
   return (
     <div className="min-h-screen flex w-full bg-[#f4f7f6] text-slate-800 font-sans selection:bg-indigo-200">
