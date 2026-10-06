@@ -2,3 +2,4 @@ node_modules
 
 ops/private/*.env
 .env.local
+.firebase/
