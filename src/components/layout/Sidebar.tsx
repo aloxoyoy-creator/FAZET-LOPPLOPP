@@ -31,12 +31,16 @@ const GROUPS: NavGroup[] = [
     id: 'study', label: 'Belajar', items: [
       { to: '/schedule', label: 'Jadwal Sekolah', icon: CalendarClock },
       { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
-      { to: '/raport', label: 'Nilai Rapot', icon: Award },
       { to: '/calendar', label: 'Academic Timeline', icon: CalendarDays },
       { to: '/tasks', label: 'Tugas', icon: ClipboardList },
       { to: '/notes', label: 'Catatan', icon: StickyNote },
       { to: '/focus', label: 'Focus Mode', icon: Timer },
       { to: '/insights', label: 'Insights', icon: BarChart3 },
+    ],
+  },
+  {
+    id: 'academic', label: 'Akademik', items: [
+      { to: '/raport', label: 'Nilai Rapot', icon: Award },
     ],
   },
   {

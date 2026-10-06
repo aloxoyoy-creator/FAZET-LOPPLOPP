@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'FAZETT LOPP LOPP',
   webDir: 'dist',
   server: {
-    url: 'https://fazet-lopplopp.vercel.app',
+    url: 'https://raport-f581d.web.app',
     cleartext: true,
   },
   android: {
