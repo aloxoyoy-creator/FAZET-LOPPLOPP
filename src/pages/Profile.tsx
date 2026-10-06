@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, CheckCircle2, Clock3, Mail, Save, ShieldCheck, Sparkles, UserCircle2, ClipboardList, CircleCheck, TimerReset, AlertTriangle, Copy, Smartphone, Monitor, Tablet, Globe2, LogIn, RefreshCw } from 'lucide-react';
+import { Camera, CheckCircle2, Clock3, Mail, Save, ShieldCheck, Sparkles, UserCircle2, ClipboardList, CircleCheck, TimerReset, AlertTriangle, Copy, Smartphone, Monitor, Tablet, Globe2, LogIn, RefreshCw, LockKeyhole } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -226,6 +226,52 @@ export default function Profile() {
             <Card className="p-5"><div className="flex items-center justify-between gap-3"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">User ID (Cari chat)</div><button type="button" onClick={() => void copyUserId()} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800" aria-label="Salin User ID"><Copy size={14}/></button></div><div className="mt-2 break-all font-mono text-xs text-slate-600 dark:text-slate-300">{user?.id}</div></Card>
           </div>
       </div>
+      
+      {/* CHANGE PASSWORD SECTION */}
+      <Card className="p-6 mb-6">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600">
+            <LockKeyhole size={20} />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold">Ubah Kata Sandi</h2>
+            <p className="mt-1 text-sm text-slate-500">Perbarui kata sandi Anda secara berkala untuk menjaga keamanan akun.</p>
+          </div>
+        </div>
+        
+        <form className="grid gap-4 max-w-md" onSubmit={async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget);
+          const newPass = fd.get('newPass') as string;
+          const confirmPass = fd.get('confirmPass') as string;
+          if (newPass.length < 8) return push({ tone: 'error', title: 'Kata Sandi Lemah', message: 'Kata sandi minimal harus 8 karakter.' });
+          if (newPass !== confirmPass) return push({ tone: 'error', title: 'Konfirmasi Gagal', message: 'Kata sandi baru tidak cocok.' });
+          
+          try {
+            // Using supabase auth to update password
+            const { getSupabase } = await import('../lib/supabase');
+            const client = getSupabase(workspaceId);
+            const { error: updateError } = await client.auth.updateUser({ password: newPass });
+            if (updateError) throw updateError;
+            push({ tone: 'success', title: 'Kata Sandi Diubah', message: 'Kata sandi Anda berhasil diperbarui.' });
+            (e.target as HTMLFormElement).reset();
+          } catch (err: any) {
+            push({ tone: 'error', title: 'Gagal Ubah Sandi', message: errorMessage(err) });
+          }
+        }}>
+          <label>
+            <span className="label">Kata Sandi Baru</span>
+            <input name="newPass" type="password" required className="input h-12" placeholder="Minimal 8 karakter" />
+          </label>
+          <label>
+            <span className="label">Konfirmasi Kata Sandi Baru</span>
+            <input name="confirmPass" type="password" required className="input h-12" placeholder="Ulangi kata sandi baru" />
+          </label>
+          <div className="flex justify-end mt-2">
+            <Button type="submit" icon={<CheckCircle2 size={16}/>}>Simpan Sandi Baru</Button>
+          </div>
+        </form>
+      </Card>
 
       <Card className="overflow-hidden p-0">
         <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/70 sm:px-6">

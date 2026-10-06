@@ -77,6 +77,9 @@ export function FazetLoginPage({
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  
   const [workspace, setWorkspace] = useState<'fathur'|'mazet'>(
     (activeWorkspace === 'fathur' || activeWorkspace === 'mazet') ? activeWorkspace : 'fathur'
   );
@@ -97,7 +100,7 @@ export function FazetLoginPage({
       }
       
       if (view === 'login') {
-        await login(email, password, true, workspace);
+        await login(email, password, rememberMe, workspace);
         const from = (location.state as any)?.from || '/';
         navigate(from, { replace: true });
       } else {
@@ -186,34 +189,62 @@ export function FazetLoginPage({
           </div>
 
           {view === 'login' && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
-                  Password
-                </label>
-                <button 
-                  type="button" 
-                  onClick={() => setView('forgot')}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
-                >
-                  Lupa?
-                </button>
-              </div>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
+                    Password
+                  </label>
+                  <button 
+                    type="button" 
+                    onClick={() => setView('forgot')}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                  >
+                    Lupa Password?
+                  </button>
                 </div>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all text-sm font-semibold"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none"
+                    title={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  >
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
                 <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all text-sm font-semibold"
-                  placeholder="••••••••"
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600/30 transition-colors"
                 />
+                <label htmlFor="remember-me" className="ml-2 block text-sm font-medium text-slate-600">
+                  Ingat sesi saya
+                </label>
               </div>
             </div>
           )}
