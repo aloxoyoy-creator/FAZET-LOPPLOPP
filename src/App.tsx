@@ -47,6 +47,7 @@ const AdminData = lazy(() => import('./pages/admin/AdminData'));
 const AdminOperations = lazy(() => import('./pages/admin/AdminOperations'));
 const AdminFocusSessions = lazy(() => import('./pages/admin/AdminFocusSessions'));
 const AdminTaskWorkspace = lazy(() => import('./pages/admin/AdminTaskWorkspace'));
+const AdminToken = lazy(() => import('./pages/admin/AdminToken'));
 const RemotePage = lazy(() => import('./pages/RemotePage'));
 const TaskSummaryPdf = lazy(() => import('./pages/TaskSummaryPdf'));
 const ActivityCenter = lazy(() => import('./pages/ActivityCenter'));
@@ -149,8 +150,8 @@ export default function App() {
             <Route path="/join" element={<RemotePage />} />
             <Route path="/admin/digital-cards" element={<AdminRoute><Page><AdminDigitalCards /></Page></AdminRoute>} />
 
-            {/* Admin */}
             <Route path="/admin" element={<AdminRoute><Page><AdminHub /></Page></AdminRoute>} />
+            <Route path="/admin/token" element={<AdminRoute><Page><AdminToken /></Page></AdminRoute>} />
             <Route path="/admin/overview" element={<AdminRoute><Page><AdminDashboard /></Page></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><Page><AdminUsers /></Page></AdminRoute>} />
             <Route path="/admin/tasks" element={<AdminRoute><Page><AdminTasks /></Page></AdminRoute>} />

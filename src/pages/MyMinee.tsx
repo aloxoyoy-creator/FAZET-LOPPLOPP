@@ -146,6 +146,37 @@ export default function MyMinee() {
   const [typeFilter, setTypeFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'archive'>('all');
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState('');
+  const [unlockToken, setUnlockToken] = useState('');
+  const [unlockError, setUnlockError] = useState('');
+  const [unlocking, setUnlocking] = useState(false);
+
+  const handleUnlock = async () => {
+    if (!unlockPassword || !unlockToken) {
+      setUnlockError('Password dan token admin wajib diisi.');
+      return;
+    }
+    if (unlockToken !== 'MYMINEE-ADMIN-999') {
+      setUnlockError('Token admin tidak valid.');
+      return;
+    }
+    setUnlocking(true);
+    setUnlockError('');
+    try {
+      const email = user?.email;
+      if (!email) throw new Error('Email akun admin tidak tersedia.');
+      const { error: reauthError } = await supabase.auth.signInWithPassword({ email, password: unlockPassword });
+      if (reauthError) throw new Error('Password salah atau sesi tidak dapat diverifikasi.');
+      setIsUnlocked(true);
+      void load();
+    } catch (err) {
+      setUnlockError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
   const load = async (quiet = false) => {
     if (quiet) setRefreshing(true);
     else setLoading(true);
@@ -190,8 +221,10 @@ export default function MyMinee() {
   };
 
   useEffect(() => {
-    void load();
-  }, []);
+    if (isUnlocked) {
+      void load();
+    }
+  }, [isUnlocked]);
 
   const imageCount = useMemo(
     () => items.filter((item) => isPreviewableImage(item.fileType, item.originalName)).length,
@@ -450,8 +483,58 @@ export default function MyMinee() {
   const selectedUrl = selected ? signedUrls[selected.id] ?? '' : '';
 
   return (
-    <div className="my-minee-page space-y-6">
-      <section className="relative overflow-hidden rounded-[28px] border border-rose-200/70 bg-gradient-to-br from-rose-50 via-white to-fuchsia-50 p-6 shadow-[0_24px_70px_rgba(244,63,94,.10)] dark:border-rose-900/40 dark:from-rose-950/50 dark:via-slate-950 dark:to-fuchsia-950/35">
+    <div className="relative">
+      {!isUnlocked && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xl rounded-3xl">
+          <Card className="w-full max-w-md overflow-hidden p-0 shadow-2xl border-rose-200 dark:border-rose-900/50">
+            <div className="bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-8 text-center text-white">
+              <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-white/20 backdrop-blur">
+                <LockKeyhole size={28} />
+              </div>
+              <h2 className="text-2xl font-black">My Minee Terkunci</h2>
+              <p className="mt-2 text-sm text-white/80">Masukkan sandi dan token admin untuk membuka</p>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {unlockError && (
+                <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
+                  {unlockError}
+                </div>
+              )}
+              
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">
+                Sandi Admin
+                <input
+                  type="password"
+                  value={unlockPassword}
+                  onChange={(e) => setUnlockPassword(e.target.value)}
+                  className="input mt-2 h-11 w-full px-3"
+                  placeholder="Masukkan sandi Anda"
+                />
+              </label>
+
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">
+                Token Admin
+                <input
+                  type="password"
+                  value={unlockToken}
+                  onChange={(e) => setUnlockToken(e.target.value)}
+                  className="input mt-2 h-11 w-full px-3"
+                  placeholder="MYMINEE-ADMIN-..."
+                />
+              </label>
+
+              <Button onClick={() => void handleUnlock()} className="mt-2 w-full" variant="primary" disabled={unlocking || !unlockPassword || !unlockToken}>
+                {unlocking ? <Loader2 size={18} className="animate-spin" /> : <LockKeyhole size={18} />}
+                Buka Brankas
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      <div className={`my-minee-page space-y-6 ${!isUnlocked ? 'pointer-events-none select-none blur-md overflow-hidden h-[80vh]' : ''}`}>
+        <section className="relative overflow-hidden rounded-[28px] border border-rose-200/70 bg-gradient-to-br from-rose-50 via-white to-fuchsia-50 p-6 shadow-[0_24px_70px_rgba(244,63,94,.10)] dark:border-rose-900/40 dark:from-rose-950/50 dark:via-slate-950 dark:to-fuchsia-950/35">
         <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-rose-300/25 blur-3xl dark:bg-rose-500/10" />
         <div className="pointer-events-none absolute -bottom-20 left-1/3 h-52 w-52 rounded-full bg-fuchsia-300/20 blur-3xl dark:bg-fuchsia-500/10" />
 
@@ -738,6 +821,7 @@ export default function MyMinee() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -35,7 +35,7 @@ export default function MobileNav() {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { isPathEnabled } = useAppConfig();
-  const extra = (isAdmin ? [...more, { to: '/admin', label: 'Admin Center', icon: Settings }, { to: '/admin/control', label: 'Kontrol Aplikasi', icon: Settings }, { to: '/admin/digital-cards', label: 'Kartu Digital', icon: IdCard }] : more).filter((i) => isPathEnabled(i.to));
+  const extra = (isAdmin ? [...more, { to: '/admin', label: 'Admin Center', icon: Settings }, { to: '/admin/control', label: 'Kontrol Aplikasi', icon: Settings }, { to: '/admin/token', label: 'Token Akses (Baru)', icon: Settings }, { to: '/admin/digital-cards', label: 'Kartu Digital', icon: IdCard }] : more).filter((i) => isPathEnabled(i.to));
   
   const isMoreActive = extra.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
 

@@ -1,1 +1,0 @@
-import{j as o}from"./vendor-radix-D7-W_wjd.js";import{F as t}from"./index-DgQ1db6s.js";import"./vendor-router-B5D04Xmd.js";import"./vendor-supabase-Pf0Abwmk.js";function e(){return o.jsx(t,{initialView:"forgot"})}export{e as default};
