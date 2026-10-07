@@ -44,7 +44,7 @@ export default function FloatingActionMenu({ onAddTask }: FloatingActionMenuProp
   ];
 
   return (
-    <div className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex flex-col-reverse items-end gap-4">
+    <div className="fixed bottom-20 right-5 lg:bottom-10 lg:right-10 z-[60] flex flex-col-reverse items-end gap-4">
       {/* Tombol Utama dengan animasi pulse dan glow */}
       <div className="relative">
         {/* Glow effect yang berdenyut */}

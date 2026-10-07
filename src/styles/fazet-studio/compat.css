@@ -132,10 +132,10 @@ html.dark .app-shell { --tf-on-accent: #fff; }
     box-shadow: 0 16px 32px color-mix(in srgb, var(--tf-text-primary) 15%, transparent), 0 0 0 1px color-mix(in srgb, var(--tf-text-primary) 5%, transparent) !important;
     
     /* Floating Taskbar */
-    bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;
-    left: 1.5rem !important;
-    right: 1.5rem !important;
-    width: calc(100% - 3rem) !important;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important;
+    left: 0.5rem !important;
+    right: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
     border-radius: 9999px !important;
     padding: 0.5rem 0.5rem !important;
     z-index: 50 !important;

@@ -298,7 +298,7 @@ canvas {
   }
 
   .app-shell .live-statusbar {
-    bottom: calc(var(--tf-mobile-nav-h) + env(safe-area-inset-bottom));
+    bottom: calc(4.25rem + env(safe-area-inset-bottom));
   }
 
   .live-statusbar__info {

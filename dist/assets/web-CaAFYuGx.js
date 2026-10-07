@@ -1,1 +1,0 @@
-import{bi as n}from"./index-DEsgCHG3.js";import"./vendor-radix-D7-W_wjd.js";import"./vendor-router-B5D04Xmd.js";import"./vendor-supabase-Pf0Abwmk.js";class p extends n{async show(e){}async hide(e){}}export{p as SplashScreenWeb};
