@@ -57,6 +57,7 @@ import {
 import FloatingActionMenu from '../ui/FloatingActionMenu';
 import TaskForm from '../tasks/TaskForm';
 import Sidebar from "./Sidebar";
+import MobileNav from "./MobileNav";
 import LiveStatusBar from "./LiveStatusBar";
 import Watermark from "./Watermark";
 import { useWorkspace } from "../../context/WorkspaceContext";
@@ -785,6 +786,7 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
+      <MobileNav />
       <FloatingActionMenu onAddTask={() => setTaskOpen(true)} />
       <TaskForm open={taskOpen} initial={null} onClose={() => setTaskOpen(false)} onSaved={() => setTaskOpen(false)} />
     </div>
