@@ -75,28 +75,8 @@ type MenuItem = {
   external?: boolean;
 };
 
-const mainMenu: MenuItem[] = GROUPS.flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
-
-const adminMenu: MenuItem[] = [
-  { label: "Admin Dashboard", to: "/admin", Icon: ShieldCheck },
-  { label: "Users", to: "/admin/users", Icon: Users },
-  { label: "Kartu Digital", to: "/admin/digital-cards", Icon: ShieldCheck },
-  { label: "Tasks", to: "/admin/tasks", Icon: CheckSquare },
-  { label: "Schedule", to: "/admin/schedule", Icon: Clock3 },
-  { label: "Subjects", to: "/admin/subjects", Icon: CalendarDays },
-  { label: "Teachers", to: "/admin/teachers", Icon: UserRound },
-  { label: "Announcements", to: "/admin/announcements", Icon: Sparkles },
-  { label: "Notifications", to: "/admin/notifications", Icon: Bell },
-  { label: "Analytics", to: "/admin/analytics", Icon: BarChart3 },
-  { label: "Audit Logs", to: "/admin/audit-logs", Icon: ShieldCheck },
-  { label: "Sessions & Devices", to: "/admin/sessions", Icon: MonitorPlay },
-  { label: "System Settings", to: "/admin/settings", Icon: Settings },
-  { label: "Broadcast Center", to: "/admin/broadcast", Icon: Megaphone },
-  { label: "Storage Manager", to: "/admin/storage", Icon: FolderOpen },
-  { label: "System Health", to: "/admin/health", Icon: Activity },
-  { label: "Data Workspace", to: "/admin/data", Icon: Table2 },
-  { label: "My Minee Gallery", to: "/admin/my-minee", Icon: Heart },
-];
+const mainMenu: MenuItem[] = GROUPS.filter(g => !g.adminOnly).flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
+const adminMenu: MenuItem[] = GROUPS.filter(g => g.adminOnly).flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
 
 function pageTitleFromPath(pathname: string): string {
   const parts = pathname.split("/").filter(Boolean);
@@ -594,7 +574,7 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
 
             <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-              {GROUPS.map((group) => (
+              {GROUPS.filter(g => !g.adminOnly || showAdmin).map((group) => (
                 <div key={group.id} className="mb-4">
                   <div
                     className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em]"
@@ -622,38 +602,6 @@ export default function AppShell({ children }: AppShellProps) {
                   })}
                 </div>
               ))}
-
-              {showAdmin && (
-                <>
-                  <div
-                    className="my-3 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em]"
-                    style={{
-                      borderTop: "1px solid var(--tf-rule)",
-                      color: "var(--tf-ink-muted)",
-                    }}
-                  >
-                    Admin Center
-                  </div>
-                  {adminMenu.map((item) => {
-                    const Icon = item.Icon;
-                    const active = location.pathname === item.to;
-                    return (
-                      <button
-                        key={item.to}
-                        type="button"
-                        onClick={() => go(item.to)}
-                        className={cn(
-                          "tf-nav-item flex w-full items-center gap-3 px-3 py-3 text-left text-sm font-medium",
-                          active && "is-active",
-                        )}
-                      >
-                        <Icon size={18} />
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </>
-              )}
             </nav>
 
             <div
