@@ -341,7 +341,7 @@ export default function Dashboard() {
                 {todayTutoring.map((t, i) => (
                   <div key={i} className="flex justify-between items-center text-sm">
                     <span className="font-semibold">{t.subjectName}</span>
-                    <span className="text-[var(--tf-text-muted)] font-mono">{t.startTimeLabel} - {t.endTimeLabel}</span>
+                    <span className="text-[var(--tf-text-muted)] font-mono">{t.startTimeLabel}</span>
                   </div>
                 ))}
               </div>
