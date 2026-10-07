@@ -189,7 +189,7 @@ export function AppConfigProvider({ children }: { children: ReactNode }) {
           { key, value, updated_at: new Date().toISOString() },
           { onConflict: "key" },
         );
-      if (error) throw new Error(error.message);
+      if (error) { console.error(error); return; }
       await load();
     },
     [load],
