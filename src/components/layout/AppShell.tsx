@@ -63,34 +63,16 @@ type AppShellProps = {
   children: ReactNode;
 };
 
+import { GROUPS, type NavItem, type NavGroup } from './Sidebar';
+
 type MenuItem = {
   label: string;
   to: string;
-  Icon: ComponentType<{ size?: number; className?: string }>;
+  Icon: ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
   external?: boolean;
 };
 
-const mainMenu: MenuItem[] = [
-  { label: "Beranda", to: "/", Icon: Home },
-  { label: "Chat", to: "/chat", Icon: MessageCircle },
-  { label: "FAZET AI", to: "/ai", Icon: Sparkles },
-  { label: "My Minee", to: "/my-minee", Icon: Heart },
-  { label: "Jadwal Sekolah", to: "/schedule", Icon: Clock3 },
-  { label: "Jadwal Les", to: "/tutoring", Icon: GraduationCap },
-  { label: "Academic Timeline", to: "/calendar", Icon: CalendarDays },
-  { label: "Nilai Rapot", to: "/raport", Icon: Award },
-  { label: "Tugas", to: "/tasks", Icon: CheckSquare },
-  { label: "Catatan", to: "/notes", Icon: Sparkles },
-  { label: "Focus Mode", to: "/focus", Icon: Clock3 },
-  { label: "Insights", to: "/insights", Icon: BarChart3 },
-  { label: "TimeBox", to: "/timebox", Icon: Clock3 },
-  { label: "MediaBox & Watch Party", to: "/mediabox", Icon: MonitorPlay },
-  { label: "Pencarian", to: "/search", Icon: Sparkles },
-  { label: "Notifikasi", to: "/notifications", Icon: Bell },
-  { label: "Aktivitas & Perangkat", to: "/activity", Icon: ShieldCheck },
-  { label: "Profil", to: "/profile", Icon: UserRound },
-  { label: "Pengaturan", to: "/settings", Icon: Settings },
-];
+const mainMenu: MenuItem[] = GROUPS.flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
 
 const adminMenu: MenuItem[] = [
   { label: "Admin Dashboard", to: "/admin", Icon: ShieldCheck },
@@ -118,7 +100,7 @@ function pageTitleFromPath(pathname: string): string {
   if (parts[0] === "admin") {
     if (!parts[1]) return "Admin Dashboard";
     const item = adminMenu.find((menu) => menu.to === pathname);
-    return item?.label ?? `Admin • ${parts[1].replace(/-/g, " ")}`;
+    return item?.label ?? `Admin ï¿½ ${parts[1].replace(/-/g, " ")}`;
   }
 
   const item = mainMenu.find((menu) => !menu.external && menu.to === pathname);
@@ -156,7 +138,7 @@ export default function AppShell({ children }: AppShellProps) {
     user?.app_metadata?.role === "admin" ||
     user?.user_metadata?.role === "admin";
 
-  const visibleMainMenu = useMemo(() => mainMenu, []);
+    const visibleMainMenu = useMemo(() => mainMenu, []);
 
   const allSearchItems = useMemo(
     () => (showAdmin ? [...visibleMainMenu, ...adminMenu] : visibleMainMenu),
@@ -424,7 +406,7 @@ export default function AppShell({ children }: AppShellProps) {
                 className="text-[10px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: "var(--tf-ink-muted)" }}
               >
-                {branding.appName || "FAZET"} · {workspace.name}
+                {branding.appName || "FAZET"} ï¿½ {workspace.name}
               </div>
               <h1 className="tf-display truncate text-base">{pageTitle}</h1>
             </div>
@@ -588,7 +570,7 @@ export default function AppShell({ children }: AppShellProps) {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="tf-display text-lg">
-                  {branding.appName || "FAZET"} · {workspace.name}
+                  {branding.appName || "FAZET"} ï¿½ {workspace.name}
                 </div>
                 <div
                   className="text-[10px] font-semibold tracking-[0.18em]"
@@ -608,38 +590,34 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
 
             <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-              {visibleMainMenu.map((item) => {
-                const Icon = item.Icon;
-                const active = !item.external && location.pathname === item.to;
-
-                if (item.external) {
-                  return (
-                    <a
-                      key={`${item.label}-${item.to}`}
-                      href={item.to}
-                      className="tf-nav-item flex w-full items-center gap-3 px-3 py-3 text-left text-sm font-medium"
-                    >
-                      <Icon size={18} />
-                      <span>{item.label}</span>
-                    </a>
-                  );
-                }
-
-                return (
-                  <button
-                    key={item.to}
-                    type="button"
-                    onClick={() => go(item.to)}
-                    className={cn(
-                      "tf-nav-item flex w-full items-center gap-3 px-3 py-3 text-left text-sm font-medium",
-                      active && "is-active",
-                    )}
+              {GROUPS.map((group) => (
+                <div key={group.id} className="mb-4">
+                  <div
+                    className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                    style={{ color: "var(--tf-ink-muted)" }}
                   >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
+                    {group.label}
+                  </div>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = location.pathname === item.to;
+                    return (
+                      <button
+                        key={item.to}
+                        type="button"
+                        onClick={() => go(item.to)}
+                        className={cn(
+                          "tf-nav-item flex w-full items-center gap-3 px-3 py-3 text-left text-sm font-medium",
+                          active && "is-active",
+                        )}
+                      >
+                        <Icon size={18} />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
 
               {showAdmin && (
                 <>

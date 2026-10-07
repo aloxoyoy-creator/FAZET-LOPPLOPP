@@ -15,10 +15,10 @@ import { cn } from '../../lib/utils';
 import '../../styles/sidebar.css';
 
 type NavIcon = ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
-type NavItem = { to: string; label: string; icon: NavIcon; end?: boolean };
-type NavGroup = { id: string; label: string; items: NavItem[]; adminOnly?: boolean };
+export type NavItem = { to: string; label: string; icon: NavIcon; end?: boolean };
+export type NavGroup = { id: string; label: string; items: NavItem[]; adminOnly?: boolean };
 
-const GROUPS: NavGroup[] = [
+export const GROUPS: NavGroup[] = [
   {
     id: 'main', label: 'Ruang utama', items: [
       { to: '/', label: 'Beranda', icon: Sparkles, end: true },
