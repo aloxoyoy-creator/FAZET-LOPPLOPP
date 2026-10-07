@@ -784,9 +784,13 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         </div>
       )}
+
+      <FloatingActionMenu onAddTask={() => setTaskOpen(true)} />
+      <TaskForm open={taskOpen} initial={null} onClose={() => setTaskOpen(false)} onSaved={() => setTaskOpen(false)} />
     </div>
   );
 }
+
 
 
 
