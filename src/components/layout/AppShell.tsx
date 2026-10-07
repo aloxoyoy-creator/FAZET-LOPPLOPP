@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePushNotifications } from "../../hooks/usePushNotifications";
 import type { ComponentType, ReactNode } from "react";
 import {
@@ -29,6 +29,7 @@ import {
   Heart,
   MessageCircle,
   GraduationCap,
+  Award,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -77,6 +78,7 @@ const mainMenu: MenuItem[] = [
   { label: "Jadwal Sekolah", to: "/schedule", Icon: Clock3 },
   { label: "Jadwal Les", to: "/tutoring", Icon: GraduationCap },
   { label: "Academic Timeline", to: "/calendar", Icon: CalendarDays },
+  { label: "Nilai Rapot", to: "/raport", Icon: Award },
   { label: "Tugas", to: "/tasks", Icon: CheckSquare },
   { label: "Catatan", to: "/notes", Icon: Sparkles },
   { label: "Focus Mode", to: "/focus", Icon: Clock3 },
@@ -116,7 +118,7 @@ function pageTitleFromPath(pathname: string): string {
   if (parts[0] === "admin") {
     if (!parts[1]) return "Admin Dashboard";
     const item = adminMenu.find((menu) => menu.to === pathname);
-    return item?.label ?? `Admin â€¢ ${parts[1].replace(/-/g, " ")}`;
+    return item?.label ?? `Admin • ${parts[1].replace(/-/g, " ")}`;
   }
 
   const item = mainMenu.find((menu) => !menu.external && menu.to === pathname);
@@ -422,7 +424,7 @@ export default function AppShell({ children }: AppShellProps) {
                 className="text-[10px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: "var(--tf-ink-muted)" }}
               >
-                {branding.appName || "FAZET"} Â· {workspace.name}
+                {branding.appName || "FAZET"} · {workspace.name}
               </div>
               <h1 className="tf-display truncate text-base">{pageTitle}</h1>
             </div>
@@ -586,7 +588,7 @@ export default function AppShell({ children }: AppShellProps) {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="tf-display text-lg">
-                  {branding.appName || "FAZET"} Â· {workspace.name}
+                  {branding.appName || "FAZET"} · {workspace.name}
                 </div>
                 <div
                   className="text-[10px] font-semibold tracking-[0.18em]"
@@ -740,7 +742,7 @@ export default function AppShell({ children }: AppShellProps) {
                         idx === paletteIndex && "is-active",
                       )}
                     >
-                      <span className="flex-1">âŒ˜ {item.label}</span>
+                      <span className="flex-1">? {item.label}</span>
                     </button>
                   ))}
                 </div>
