@@ -1,4 +1,3 @@
-import FloatingActionMenu from '../components/ui/FloatingActionMenu';
 import { useAppConfig } from '../context/AppConfigContext';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
@@ -469,7 +468,6 @@ export default function Dashboard() {
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-1 text-[11px] text-[var(--tf-text-muted)]"><span>{layout === 'focus' ? 'Fathur ↔ Mazet · perjalanan kita' : `${workspace.name} workspace · siap untuk dijalani`}</span><Link to="/settings" className="inline-flex items-center gap-1 font-semibold text-[var(--tf-primary)]">Atur tampilan <ArrowRight size={13} /></Link></div>
-      <FloatingActionMenu onAddTask={() => setTaskOpen(true)} />
       <TaskForm open={taskOpen} initial={null} onClose={() => setTaskOpen(false)} onSaved={() => setTaskOpen(false)} />
     </div>
   );

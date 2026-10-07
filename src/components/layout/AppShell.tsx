@@ -54,6 +54,8 @@ import {
   type ThemePrefs as StudioThemePrefs,
 } from "../../lib/themePrefs";
 
+import FloatingActionMenu from '../ui/FloatingActionMenu';
+import TaskForm from '../tasks/TaskForm';
 import Sidebar from "./Sidebar";
 import LiveStatusBar from "./LiveStatusBar";
 import Watermark from "./Watermark";
@@ -112,6 +114,7 @@ function pageTitleFromPath(pathname: string): string {
 export default function AppShell({ children }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [taskOpen, setTaskOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [query, setQuery] = useState("");

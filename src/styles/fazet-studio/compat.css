@@ -124,13 +124,29 @@ html.dark .app-shell { --tf-on-accent: #fff; }
 
 /* Mobile dock. */
 @media (max-width: 1023px) {
-  .app-shell .mobile-nav {
+    .app-shell .mobile-nav {
     display: flex;
-    background: color-mix(in srgb, var(--tf-bg-surface) 94%, transparent) !important;
-    border-top: 1px solid var(--tf-border) !important;
+    background: color-mix(in srgb, var(--tf-bg-surface) 85%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--tf-border) 50%, transparent) !important;
     backdrop-filter: blur(20px);
-    box-shadow: 0 -12px 32px color-mix(in srgb, var(--tf-text-primary) 8%, transparent) !important;
-    padding-bottom: calc(.45rem + env(safe-area-inset-bottom));
+    box-shadow: 0 16px 32px color-mix(in srgb, var(--tf-text-primary) 15%, transparent), 0 0 0 1px color-mix(in srgb, var(--tf-text-primary) 5%, transparent) !important;
+    
+    /* Floating Taskbar */
+    bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;
+    left: 1.5rem !important;
+    right: 1.5rem !important;
+    width: calc(100% - 3rem) !important;
+    border-radius: 9999px !important;
+    padding: 0.5rem 0.5rem !important;
+    z-index: 50 !important;
+    
+    /* Animation */
+    animation: float-nav 4s ease-in-out infinite alternate !important;
+  }
+  
+  @keyframes float-nav {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-4px); }
   }
   .app-shell .mobile-nav__item { color: var(--tf-text-muted) !important; border-radius: var(--tf-radius-md); }
   .app-shell .mobile-nav__item.is-active { color: var(--tf-primary) !important; background: var(--tf-primary-subtle) !important; }
