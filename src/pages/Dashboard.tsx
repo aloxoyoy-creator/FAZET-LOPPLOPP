@@ -264,9 +264,14 @@ export default function Dashboard() {
 
   // Jadwal Sekolah Hari Ini (Timeline Vertikal dengan Penggabungan)
   const todayTimeline = useMemo(() => {
-    const day = jakartaWeekday(now);
+    const isPast18 = now.getHours() >= 18;
+    const tomorrowDate = new Date(now);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowDay = jakartaWeekday(tomorrowDate);
+    const targetDay = isPast18 ? tomorrowDay : jakartaWeekday(now);
+    
     const todayItems = schedule
-      .filter((item) => item.active && item.day === day)
+      .filter((item) => item.active && item.day === targetDay)
       .sort((a, b) => minutes(a.startTime) - minutes(b.startTime));
     
     const groups: ScheduleItem[] = [];
@@ -323,15 +328,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Jadwal Besok Harinya (Muncul di atas jam 18:00) */}
-          {showTomorrowSchedule && (
-            <div className="mb-6 rounded-[var(--tf-radius-md)] bg-[var(--tf-primary-subtle)]/30 p-4 border-l-4 border-[var(--tf-primary)]">
-              <div className="studio-eyebrow text-[var(--tf-primary)] mb-2">Pelajaran Besok ({tomorrowDay})</div>
-              <div className="flex flex-wrap gap-2">
-                {tomorrowSubjects.length > 0 ? tomorrowSubjects.map(s => <Badge key={s} variant="primary">{s}</Badge>) : <span className="text-xs text-[var(--tf-text-muted)]">Kosong.</span>}
-              </div>
-            </div>
-          )}
+          
 
           {/* Jadwal Les Hari Ini */}
           {todayTutoring.length > 0 && (
@@ -350,17 +347,18 @@ export default function Dashboard() {
 
           {/* Jadwal Sekolah Vertikal */}
           <div>
-            <div className="studio-eyebrow mb-4"><Clock3 size={12}/> Jadwal Sekolah</div>
+            <div className="studio-eyebrow mb-4"><Clock3 size={12}/> {now.getHours() >= 18 ? "Jadwal Sekolah Besok" : "Jadwal Sekolah"}</div>
             {todayTimeline.length === 0 ? (
               <div className="text-sm text-[var(--tf-text-muted)]">Tidak ada jadwal tercatat hari ini.</div>
             ) : (
               <div className="relative space-y-6 pl-8">
                 <div className="absolute bottom-1 left-3 top-1 w-px bg-[var(--tf-border)]" />
                 {todayTimeline.map((item, index) => { 
+                  const isPast18 = now.getHours() >= 18;
                   const atStart = minutes(item.startTime); 
                   const atEnd = minutes(item.endTime);
-                  const isNow = currentMinutes >= atStart && currentMinutes <= atEnd; 
-                  const past = currentMinutes > atEnd; 
+                  const isNow = !isPast18 && currentMinutes >= atStart && currentMinutes <= atEnd; 
+                  const past = !isPast18 && currentMinutes > atEnd; 
                   
                   return (
                     <div key={`${item.id}-${index}`} className="relative group">
