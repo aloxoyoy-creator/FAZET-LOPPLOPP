@@ -9,3 +9,5 @@ export function relativeDeadline(t:{dueDate:string;dueTime:string}){const ms=new
 
 export function pad(n:number):string { return String(n).padStart(2,'0'); }
 export function timeToMinutes(timeStr:string):number { const [h,m] = timeStr.split(':').map(Number); return h*60+m; }
+
+export async function clearAppCaches() { try { if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(key => caches.delete(key))); } localStorage.clear(); sessionStorage.clear(); } catch (e) { console.error('Gagal menghapus cache', e); } }
