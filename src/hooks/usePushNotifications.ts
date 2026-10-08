@@ -42,7 +42,7 @@ export function usePushNotifications() {
         (payload) => {
           const newTask = payload.new;
           // Notify for new tasks
-          sendNotification('Ada Tugas Baru! 📝', {
+          sendNotification('Ada Tugas Baru!', {
             body: `Tugas "${newTask.title}" ditambahkan untuk deadline ${newTask.due_date}. Jangan lupa dikerjakan ya!`,
             tag: `task-${newTask.id}`
           });
@@ -79,14 +79,12 @@ export function usePushNotifications() {
             const taskTitles = tasksData?.map((t: any) => t.title) || [];
             let bodyText = 'Persiapkan jadwal dan barang untuk besok ya!';
             if (taskTitles.length > 0) {
-                bodyText = `Ada ${taskTitles.length} tugas untuk besok: 
-- ${taskTitles.join('
-- ')}`;
+                bodyText = `Ada ${taskTitles.length} tugas untuk besok: \n- ${taskTitles.join('\n- ')}`;
             } else {
                 bodyText = `Tidak ada tugas yang jatuh tempo besok. Tapi jangan lupa cek jadwal pelajaran!`;
             }
 
-            sendNotification('Persiapan Besok! 🎒', {
+            sendNotification('Persiapan Besok!', {
               body: bodyText,
               tag: 'tomorrow-schedule'
             });
@@ -102,7 +100,7 @@ export function usePushNotifications() {
         const city = workspaceId === 'fathur' ? 'Tuban' : 'Tasikmalaya';
         const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
         const cacheKey = `prayer_times_${city}_${todayStr}`;
-        let timings = null;
+        let timings: any = null;
 
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
@@ -134,7 +132,7 @@ export function usePushNotifications() {
               const lastNotifiedPrep = localStorage.getItem(`notified_prep_${sholat}_${todayStr}`);
               if (!lastNotifiedPrep) {
                 const label = sholat === 'Fajr' ? 'Subuh' : sholat === 'Dhuhr' ? 'Dzuhur' : sholat === 'Asr' ? 'Ashar' : sholat === 'Maghrib' ? 'Maghrib' : 'Isya';
-                sendNotification(`Mendekati Waktu ${label} 🕌`, {
+                sendNotification(`Mendekati Waktu ${label}`, {
                   body: `Waktu sholat ${label} di ${city} kurang 10 menit lagi. Yuk siap-siap!`,
                   tag: `sholat-prep-${sholat}`
                 });
@@ -147,7 +145,7 @@ export function usePushNotifications() {
               const lastNotified = localStorage.getItem(`notified_${sholat}_${todayStr}`);
               if (!lastNotified) {
                 const label = sholat === 'Fajr' ? 'Subuh' : sholat === 'Dhuhr' ? 'Dzuhur' : sholat === 'Asr' ? 'Ashar' : sholat === 'Maghrib' ? 'Maghrib' : 'Isya';
-                sendNotification(`Waktu Sholat ${label} 🕌`, {
+                sendNotification(`Waktu Sholat ${label}`, {
                   body: `Waktu sholat ${label} untuk wilayah ${city} telah tiba. Mari laksanakan sholat!`,
                   tag: `sholat-${sholat}`
                 });
