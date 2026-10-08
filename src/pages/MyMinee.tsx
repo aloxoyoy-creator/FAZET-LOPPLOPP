@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useMyMineeAccess } from '../hooks/useMyMineeAccess';
 import JSZip from 'jszip';
 import {
   AudioLines,
@@ -133,40 +132,6 @@ function IconForFile({ type, name, size = 22 }: { type: string; name: string; si
 export default function MyMinee() {
   const { workspaceId } = useWorkspace();
   const isFathur = workspaceId === 'fathur';
-  const { status: accessStatus, loading: checkingAccess, requestAccess } = useMyMineeAccess();
-
-  const handleRequestAccess = async () => {
-    setUnlocking(true);
-    setUnlockError('');
-    try {
-      await requestAccess();
-      
-      try {
-        // Coba kirim notif jika memungkinkan (gunakan maybeSingle agar tidak throw error jika tidak ada)
-        const { data: adminData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'fathur').maybeSingle();
-        if (adminData?.uid) {
-          await supabase.from('notifications').insert({
-            user_id: adminData.uid,
-            title: 'Permintaan Akses My Minee',
-            message: 'Mazet meminta akses untuk membuka galeri My Minee.',
-            type: 'security',
-            read: false
-          });
-        }
-      } catch (notifError) {
-        console.warn('Gagal mengirim notif, tapi akses tetap diminta:', notifError);
-      }
-      
-    } catch (e) {
-      console.error(e);
-      setUnlockError('Gagal mengirim permintaan. Pastikan koneksi internet stabil.');
-    } finally {
-      setUnlocking(false);
-    }
-  };
-
-
-
   const { user, isAdmin } = useAuth();
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -537,21 +502,7 @@ export default function MyMinee() {
                 
 
 
-                {accessStatus === 'none' && !isFathur ? (
-                  <>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 text-center">Kamu belum memiliki akses ke brankas ini.</p>
-                    <Button onClick={handleRequestAccess} disabled={unlocking} className="w-full mt-2" variant="primary">
-                      {unlocking ? <Loader2 size={18} className="animate-spin" /> : <LockKeyhole size={18} />}
-                      Minta Akses ke Admin
-                    </Button>
-                  </>
-                ) : accessStatus === 'pending' && !isFathur ? (
-                  <div className="text-center p-4">
-                    <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Menunggu Persetujuan Admin...</p>
-                    <p className="text-xs text-slate-500 mt-2">Fathur belum menyetujui permintaanmu. Mohon tunggu.</p>
-                  </div>
-                ) : (
-                  <>
+                <>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">
                       Masukkan Sandi Akun Anda
                       <input
@@ -568,7 +519,6 @@ export default function MyMinee() {
                       Buka Brankas
                     </Button>
                   </>
-                )}
               </div>
             </Card>
           </div>
@@ -867,3 +817,5 @@ export default function MyMinee() {
     </div>
   );
 }
+
+

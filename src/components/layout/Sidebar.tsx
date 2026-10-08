@@ -63,7 +63,6 @@ export const GROUPS: NavGroup[] = [
   {
       id: 'admin-management', label: 'Admin: Manajemen', adminOnly: true, items: [
         { to: '/admin', label: 'Operations Center', icon: KeyRound, end: true },
-        { to: '/admin/token', label: 'Persetujuan Akses', icon: ShieldAlert },
         { to: '/admin/users', label: 'Users', icon: Users },
         { to: '/admin/digital-cards', label: 'Kartu Digital', icon: IdCard },
         { to: '/admin/tasks', label: 'Tasks', icon: ClipboardList },
