@@ -1,8 +1,9 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 import RandomMotion from './RandomMotion';
+import { HTMLMotionProps } from 'framer-motion';
 
-type Props = HTMLAttributes<HTMLElement> & {
+type Props = HTMLMotionProps<"div"> & {
   children: ReactNode;
   variant?: 'flat' | 'raised' | 'glass' | 'outline';
   interactive?: boolean;

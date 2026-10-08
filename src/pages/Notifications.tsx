@@ -74,7 +74,7 @@ export default function Notifications() {
   };
 
   // Helper for staggered list animation
-  const containerVariants = {
+  const containerVariants: any = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -82,7 +82,7 @@ export default function Notifications() {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 30, scale: 0.95 },
     show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
     exit: { opacity: 0, x: -100, transition: { duration: 0.2 } }

@@ -1,7 +1,20 @@
 import React, { useMemo } from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 
-const VARIANTS = [
+type CustomVariant = {
+  hidden: any;
+  show: {
+    opacity: number;
+    y?: number;
+    x?: number;
+    scale?: number;
+    rotate?: number;
+    rotateX?: number;
+    transition: any;
+  }
+};
+
+const VARIANTS: CustomVariant[] = [
   // 1. Springy pop up
   {
     hidden: { opacity: 0, y: 30, scale: 0.9 },

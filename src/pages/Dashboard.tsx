@@ -387,8 +387,7 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-        </Card>
-      </div>
+        </Card></RandomMotion></div>
 
       {/* 2. BENTO KITA (Waktu Sholat & Animasi) */}
       <div className="space-y-4">

@@ -239,7 +239,7 @@ export default function JadwalSholat() {
                     opacity: 1,
                     transition: { staggerChildren: 0.1 }
                   }
-                }}
+                } as any}
               >
                 <TimeCard title="Imsak" time={activeJadwal.imsak} icon={<Moon size={20} />} isActive={currentPrayer === 'Imsak' && !isBesokUI} highlight />
                 <TimeCard title="Subuh" time={activeJadwal.subuh} icon={<Sunrise size={20} />} isActive={currentPrayer === 'Subuh' && !isBesokUI} highlight />
@@ -262,7 +262,7 @@ export default function JadwalSholat() {
 }
 
 function TimeCard({ title, time, icon, highlight = false, isActive = false }: { title: string, time: string, icon: React.ReactNode, highlight?: boolean, isActive?: boolean }) {
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 20, scale: 0.9 },
     show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } }
   };
