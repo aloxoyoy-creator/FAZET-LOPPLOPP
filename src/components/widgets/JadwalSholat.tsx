@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Sparkles, Navigation, Clock, Sunrise, Sun, Sunset, Moon } from 'lucide-react';
+import { MapPin, Sparkles, Navigation, Clock, Sunrise, Sun, Sunset, Moon, CalendarDays } from 'lucide-react';
 
 const WIDGETS = [
-  {
-    id: 'tasikmalaya',
-    name: 'Tasikmalaya',
-    apiId: '1227',
-  },
-  {
-    id: 'ciamis',
-    name: 'Kawali, Ciamis',
-    apiId: '1205',
-  },
-  {
-    id: 'tuban',
-    name: 'Tuban',
-    apiId: '1628',
-  }
+  { id: 'tasikmalaya', name: 'Tasikmalaya', apiId: '1227' },
+  { id: 'ciamis', name: 'Kawali, Ciamis', apiId: '1205' },
+  { id: 'tuban', name: 'Tuban', apiId: '1628' }
 ];
 
 type JadwalData = {
@@ -34,7 +22,8 @@ type JadwalData = {
 
 export default function JadwalSholat() {
   const [activeTab, setActiveTab] = useState(WIDGETS[0].id);
-  const [jadwal, setJadwal] = useState<JadwalData | null>(null);
+  const [jadwalToday, setJadwalToday] = useState<JadwalData | null>(null);
+  const [jadwalTomorrow, setJadwalTomorrow] = useState<JadwalData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [now, setNow] = useState(new Date());
@@ -46,49 +35,69 @@ export default function JadwalSholat() {
 
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time: string; diff: number } | null>(null);
   const [currentPrayer, setCurrentPrayer] = useState<string>('');
+  const [activeJadwal, setActiveJadwal] = useState<JadwalData | null>(null);
+  const [isBesokUI, setIsBesokUI] = useState(false);
 
   useEffect(() => {
-    if (!jadwal) return;
+    if (!jadwalToday || !jadwalTomorrow) return;
     
-    const times = [
-      { name: 'Imsak', time: jadwal.imsak },
-      { name: 'Subuh', time: jadwal.subuh },
-      { name: 'Terbit', time: jadwal.terbit },
-      { name: 'Dhuha', time: jadwal.dhuha },
-      { name: 'Dzuhur', time: jadwal.dzuhur },
-      { name: 'Ashar', time: jadwal.ashar },
-      { name: 'Maghrib', time: jadwal.maghrib },
-      { name: 'Isya', time: jadwal.isya },
-    ];
-
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
+    const [isyaH, isyaM] = jadwalToday.isya.split(':').map(Number);
+    const isyaMins = isyaH * 60 + isyaM;
+
+    let active = jadwalToday;
+    let isBesok = false;
     let next = null;
     let current = '';
-    
-    for (let i = 0; i < times.length; i++) {
-      const t = times[i];
-      const [h, m] = t.time.split(':').map(Number);
-      const tMins = h * 60 + m;
-      
-      if (tMins > currentMinutes) {
-        next = { name: t.name, time: t.time, diff: tMins - currentMinutes };
-        break;
-      } else {
-        current = t.name;
+
+    if (currentMinutes >= isyaMins + 30) {
+      active = jadwalTomorrow;
+      isBesok = true;
+    }
+
+    const times = [
+      { name: 'Imsak', time: active.imsak },
+      { name: 'Subuh', time: active.subuh },
+      { name: 'Terbit', time: active.terbit },
+      { name: 'Dhuha', time: active.dhuha },
+      { name: 'Dzuhur', time: active.dzuhur },
+      { name: 'Ashar', time: active.ashar },
+      { name: 'Maghrib', time: active.maghrib },
+      { name: 'Isya', time: active.isya },
+    ];
+
+    if (isBesok) {
+      // Countdown ke Imsak esok hari
+      const [h, m] = times[0].time.split(':').map(Number);
+      next = { name: 'Imsak', time: times[0].time, diff: (24 * 60 - currentMinutes) + (h * 60 + m) };
+      current = 'Isya'; 
+    } else {
+      // Hari ini
+      for (let i = 0; i < times.length; i++) {
+        const t = times[i];
+        const [h, m] = t.time.split(':').map(Number);
+        const tMins = h * 60 + m;
+        
+        if (tMins > currentMinutes) {
+          next = { name: t.name, time: t.time, diff: tMins - currentMinutes };
+          break;
+        } else {
+          current = t.name;
+        }
+      }
+
+      // Jika sudah masuk Isya tapi belum lewat 30 menit
+      if (!next && currentMinutes >= isyaMins) {
+         current = 'Isya';
+         next = null; // Menghilangkan countdown selama 30 menit
       }
     }
     
-    // If all times have passed, next is Imsak tomorrow
-    if (!next) {
-      const [h, m] = times[0].time.split(':').map(Number);
-      next = { name: 'Imsak', time: times[0].time, diff: (24 * 60 - currentMinutes) + (h * 60 + m) };
-      current = 'Isya';
-    }
-    
+    setActiveJadwal(active);
     setNextPrayer(next);
     setCurrentPrayer(current);
-  }, [now, jadwal]);
+    setIsBesokUI(isBesok);
+  }, [now, jadwalToday, jadwalTomorrow]);
 
   const formatCountdown = (diff: number) => {
     const hours = Math.floor(diff / 60);
@@ -97,35 +106,52 @@ export default function JadwalSholat() {
     return `${hours > 0 ? `${hours}j ` : ''}${minutes}m ${seconds}d`;
   };
 
-
   const activeWidget = WIDGETS.find(w => w.id === activeTab) || WIDGETS[0];
 
   useEffect(() => {
-    async function fetchJadwal() {
+    async function fetchBothDays() {
       setLoading(true);
       try {
         const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
+        const tYear = today.getFullYear();
+        const tMonth = String(today.getMonth() + 1).padStart(2, '0');
+        const tDay = String(today.getDate()).padStart(2, '0');
+
+        const tomorrow = new Date(today.getTime() + 86400000);
+        const mYear = tomorrow.getFullYear();
+        const mMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const mDay = String(tomorrow.getDate()).padStart(2, '0');
         
-        const response = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${activeWidget.apiId}/${year}/${month}/${day}`);
-        const result = await response.json();
+        const [resToday, resTomorrow] = await Promise.all([
+          fetch(`https://api.myquran.com/v2/sholat/jadwal/${activeWidget.apiId}/${tYear}/${tMonth}/${tDay}`),
+          fetch(`https://api.myquran.com/v2/sholat/jadwal/${activeWidget.apiId}/${mYear}/${mMonth}/${mDay}`)
+        ]);
+
+        const jsonToday = await resToday.json();
+        const jsonTomorrow = await resTomorrow.json();
         
-        if (result.status && result.data && result.data.jadwal) {
-          setJadwal(result.data.jadwal);
+        if (jsonToday.status && jsonToday.data?.jadwal) {
+          setJadwalToday(jsonToday.data.jadwal);
         } else {
-          setJadwal(null);
+          setJadwalToday(null);
         }
+
+        if (jsonTomorrow.status && jsonTomorrow.data?.jadwal) {
+          setJadwalTomorrow(jsonTomorrow.data.jadwal);
+        } else {
+          setJadwalTomorrow(null);
+        }
+
       } catch (err) {
         console.error('Failed to fetch jadwal sholat:', err);
-        setJadwal(null);
+        setJadwalToday(null);
+        setJadwalTomorrow(null);
       } finally {
         setLoading(false);
       }
     }
 
-    void fetchJadwal();
+    void fetchBothDays();
   }, [activeWidget.apiId]);
 
   return (
@@ -166,35 +192,50 @@ export default function JadwalSholat() {
         </div>
 
         {/* Native UI Container */}
-        <div className="relative w-full rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 p-6 min-h-[200px]">
+        <div className={`relative w-full rounded-2xl border p-6 min-h-[200px] transition-colors duration-500 ${
+          isBesokUI 
+            ? 'bg-indigo-50/50 border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/30' 
+            : 'bg-slate-50/50 border-slate-100 dark:bg-slate-900/50 dark:border-slate-800'
+        }`}>
           {loading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3">
               <Navigation className="w-8 h-8 animate-spin text-amber-400/50" />
               <span className="font-semibold text-sm animate-pulse">Menyiapkan jadwal wilayah {activeWidget.name}...</span>
             </div>
-          ) : jadwal ? (
-            <div>
+          ) : activeJadwal ? (
+            <div className="fade-in">
               <div className="text-center mb-6 space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-bold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-                  <Clock size={14} />
-                  {jadwal.tanggal} — {now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold transition-colors ${
+                  isBesokUI 
+                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-300'
+                    : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300'
+                }`}>
+                  {isBesokUI ? <CalendarDays size={14} /> : <Clock size={14} />}
+                  {isBesokUI ? `Besok: ${activeJadwal.tanggal}` : activeJadwal.tanggal} — {now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </div>
-                {nextPrayer && (
+                
+                {nextPrayer ? (
                   <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Sekarang waktu <span className="text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider">{currentPrayer || 'Belum masuk waktu'}</span>. 
                     <br />
-                    <span className="text-amber-600 dark:text-amber-400 font-black">{formatCountdown(nextPrayer.diff)}</span> menuju {nextPrayer.name}.
+                    <span className="text-amber-600 dark:text-amber-400 font-black text-lg">{formatCountdown(nextPrayer.diff)}</span> menuju {nextPrayer.name}.
+                  </div>
+                ) : (
+                  <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Sekarang waktu <span className="text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider">{currentPrayer}</span>. 
+                    <br />
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">Selamat menunaikan ibadah sholat Isya.</span>
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                <TimeCard title="Imsak" time={jadwal.imsak} icon={<Moon size={20} />} isActive={currentPrayer === 'Imsak'} highlight />
-                <TimeCard title="Subuh" time={jadwal.subuh} icon={<Sunrise size={20} />} isActive={currentPrayer === 'Subuh'} highlight />
-                <TimeCard title="Dhuha" time={jadwal.dhuha} icon={<Sun size={20} />} isActive={currentPrayer === 'Dhuha'} highlight />
-                <TimeCard title="Dzuhur" time={jadwal.dzuhur} icon={<Sun size={20} />} isActive={currentPrayer === 'Dzuhur'} highlight />
-                <TimeCard title="Ashar" time={jadwal.ashar} icon={<Sun size={20} />} isActive={currentPrayer === 'Ashar'} highlight />
-                <TimeCard title="Maghrib" time={jadwal.maghrib} icon={<Sunset size={20} />} isActive={currentPrayer === 'Maghrib'} highlight />
-                <TimeCard title="Isya" time={jadwal.isya} icon={<Moon size={20} />} isActive={currentPrayer === 'Isya'} highlight />
+              <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+                <TimeCard title="Imsak" time={activeJadwal.imsak} icon={<Moon size={20} />} isActive={currentPrayer === 'Imsak' && !isBesokUI} highlight />
+                <TimeCard title="Subuh" time={activeJadwal.subuh} icon={<Sunrise size={20} />} isActive={currentPrayer === 'Subuh' && !isBesokUI} highlight />
+                <TimeCard title="Dhuha" time={activeJadwal.dhuha} icon={<Sun size={20} />} isActive={currentPrayer === 'Dhuha' && !isBesokUI} highlight />
+                <TimeCard title="Dzuhur" time={activeJadwal.dzuhur} icon={<Sun size={20} />} isActive={currentPrayer === 'Dzuhur' && !isBesokUI} highlight />
+                <TimeCard title="Ashar" time={activeJadwal.ashar} icon={<Sun size={20} />} isActive={currentPrayer === 'Ashar' && !isBesokUI} highlight />
+                <TimeCard title="Maghrib" time={activeJadwal.maghrib} icon={<Sunset size={20} />} isActive={currentPrayer === 'Maghrib' && !isBesokUI} highlight />
+                <TimeCard title="Isya" time={activeJadwal.isya} icon={<Moon size={20} />} isActive={currentPrayer === 'Isya' && !isBesokUI} highlight />
               </div>
             </div>
           ) : (
