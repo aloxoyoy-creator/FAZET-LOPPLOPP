@@ -48,11 +48,22 @@ export default function Notifications() {
             {unreadCount > 0 ? `Anda memiliki ${unreadCount} notifikasi baru.` : 'Tidak ada notifikasi baru.'}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <Button variant="outline" size="sm" icon={<Check size={16} />} onClick={handleMarkAllRead}>
-            Tandai semua dibaca
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {permissionStatus === 'granted' && (
+            <Button variant="soft" size="sm" icon={<BellRing size={16} />} onClick={() => {
+              import('../services/systemNotificationService').then(({ showSystemNotification }) => {
+                showSystemNotification("Tes Notifikasi", "Halo! Notifikasi sistem Anda berfungsi dengan baik 🎉");
+              });
+            }}>
+              Test Push
+            </Button>
+          )}
+          {unreadCount > 0 && (
+            <Button variant="outline" size="sm" icon={<Check size={16} />} onClick={handleMarkAllRead}>
+              Tandai semua dibaca
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Permission Banner */}
