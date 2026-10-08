@@ -1,0 +1,1 @@
+function s(){return`FAZET-SECURE-${Math.floor(Date.now()/3e5).toString(36).toUpperCase()}`}function c(n){const t=Date.now(),e=Math.floor(t/3e5),o=e-1,r=`FAZET-SECURE-${e.toString(36).toUpperCase()}`,a=`FAZET-SECURE-${o.toString(36).toUpperCase()}`;return n===r||n===a}function i(){const n=Date.now();return(Math.floor(n/3e5)+1)*3e5-n}export{i as a,s as g,c as v};

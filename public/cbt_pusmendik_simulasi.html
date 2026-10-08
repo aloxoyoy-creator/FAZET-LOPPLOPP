@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT Simulasi TKA 2025</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            background-color: #0056b3;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .timer-box {
+            background-color: #ff4757;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+        .question-section {
+            flex: 3;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            position: relative;
+        }
+        .navigation-section {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .subject-badge {
+            display: inline-block;
+            background-color: #eccc68;
+            color: #2f3542;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .question-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #2f3542;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-label {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 15px;
+            border: 1px solid #dfe4ea;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-label:hover {
+            background-color: #f1f2f6;
+        }
+        .option-label input {
+            margin-top: 5px;
+            margin-right: 15px;
+            transform: scale(1.2);
+        }
+        .option-label.selected {
+            border-color: #0056b3;
+            background-color: #eaf3fc;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: 0.2s;
+        }
+        .btn-prev { background-color: #747d8c; }
+        .btn-next { background-color: #0056b3; }
+        .btn-submit { background-color: #2ed573; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .nav-btn {
+            padding: 10px;
+            text-align: center;
+            background: #f1f2f6;
+            border: 1px solid #ced6e0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .nav-btn.answered {
+            background-color: #0056b3;
+            color: white;
+            border-color: #0056b3;
+        }
+        .nav-btn.active {
+            border: 2px solid #ff4757;
+            transform: scale(1.05);
+        }
+
+        #result-screen {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            background-color: #0056b3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0 auto 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">CBT TKA 2025 - SIMULASI PUSMENDIK</div>
+        <div class="timer-box" id="timer">00:15:00</div>
+    </header>
+
+    <div class="main-container" id="test-screen">
+        <div class="question-section">
+            <span class="subject-badge" id="subject-badge">Mata Pelajaran</span>
+            <div class="question-text" id="question-text">
+                Memuat soal...
+            </div>
+            <div class="options-container" id="options-container">
+                <!-- Options will be injected here via JS -->
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-prev" id="btn-prev" onclick="prevQuestion()">SEBELUMNYA</button>
+                <button class="btn btn-next" id="btn-next" onclick="nextQuestion()">SELANJUTNYA</button>
+                <button class="btn btn-submit" id="btn-submit" style="display:none;" onclick="finishTest()">SELESAI UJIAN</button>
+            </div>
+        </div>
+        
+        <div class="navigation-section">
+            <h3 style="margin-top: 0; color: #2f3542; font-size: 1.1rem;">Navigasi Soal</h3>
+            <div class="nav-grid" id="nav-grid">
+                <!-- Navigation buttons will be injected here via JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen">
+        <h2>Simulasi Selesai!</h2>
+        <p>Terima kasih telah mengikuti simulasi TKA 2025.</p>
+        <div class="score-circle" id="final-score">100</div>
+        <h3>Jawaban Benar: <span id="correct-count"></span> / <span id="total-count"></span></h3>
+        <button class="btn btn-next" onclick="location.reload()" style="margin-top: 20px;">Ulangi Simulasi</button>
+    </div>
+
+    <script>
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let answers = {}; 
+        
+        // Timer Logic (15 minutes)
+        let timeRemaining = 15 * 60;
+        const timerElement = document.getElementById('timer');
+        const timerInterval = setInterval(() => {
+            timeRemaining--;
+            let m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            let s = (timeRemaining % 60).toString().padStart(2, '0');
+            timerElement.textContent = `00:${m}:${s}`;
+            
+            if(timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                finishTest();
+            }
+        }, 1000);
+
+        // Fetch JSON data
+        fetch('bank_soal_tka.json')
+            .then(response => response.json())
+            .then(data => {
+                questions = data;
+                initNavigation();
+                renderQuestion();
+            })
+            .catch(error => {
+                document.getElementById('question-text').innerHTML = 'Gagal memuat soal. Pastikan file bank_soal_tka.json berada di folder yang sama dan buka melalui Live Server (HTTP).';
+                console.error(error);
+            });
+
+        function initNavigation() {
+            const grid = document.getElementById('nav-grid');
+            grid.innerHTML = '';
+            questions.forEach((q, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'nav-btn';
+                btn.id = `nav-${index}`;
+                btn.innerText = index + 1;
+                btn.onclick = () => jumpToQuestion(index);
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderQuestion() {
+            if(questions.length === 0) return;
+            
+            const q = questions[currentQuestionIndex];
+            
+            document.getElementById('subject-badge').innerText = `Soal No. ${currentQuestionIndex + 1} | ${q.subject.toUpperCase()}`;
+            document.getElementById('question-text').innerHTML = q.text;
+            
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+            
+            const labels = ['A', 'B', 'C', 'D', 'E'];
+            
+            q.options.forEach((optText, i) => {
+                const isChecked = answers[currentQuestionIndex] === i;
+                
+                const label = document.createElement('label');
+                label.className = `option-label ${isChecked ? 'selected' : ''}`;
+                
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'option';
+                input.value = i;
+                input.checked = isChecked;
+                input.onchange = () => selectOption(i);
+                
+                const span = document.createElement('span');
+                span.innerHTML = `<strong>${labels[i]}.</strong> ${optText}`;
+                
+                label.appendChild(input);
+                label.appendChild(span);
+                optsContainer.appendChild(label);
+            });
+
+            // Update Navigation active state
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`nav-${currentQuestionIndex}`).classList.add('active');
+
+            // Button visibility
+            document.getElementById('btn-prev').disabled = currentQuestionIndex === 0;
+            
+            if(currentQuestionIndex === questions.length - 1) {
+                document.getElementById('btn-next').style.display = 'none';
+                document.getElementById('btn-submit').style.display = 'inline-block';
+            } else {
+                document.getElementById('btn-next').style.display = 'inline-block';
+                document.getElementById('btn-submit').style.display = 'none';
+            }
+        }
+
+        function selectOption(optIndex) {
+            answers[currentQuestionIndex] = optIndex;
+            document.getElementById(`nav-${currentQuestionIndex}`).classList.add('answered');
+            renderQuestion(); // Re-render to show selected styling
+        }
+
+        function nextQuestion() {
+            if(currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        }
+
+        function prevQuestion() {
+            if(currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        function jumpToQuestion(index) {
+            currentQuestionIndex = index;
+            renderQuestion();
+        }
+
+        function finishTest() {
+            clearInterval(timerInterval);
+            let score = 0;
+            let correct = 0;
+            
+            questions.forEach((q, i) => {
+                if(answers[i] === q.correct_answer) {
+                    correct++;
+                }
+            });
+            
+            score = Math.round((correct / questions.length) * 100);
+            
+            document.getElementById('test-screen').style.display = 'none';
+            document.querySelector('header').style.display = 'none';
+            
+            document.getElementById('result-screen').style.display = 'block';
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('correct-count').innerText = correct;
+            document.getElementById('total-count').innerText = questions.length;
+        }
+    </script>
+</body>
+</html>

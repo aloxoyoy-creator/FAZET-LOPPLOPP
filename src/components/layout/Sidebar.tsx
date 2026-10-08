@@ -32,6 +32,7 @@ export const GROUPS: NavGroup[] = [
       { to: '/schedule', label: 'Jadwal Sekolah', icon: CalendarClock },
       { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
       { to: '/calendar', label: 'Academic Timeline', icon: CalendarDays },
+      { to: '/simulasi-tka', label: 'Simulasi TKA', icon: ClipboardList },
       { to: '/tasks', label: 'Tugas', icon: ClipboardList },
       { to: '/notes', label: 'Catatan', icon: StickyNote },
       { to: '/focus', label: 'Focus Mode', icon: Timer },
