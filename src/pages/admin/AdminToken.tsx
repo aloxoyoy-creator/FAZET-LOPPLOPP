@@ -1,19 +1,31 @@
-import { ShieldAlert, KeyRound, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { ShieldAlert, KeyRound, Copy, Check, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import { getAdminToken, getTokenTimeRemaining } from '../../lib/token';
 
 export default function AdminToken() {
   const [copied, setCopied] = useState(false);
-  
-  // This is the static token for My Minee security verification
-  const ADMIN_TOKEN = "MYMINEE-ADMIN-999";
+  const [token, setToken] = useState(getAdminToken());
+  const [timeLeft, setTimeLeft] = useState(getTokenTimeRemaining());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const remaining = getTokenTimeRemaining();
+      setTimeLeft(remaining);
+      setToken(getAdminToken());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(ADMIN_TOKEN);
+    navigator.clipboard.writeText(token);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const minutes = Math.floor(timeLeft / 60000);
+  const seconds = Math.floor((timeLeft % 60000) / 1000);
 
   return (
     <div className="space-y-6">
@@ -32,14 +44,18 @@ export default function AdminToken() {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Token Keamanan Utama</h2>
-              <p className="text-xs font-semibold text-slate-500">Status: Aktif</p>
+              <p className="text-xs font-semibold text-slate-500">Token diperbarui secara otomatis setiap 5 menit.</p>
             </div>
           </div>
         </div>
         <div className="p-6 space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-slate-900">
-            <div className="font-mono text-2xl font-black tracking-widest text-slate-900 dark:text-white">
-              {ADMIN_TOKEN}
+            <div className="font-mono text-3xl font-black tracking-widest text-slate-900 dark:text-white transition-all">
+              {token}
+            </div>
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-500">
+              <Clock size={16} />
+              Kedaluwarsa dalam {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
             </div>
           </div>
 

@@ -27,6 +27,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { validateAdminToken } from '../lib/token';
 
 type GalleryItem = {
   id: string;
@@ -157,8 +158,8 @@ export default function MyMinee() {
       setUnlockError('Password dan token admin wajib diisi.');
       return;
     }
-    if (unlockToken !== 'MYMINEE-ADMIN-999') {
-      setUnlockError('Token admin tidak valid.');
+    if (!validateAdminToken(unlockToken)) {
+      setUnlockError('Token admin tidak valid atau sudah kedaluwarsa.');
       return;
     }
     setUnlocking(true);
