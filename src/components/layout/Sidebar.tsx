@@ -18,7 +18,7 @@ type NavIcon = ComponentType<{ size?: number; className?: string; strokeWidth?: 
 export type NavItem = { to: string; label: string; icon: NavIcon; end?: boolean };
 export type NavGroup = { id: string; label: string; items: NavItem[]; adminOnly?: boolean };
 
-export const GROUPS: NavGroup[] = [
+export const getGroups = (workspaceId: WorkspaceId): NavGroup[] => [
   {
     id: 'main', label: 'Ruang utama', items: [
       { to: '/', label: 'Beranda', icon: Sparkles, end: true },
@@ -29,7 +29,7 @@ export const GROUPS: NavGroup[] = [
   },
   {
     id: 'study', label: 'Belajar', items: [
-      { to: '/schedule', label: 'Jadwal Sekolah', icon: CalendarClock },
+      { to: '/schedule', label: workspaceId === 'mazet' ? 'Jadwal Kuliah' : 'Jadwal Sekolah', icon: CalendarClock },
       { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
       { to: '/calendar', label: 'Academic Timeline', icon: CalendarDays },
       { to: '/simulasi-tka', label: 'Simulasi TKA', icon: ClipboardList },
@@ -134,7 +134,7 @@ export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolea
 
   const { isPathEnabled } = useAppConfig();
   const showAdmin = isAdmin || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'admin';
-  const groups = useMemo(() => GROUPS.filter((g) => !g.adminOnly || showAdmin).map((g) => g.adminOnly ? g : { ...g, items: g.items.filter((i) => isPathEnabled(i.to)) }), [showAdmin, isPathEnabled]);
+  const groups = useMemo(() => getGroups(workspaceId).filter((g) => !g.adminOnly || showAdmin).map((g) => g.adminOnly ? g : { ...g, items: g.items.filter((i) => isPathEnabled(i.to)) }), [showAdmin, isPathEnabled, workspaceId]);
 
   const [pins, setPins] = useState<string[]>(() => readList(PINS_KEY, []));
   const [closed, setClosed] = useState<string[]>(() => readList(CLOSED_KEY, ['admin']));

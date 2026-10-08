@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { supabase } from '../lib/supabase';
+import { supabase, fathurSupabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 
@@ -180,8 +180,7 @@ export default function MyMinee() {
     else setLoading(true);
     setError('');
 
-    const { data, error: queryError } = await supabase
-      .from('romantic_gallery')
+    const { data, error: queryError } = await fathurSupabase.from('romantic_gallery')
       .select('id,title,storage_path,caption,sort_order,created_at,original_name,file_type,file_size,source_archive,previewable')
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
@@ -207,7 +206,7 @@ export default function MyMinee() {
       const signed = await Promise.all(
         rows.map(async (row) => {
           const path = String(row.storage_path);
-          const { data: signedData } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
+          const { data: signedData } = await fathurSupabase.storage.from(BUCKET).createSignedUrl(path, 3600);
           return [String(row.id), signedData?.signedUrl ?? ''] as const;
         }),
       );
@@ -269,7 +268,7 @@ export default function MyMinee() {
     const relativeName = safeRelativePath(displayName);
     const path = `${user.id}/${crypto.randomUUID()}-${relativeName}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await fathurSupabase.storage
       .from(BUCKET)
       .upload(path, file, {
         upsert: false,
@@ -279,8 +278,7 @@ export default function MyMinee() {
 
     if (uploadError) throw uploadError;
 
-    const { error: insertError } = await supabase
-      .from('romantic_gallery')
+    const { error: insertError } = await fathurSupabase.from('romantic_gallery')
       .insert({
         title: fileTitle(displayName, sortOrder),
         storage_path: path,
@@ -295,7 +293,7 @@ export default function MyMinee() {
       });
 
     if (insertError) {
-      await supabase.storage.from(BUCKET).remove([path]);
+      await fathurSupabase.storage.from(BUCKET).remove([path]);
       throw insertError;
     }
   };
@@ -427,14 +425,13 @@ export default function MyMinee() {
 
       if (reauthError) throw new Error('Password admin salah atau sesi tidak dapat diverifikasi.');
 
-      const { error: storageError } = await supabase.storage
+      const { error: storageError } = await fathurSupabase.storage
         .from(BUCKET)
         .remove([deleteTarget.storagePath]);
 
       if (storageError) throw storageError;
 
-      const { error: deleteError } = await supabase
-        .from('romantic_gallery')
+      const { error: deleteError } = await fathurSupabase.from('romantic_gallery')
         .delete()
         .eq('id', deleteTarget.id);
 
@@ -457,7 +454,7 @@ export default function MyMinee() {
 
     let url = signedUrls[item.id];
     if (!url) {
-      const { data, error: signedError } = await supabase.storage
+      const { data, error: signedError } = await fathurSupabase.storage
         .from(BUCKET)
         .createSignedUrl(item.storagePath, 300);
       if (signedError || !data?.signedUrl) {
@@ -817,5 +814,6 @@ export default function MyMinee() {
     </div>
   );
 }
+
 
 

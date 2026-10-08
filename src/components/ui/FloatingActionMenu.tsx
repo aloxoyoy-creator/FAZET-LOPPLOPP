@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, CheckSquare, GraduationCap, CalendarClock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useWorkspace } from "../../context/WorkspaceContext";
 import { cn } from "../../lib/utils";
 
 interface FloatingActionMenuProps {
@@ -10,6 +11,7 @@ interface FloatingActionMenuProps {
 export default function FloatingActionMenu({ onAddTask }: FloatingActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { workspaceId } = useWorkspace();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -33,7 +35,7 @@ export default function FloatingActionMenu({ onAddTask }: FloatingActionMenuProp
       color: "bg-purple-500 shadow-purple-500/50",
     },
     {
-      label: "Lihat Jadwal Sekolah",
+      label: workspaceId === 'mazet' ? "Lihat Jadwal Kuliah" : "Lihat Jadwal Sekolah",
       icon: CalendarClock,
       onClick: () => {
         navigate("/schedule");

@@ -354,7 +354,7 @@ export default function Dashboard() {
 
           {/* Jadwal Sekolah Vertikal */}
           <div>
-            <div className="studio-eyebrow mb-4"><ContinuousMotion intensity="low" className="inline-block"><Clock3 size={12} /></ContinuousMotion> {now.getHours() >= 18 ? "Jadwal Sekolah Besok" : "Jadwal Sekolah"}</div>
+            <div className="studio-eyebrow mb-4"><ContinuousMotion intensity="low" className="inline-block"><Clock3 size={12} /></ContinuousMotion> {now.getHours() >= 18 ? (workspaceId === 'mazet' ? "Jadwal Kuliah Besok" : "Jadwal Sekolah Besok") : (workspaceId === 'mazet' ? "Jadwal Kuliah" : "Jadwal Sekolah")}</div>
             {todayTimeline.length === 0 ? (
               <div className="text-sm text-[var(--tf-text-muted)]">Tidak ada jadwal tercatat hari ini.</div>
             ) : (

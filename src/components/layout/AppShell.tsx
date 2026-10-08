@@ -66,7 +66,7 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-import { GROUPS, type NavItem, type NavGroup } from './Sidebar';
+import { getGroups, type NavItem, type NavGroup } from './Sidebar';
 
 type MenuItem = {
   label: string;
@@ -75,10 +75,12 @@ type MenuItem = {
   external?: boolean;
 };
 
-const mainMenu: MenuItem[] = GROUPS.filter(g => !g.adminOnly).flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
-const adminMenu: MenuItem[] = GROUPS.filter(g => g.adminOnly).flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
+const getMainMenu = (workspaceId: string): MenuItem[] => getGroups(workspaceId as any).filter(g => !g.adminOnly).flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
+const getAdminMenu = (workspaceId: string): MenuItem[] => getGroups(workspaceId as any).filter(g => g.adminOnly).flatMap(g => g.items).map(i => ({ label: i.label, to: i.to, Icon: i.icon, external: false }));
 
-function pageTitleFromPath(pathname: string): string {
+function pageTitleFromPath(pathname: string, workspaceId: string): string {
+  const mainMenu = getMainMenu(workspaceId);
+  const adminMenu = getAdminMenu(workspaceId);
   const parts = pathname.split("/").filter(Boolean);
   if (parts[0] === "admin") {
     if (!parts[1]) return "Admin Dashboard";
@@ -122,11 +124,11 @@ export default function AppShell({ children }: AppShellProps) {
     user?.app_metadata?.role === "admin" ||
     user?.user_metadata?.role === "admin";
 
-    const visibleMainMenu = useMemo(() => mainMenu, []);
+    const visibleMainMenu = useMemo(() => getMainMenu(workspaceId), [workspaceId]);
 
   const allSearchItems = useMemo(
-    () => (showAdmin ? [...visibleMainMenu, ...adminMenu] : visibleMainMenu),
-    [showAdmin, visibleMainMenu],
+    () => (showAdmin ? [...visibleMainMenu, ...getAdminMenu(workspaceId)] : visibleMainMenu),
+    [showAdmin, visibleMainMenu, workspaceId],
   );
 
   const commandItems = useMemo(
@@ -357,7 +359,7 @@ export default function AppShell({ children }: AppShellProps) {
   const profileInitials =
     profile?.name?.trim()?.slice(0, 2).toUpperCase() || "U";
 
-  const pageTitle = pageTitleFromPath(location.pathname);
+  const pageTitle = pageTitleFromPath(location.pathname, workspaceId);
 
   return (
     <div
@@ -574,7 +576,7 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
 
             <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-              {GROUPS.filter(g => !g.adminOnly || showAdmin).map((group) => (
+              {getGroups(workspaceId).filter(g => !g.adminOnly || showAdmin).map((group) => (
                 <div key={group.id} className="mb-4">
                   <div
                     className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em]"
