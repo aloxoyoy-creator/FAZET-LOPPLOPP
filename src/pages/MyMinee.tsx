@@ -132,12 +132,15 @@ function IconForFile({ type, name, size = 22 }: { type: string; name: string; si
 export default function MyMinee() {
   const { workspaceId } = useWorkspace();
   const isFathur = workspaceId === 'fathur';
-  const [accessStatus, setAccessStatus] = useState<'none' | 'pending' | 'approved'>(isFathur ? 'approved' : 'none');
+  const [accessStatus, setAccessStatus] = useState<'none' | 'pending' | 'approved'>('none');
+  const [mazetRequestStatus, setMazetRequestStatus] = useState<'none' | 'pending' | 'approved'>('none');
 
   useEffect(() => {
-    if (isFathur) return;
     supabase.from('app_config').select('value').eq('key', 'myminee_access_mazet').single().then(({data}) => {
-      if (data?.value?.status) setAccessStatus(data.value.status);
+      if (data?.value?.status) {
+        setMazetRequestStatus(data.value.status);
+        if (!isFathur) setAccessStatus(data.value.status);
+      }
     });
   }, [isFathur]);
 
@@ -181,7 +184,7 @@ export default function MyMinee() {
           read: false
         });
       }
-      setAccessStatus('approved');
+      setMazetRequestStatus('approved');
     } catch (e) {}
     setUnlocking(false);
   };
@@ -554,7 +557,7 @@ export default function MyMinee() {
                   </div>
                 )}
                 
-                {isFathur && accessStatus === 'pending' && (
+                {isFathur && mazetRequestStatus === 'pending' && (
                   <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 mb-4 dark:bg-amber-900/20 dark:border-amber-800">
                     <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 font-medium">Mazet meminta akses untuk membuka galeri ini.</p>
                     <Button onClick={handleApproveAccess} disabled={unlocking} variant="primary" className="w-full bg-amber-500 hover:bg-amber-600 text-white">Setujui Akses</Button>
