@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentType, type Keyboard
 import {
   Activity, Award, BarChart3, Bell, BookOpen, CalendarClock, CalendarDays, ChevronDown, ClipboardList, FolderOpen,
   GraduationCap, Heart, IdCard, KeyRound, ListChecks, LogOut, Megaphone, MessageCircle, MonitorPlay,
-  PanelLeftClose, PanelLeftOpen, Pin, PinOff, Search, Settings, ShieldAlert, ShieldCheck, Sparkles,
+  PanelLeftClose, PanelLeftOpen, Pin, PinOff, Search, Settings, ShieldAlert, ShieldCheck, Sparkles, Info,
   StickyNote, Table2, Timer, TrendingUp, Tv, UserRound, Users, Clock3,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -57,6 +57,7 @@ export const GROUPS: NavGroup[] = [
       { to: '/activity', label: 'Aktivitas & Perangkat', icon: ShieldAlert },
       { to: '/profile', label: 'Profil', icon: UserRound },
       { to: '/settings', label: 'Pengaturan', icon: Settings },
+      { to: '/about', label: 'Informasi', icon: Info },
     ],
   },
   {

@@ -25,6 +25,7 @@ const Calendar = lazy(() => import('./pages/Calendar'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
+const About = lazy(() => import('./pages/About'));
 const Focus = lazy(() => import('./pages/Focus'));
 const SearchPage = lazy(() => import('./pages/Search'));
 const Insights = lazy(() => import('./pages/Insights'));
@@ -132,6 +133,7 @@ export default function App() {
             <Route path="/ai" element={<ProtectedRoute><Page><AiAssistant /></Page></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Page><Profile /></Page></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Page><Settings /></Page></ProtectedRoute>} />
+            <Route path="/about" element={<ProtectedRoute><Page><About /></Page></ProtectedRoute>} />
 
             {/* Semua fitur Fathur School Hub — kini tampil penuh di menu */}
             <Route path="/notes" element={<ProtectedRoute><Page><Notes /></Page></ProtectedRoute>} />
