@@ -220,15 +220,15 @@ export default function Calendar() {
                   </div>
 
                   {/* Desktop event chips */}
-                  <div className="hidden md:flex flex-col gap-1.5 mt-3 overflow-y-auto max-h-[70px] hide-scrollbar w-full">
+                  <div className="flex flex-col gap-1 mt-1 md:gap-1.5 md:mt-3 overflow-y-auto max-h-[120px] hide-scrollbar w-full">
                     {holiday && (
-                      <div className="bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-1 rounded-lg truncate w-full border border-rose-200/50 dark:border-rose-800/50">
+                      <div className="bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-1 rounded-lg whitespace-normal break-words leading-tight w-full border border-rose-200/50 dark:border-rose-800/50">
                         {String(holidayByDate.get(key)?.[0]?.summary || 'Libur')}
                       </div>
                     )}
                     
                     {!holiday && dayTasks.slice(0,2).map((t, i) => (
-                      <div key={i} className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-lg truncate w-full border border-blue-200/50 dark:border-blue-800/50 flex items-center gap-1">
+                      <div key={i} className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-lg whitespace-normal break-words leading-tight w-full border border-blue-200/50 dark:border-blue-800/50 flex items-center gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
                         {t.title}
                       </div>
@@ -238,13 +238,13 @@ export default function Calendar() {
                     )}
 
                     {!holiday && dayTutoring.map((t, i) => (
-                      <div key={`tut-${i}`} className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-bold px-2 py-1 rounded-lg truncate w-full border border-violet-200/50 dark:border-violet-800/50">
+                      <div key={`tut-${i}`} className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-bold px-2 py-1 rounded-lg whitespace-normal break-words leading-tight w-full border border-violet-200/50 dark:border-violet-800/50">
                         Les: {t.subjectName}
                       </div>
                     ))}
 
                     {hasSchedule && (
-                      <div className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-1 rounded-lg truncate w-full border border-slate-200/50 dark:border-slate-700/50">
+                      <div className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-1 rounded-lg whitespace-normal break-words leading-tight w-full border border-slate-200/50 dark:border-slate-700/50">
                         {daySchedule.length} Mapel
                       </div>
                     )}
@@ -390,7 +390,7 @@ export default function Calendar() {
                           )}>
                             <div className="flex justify-between items-start mb-2">
                               <div className={cn("text-xs font-black bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg", past ? "text-slate-500" : "text-emerald-600 dark:text-emerald-400")}>
-                                {item.startTime} ?" {item.endTime}
+                                {item.startTime} - {item.endTime}
                               </div>
                             </div>
                             <div className="text-base font-black text-slate-900 dark:text-white leading-tight">{item.subject}</div>
