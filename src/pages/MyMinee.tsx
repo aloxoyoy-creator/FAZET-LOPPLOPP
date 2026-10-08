@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMyMineeAccess } from '../hooks/useMyMineeAccess';
 import JSZip from 'jszip';
 import {
   AudioLines,
@@ -157,25 +158,7 @@ export default function MyMinee() {
     }
   };
 
-  const handleApproveAccess = async () => {
-    setUnlocking(true);
-    try {
-      await supabase.from('app_config').upsert({ key: 'myminee_access_mazet', value: { status: 'approved', approvedAt: Date.now() }, updated_at: new Date().toISOString() });
-      
-      const { data: mazetData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'mazet').single();
-      if (mazetData?.uid) {
-        await supabase.from('notifications').insert({
-          user_id: mazetData.uid,
-          title: 'Akses My Minee Disetujui',
-          message: 'Fathur telah menyetujui akses kamu ke My Minee!',
-          type: 'achievement',
-          read: false
-        });
-      }
-      setMazetRequestStatus('approved');
-    } catch (e) {}
-    setUnlocking(false);
-  };
+
 
   const { user, isAdmin } = useAuth();
   const [items, setItems] = useState<GalleryItem[]>([]);
