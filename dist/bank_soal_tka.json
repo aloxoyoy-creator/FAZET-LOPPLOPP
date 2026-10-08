@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "subject": "Bahasa Indonesia",
+    "type": "wajib",
+    "text": "<p><strong>Bacalah teks berikut!</strong></p><p>Perkembangan kecerdasan buatan (AI) telah mengubah paradigma dunia kerja secara masif. Di satu sisi, otomatisasi menggantikan pekerjaan yang bersifat repetitif, sehingga memicu kekhawatiran akan lonjakan angka pengangguran. Namun di sisi lain, AI menciptakan lapangan kerja baru yang membutuhkan keterampilan tingkat tinggi, seperti <em>prompt engineer</em> dan analis data. Oleh karena itu, adaptasi dan <em>reskilling</em> menjadi kunci utama bagi angkatan kerja saat ini agar tidak tergilas oleh perubahan.</p><p>Berdasarkan teks di atas, simpulan logis yang paling tepat mengenai dampak kecerdasan buatan terhadap dunia kerja adalah...</p>",
+    "options": [
+      "AI hanya akan membawa dampak negatif berupa lonjakan pengangguran di masa depan.",
+      "Semua jenis pekerjaan pada akhirnya akan sepenuhnya digantikan oleh otomatisasi AI.",
+      "Tantangan hilangnya pekerjaan repetitif akibat AI dapat diatasi jika angkatan kerja melakukan reskilling.",
+      "Pekerjaan sebagai analis data dan prompt engineer akan segera tergantikan oleh sistem otomatisasi.",
+      "Perkembangan AI membuat angkatan kerja tidak perlu lagi memiliki keterampilan tingkat tinggi."
+    ],
+    "correct_answer": 2,
+    "explanation": "Teks menyatakan bahwa meskipun AI menggantikan pekerjaan repetitif, ia menciptakan lapangan kerja baru. Adaptasi dan reskilling adalah kunci utama, sehingga opsi C adalah simpulan paling logis."
+  },
+  {
+    "id": 2,
+    "subject": "Matematika Wajib",
+    "type": "wajib",
+    "text": "<p>Sebuah kafe memberikan promo \"Diskon Ganda\" untuk pelanggannya di akhir pekan. Promo tersebut adalah diskon 20%, kemudian dari harga setelah diskon pertama, dipotong lagi sebesar 15%. Jika Rina membeli makanan dan minuman dengan total harga awal Rp 200.000, berapa total uang yang harus ia bayar?</p>",
+    "options": [
+      "Rp 130.000",
+      "Rp 136.000",
+      "Rp 140.000",
+      "Rp 150.000",
+      "Rp 165.000"
+    ],
+    "correct_answer": 1,
+    "explanation": "Diskon 1 (20%): 200.000 - 40.000 = 160.000. Diskon 2 (15% dari 160.000): 160.000 - 24.000 = 136.000."
+  },
+  {
+    "id": 3,
+    "subject": "Bahasa Inggris Wajib",
+    "type": "wajib",
+    "text": "<p><strong>Text for question 3</strong></p><p>The concept of a \"circular economy\" is gaining traction as a solution to environmental degradation. Unlike the traditional linear economy, which follows a \"take-make-dispose\" model, a circular economy aims to keep resources in use for as long as possible. Products are designed to be durable, repairable, and recyclable. This regenerative approach not only minimizes waste but also reduces the extraction of raw materials.</p><p>The word \"regenerative\" in the passage is closest in meaning to...</p>",
+    "options": [
+      "Destructive",
+      "Restorative",
+      "Conventional",
+      "Temporary",
+      "Inefficient"
+    ],
+    "correct_answer": 1,
+    "explanation": "Regenerative means to restore or renew (restorative). It contrasts with destructive linear models."
+  },
+  {
+    "id": 4,
+    "subject": "Matematika Tingkat Lanjut",
+    "type": "lanjut",
+    "text": "<p>Suku banyak P(x) = x³ + ax² - 13x + b habis dibagi oleh (x - 2) dan (x + 1). Berapakah nilai dari a + b?</p>",
+    "options": [
+      "8",
+      "10",
+      "12",
+      "-12",
+      "16"
+    ],
+    "correct_answer": 3,
+    "explanation": "P(2) = 0 -> 4a + b = 18. P(-1) = 0 -> a + b = -12. Kurangkan: 3a = 30 -> a = 10. Substitusi a=10 -> 10 + b = -12 -> b = -22. a + b = 10 - 22 = -12."
+  },
+  {
+    "id": 5,
+    "subject": "Bahasa Inggris Tingkat Lanjut",
+    "type": "lanjut",
+    "text": "<p>The proliferation of quantum computing poses a paradoxical challenge to modern cryptography. While quantum algorithms threaten to dismantle the RSA encryption that secures global communications, quantum mechanics also offers a seemingly impenetrable alternative: Quantum Key Distribution (QKD).</p><p>The author’s use of the phrase \"paradoxical challenge\" is primarily intended to highlight that quantum computing...</p>",
+    "options": [
+      "is mathematically too complex for classical cryptographers to comprehend.",
+      "threatens current cybersecurity measures while simultaneously providing a theoretically perfect solution.",
+      "will render all digital communications obsolete before new infrastructures can be built.",
+      "relies on factoring large prime numbers.",
+      "lacks the fault tolerance required for practical use."
+    ],
+    "correct_answer": 1,
+    "explanation": "Paradoxical challenge means it both destroys (RSA encryption) and saves (QKD) cybersecurity simultaneously."
+  }
+]

@@ -187,7 +187,7 @@ export default function Calendar() {
                   type="button" 
                   onClick={() => setSelected(key)} 
                   className={cn(
-                    'relative flex flex-col min-h-[100px] md:min-h-[130px] rounded-2xl p-2 md:p-3 text-left transition-all border',
+                    'relative flex flex-col min-h-[60px] md:min-h-[130px] rounded-2xl p-2 md:p-3 text-left transition-all border',
                     selected === key 
                       ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10 shadow-[0_0_0_2px_rgba(59,130,246,0.2)]' 
                       : weekend 
@@ -212,15 +212,16 @@ export default function Calendar() {
                     </span>
                     
                     {/* Tiny dots indicator for mobile (hidden on md) */}
-                    <div className="flex gap-1 md:hidden mt-2">
+                    <div className="flex flex-wrap justify-end max-w-[50%] gap-1 md:hidden mt-1">
                       {dayTasks.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>}
                       {hasSchedule && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                       {holiday && <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>}
+                      {dayTutoring.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>}
                     </div>
                   </div>
 
                   {/* Desktop event chips */}
-                  <div className="flex flex-col gap-1 mt-1 md:gap-1.5 md:mt-3 overflow-y-auto max-h-[120px] hide-scrollbar w-full">
+                  <div className="hidden md:flex flex-col gap-1.5 mt-3 overflow-y-auto max-h-[120px] hide-scrollbar w-full">
                     {holiday && (
                       <div className="bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-1 rounded-lg whitespace-normal break-words leading-tight w-full border border-rose-200/50 dark:border-rose-800/50">
                         {String(holidayByDate.get(key)?.[0]?.summary || 'Libur')}

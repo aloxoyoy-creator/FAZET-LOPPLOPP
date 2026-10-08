@@ -33,6 +33,8 @@ import {
 import { Link } from 'react-router-dom';
 import JadwalSholat from '../components/widgets/JadwalSholat';
 import CountdownTKA from '../components/widgets/CountdownTKA';
+import CurrentSubjectAlert from '../components/widgets/CurrentSubjectAlert';
+import YoutubeWidget from '../components/widgets/YoutubeWidget';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useSchedule } from '../hooks/useSchedule';
@@ -316,6 +318,9 @@ export default function Dashboard() {
         <Card className="p-5 overflow-hidden border border-[var(--tf-primary-subtle)]">
           <div className="mb-6"><CountdownTKA /></div>
           
+          {/* Status Pelajaran (Jam/Menit/Detik menuju pelajaran berikutnya) */}
+          <CurrentSubjectAlert />
+          
           {/* Tugas Besok */}
           {tomorrowTasks.length > 0 && (
             <div className="mb-6 rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)] p-4 border-l-4 border-orange-500">
@@ -397,7 +402,15 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 3. ROMANTISS (Perjalanan Kita, Ulang Tahun, My Minee) */}
+      {/* 3. HIBURAN & FOKUS (YOUTUBE) */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)]">Hiburan & Fokus Belajar</h3>
+        <div className="grid grid-cols-1 gap-4">
+          <YoutubeWidget />
+        </div>
+      </div>
+
+      {/* 4. ROMANTISS (Perjalanan Kita, Ulang Tahun, My Minee) */}
       {workspaceId === 'fathur' && (
         <div className="space-y-4">
           <div className="dashboard-layout-romantic">
