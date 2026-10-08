@@ -46,6 +46,36 @@
   },
   {
     "id": 4,
+    "subject": "Fisika",
+    "type": "pilihan",
+    "text": "<p>Sebuah mobil bermassa 1.000 kg melaju dengan kecepatan 20 m/s. Sopir tiba-tiba menginjak rem hingga mobil berhenti dalam waktu 5 detik. Jika gaya gesek udara diabaikan, besar gaya pengereman rata-rata yang dialami mobil tersebut adalah...</p>",
+    "options": [
+      "2.000 N",
+      "3.000 N",
+      "4.000 N",
+      "5.000 N",
+      "10.000 N"
+    ],
+    "correct_answer": 2,
+    "explanation": "Percepatan (a) = (0 - 20) / 5 = -4 m/s^2. Gaya (F) = m * a = 1000 * 4 = 4.000 N."
+  },
+  {
+    "id": 5,
+    "subject": "Sosiologi",
+    "type": "pilihan",
+    "text": "<p>Di sebuah perumahan elite, warga cenderung tidak mengenal satu sama lain secara mendalam dan interaksi hanya terjadi saat ada kepentingan tertentu, misalnya saat rapat dengan pengurus RT. Bentuk hubungan sosial atau kelompok sosial yang tercermin dari ilustrasi tersebut adalah...</p>",
+    "options": [
+      "Paguyuban (Gemeinschaft)",
+      "Patembayan (Gesellschaft)",
+      "Kelompok primer",
+      "Solidaritas mekanik",
+      "Kelompok informal"
+    ],
+    "correct_answer": 1,
+    "explanation": "Hubungan formal, dangkal, dan berdasarkan kepentingan sesaat (seperti di kota besar/perumahan elite) disebut Patembayan (Gesellschaft)."
+  },
+  {
+    "id": 6,
     "subject": "Matematika Tingkat Lanjut",
     "type": "lanjut",
     "text": "<p>Suku banyak P(x) = x³ + ax² - 13x + b habis dibagi oleh (x - 2) dan (x + 1). Berapakah nilai dari a + b?</p>",
@@ -60,7 +90,7 @@
     "explanation": "P(2) = 0 -> 4a + b = 18. P(-1) = 0 -> a + b = -12. Kurangkan: 3a = 30 -> a = 10. Substitusi a=10 -> 10 + b = -12 -> b = -22. a + b = 10 - 22 = -12."
   },
   {
-    "id": 5,
+    "id": 7,
     "subject": "Bahasa Inggris Tingkat Lanjut",
     "type": "lanjut",
     "text": "<p>The proliferation of quantum computing poses a paradoxical challenge to modern cryptography. While quantum algorithms threaten to dismantle the RSA encryption that secures global communications, quantum mechanics also offers a seemingly impenetrable alternative: Quantum Key Distribution (QKD).</p><p>The author’s use of the phrase \"paradoxical challenge\" is primarily intended to highlight that quantum computing...</p>",
