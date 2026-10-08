@@ -52,11 +52,11 @@ export default function LiveStatusBar() {
   }, [current, parts.hour, parts.minute, parts.second, weekend, holiday]);
 
   const label = weekend
-    ? 'Hari libur • akhir pekan'
+    ? 'Hari libur - akhir pekan'
     : holiday
-      ? `Hari libur • ${holiday.summary}`
+      ? `Hari libur - ${holiday.summary}`
       : current
-        ? `${current.subject} • ${current.startTime}–${current.endTime}`
+        ? `${current.subject} - ${current.startTime} - ${current.endTime}`
         : 'Tidak ada sesi aktif';
 
   const connectionLabel = connection === 'ONLINE' ? 'ONLINE' : connection === 'SYNCING' ? 'SYNCING' : connection === 'DEGRADED' ? 'DEGRADED' : 'OFFLINE';
@@ -72,7 +72,7 @@ export default function LiveStatusBar() {
         <span className="live-statusbar__divider" />
         <Clock3 size={13} />
         <span className="font-mono">{formatClock(now)}</span>
-        <span className="hidden md:inline text-slate-400">• {label}</span>
+        <span className="text-slate-400 text-[10px] sm:text-xs truncate max-w-[120px] sm:max-w-none ml-1 sm:ml-2"> - {label}</span>
         {current && !weekend && !holiday && (
           <span className="live-statusbar__active"><Sparkles size={12} /> LIVE</span>
         )}

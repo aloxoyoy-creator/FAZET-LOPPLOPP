@@ -125,7 +125,7 @@ export default function App() {
             <Route path="/notes/:id" element={<ProtectedRoute><Page><Notes /></Page></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Page><Schedule /></Page></ProtectedRoute>} />
             <Route path="/tutoring" element={<ProtectedRoute><Page><Tutoring /></Page></ProtectedRoute>} />
-            <Route path="/simulasi-tka" element={<ProtectedRoute><Page><iframe src="https://simulasi-tes.bppp.kemdikbud.go.id/" style={{width: '100%', height: 'calc(100vh - 64px)', border: 'none', borderRadius: '8px'}}/></Page></ProtectedRoute>} />
+            <Route path="/simulasi-tka" element={<ProtectedRoute><Page><iframe src="/cbt_pusmendik_simulasi.html" style={{width: '100%', height: 'calc(100vh - 64px)', border: 'none', borderRadius: '8px'}}/></Page></ProtectedRoute>} />
             <Route path="/raport" element={<ProtectedRoute><Page><Raport /></Page></ProtectedRoute>} />
             <Route path="/rapor" element={<Navigate to="/raport" replace />} />
             <Route path="/calendar" element={<ProtectedRoute><Page><Calendar /></Page></ProtectedRoute>} />
