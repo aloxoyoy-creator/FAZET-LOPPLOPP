@@ -16,6 +16,7 @@ import { formatDateTime } from '../lib/utils';
 import { checkNotificationPermission, requestNotificationPermission } from '../services/systemNotificationService';
 import { useAuth } from '../context/AuthContext';
 import PullToRefresh from '../components/ui/PullToRefresh';
+import ContinuousMotion from '../components/ui/ContinuousMotion';
 import type { Notification } from '../types';
 
 function getNotificationIcon(type: Notification['type'], read: boolean) {
@@ -100,13 +101,15 @@ export default function Notifications() {
         >
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <motion.div 
-                whileHover={{ rotate: [0, -15, 15, -15, 15, 0] }}
-                transition={{ duration: 0.5 }}
-                className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl text-blue-600 dark:text-blue-400 cursor-default"
-              >
-                <BellRing size={20} />
-              </motion.div>
+              <ContinuousMotion intensity="high">
+                <motion.div 
+                  whileHover={{ rotate: [0, -15, 15, -15, 15, 0] }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl text-blue-600 dark:text-blue-400 cursor-default"
+                >
+                  <BellRing size={20} />
+                </motion.div>
+              </ContinuousMotion>
               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Notifikasi</h1>
             </div>
             <motion.p 
@@ -233,12 +236,14 @@ export default function Notifications() {
                       />
                     )}
 
-                    <motion.div 
-                      whileHover={{ rotate: n.type === 'calendar' ? 15 : n.type === 'achievement' ? [0, -10, 10, -10, 10, 0] : 0, scale: 1.1 }}
-                      className={`mt-1 grid h-12 w-12 shrink-0 place-items-center rounded-2xl transition-colors shadow-sm ${getNotificationColorClass(n.type, n.read)}`}
-                    >
-                      {getNotificationIcon(n.type, n.read)}
-                    </motion.div>
+                    <ContinuousMotion intensity={n.read ? 'low' : 'medium'}>
+                      <motion.div 
+                        whileHover={{ rotate: n.type === 'calendar' ? 15 : n.type === 'achievement' ? [0, -10, 10, -10, 10, 0] : 0, scale: 1.1 }}
+                        className={`mt-1 grid h-12 w-12 shrink-0 place-items-center rounded-2xl transition-colors shadow-sm ${getNotificationColorClass(n.type, n.read)}`}
+                      >
+                        {getNotificationIcon(n.type, n.read)}
+                      </motion.div>
+                    </ContinuousMotion>
                     
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-1.5">

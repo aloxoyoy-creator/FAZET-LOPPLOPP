@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Sparkles, Navigation, Clock, Sunrise, Sun, Sunset, Moon, CalendarDays } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ContinuousMotion from '../ui/ContinuousMotion';
 
 const WIDGETS = [
   { id: 'tasikmalaya', name: 'Tasikmalaya', apiId: '1227' },
@@ -278,13 +279,15 @@ function TimeCard({ title, time, icon, highlight = false, isActive = false }: { 
         ? 'bg-amber-50 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30' 
         : 'bg-white border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800'
     }`}>
-      <div className={`grid h-10 w-10 place-items-center rounded-xl ${
-        highlight 
-        ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400' 
-        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-      }`}>
-        {icon}
-      </div>
+      <ContinuousMotion intensity={isActive ? 'medium' : 'low'}>
+        <div className={`grid h-10 w-10 place-items-center rounded-xl ${
+          highlight 
+          ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400' 
+          : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+        }`}>
+          {icon}
+        </div>
+      </ContinuousMotion>
       <div className={`text-[11px] font-black uppercase tracking-wider ${
         highlight ? 'text-amber-700 dark:text-amber-500' : 'text-slate-500 dark:text-slate-400'
       }`}>

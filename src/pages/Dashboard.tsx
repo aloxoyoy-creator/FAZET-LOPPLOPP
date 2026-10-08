@@ -1,5 +1,6 @@
 import { useAppConfig } from '../context/AppConfigContext';
 import RandomMotion from '../components/ui/RandomMotion';
+import ContinuousMotion from '../components/ui/ContinuousMotion';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -184,7 +185,7 @@ function MineePreviewCard() {
       <div className="border-b border-[var(--tf-border)] p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="studio-eyebrow"><Images size={13} /> My Minee</div>
+            <div className="studio-eyebrow"><ContinuousMotion intensity="low" className="inline-block"><Images size={13} /></ContinuousMotion> My Minee</div>
             <h2 className="mt-1 text-lg font-semibold">Foto-foto perjalanan kita</h2>
             <p className="mt-1 max-w-xl text-xs leading-5 text-[var(--tf-text-muted)]">
               Preview otomatis mengambil koleksi yang tersimpan di galeri My Minee, jadi foto lama tetap ikut muncul tanpa dibundel ulang ke aplikasi.
@@ -308,14 +309,14 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col gap-3 border-b border-[var(--tf-border)] pb-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="studio-eyebrow"><Sparkles size={13} /> FAZET Studio</div>
+          <div className="studio-eyebrow"><ContinuousMotion intensity="high" className="inline-block"><Sparkles size={13} /></ContinuousMotion> FAZET Studio</div>
           <div className="mt-1 flex items-center gap-2"><h2 className="studio-page-title !text-xl sm:!text-2xl">Dashboard</h2></div>
         </div>
       </div>
 
       {/* 1. TIMELINE VERTIKAL (TKA, Tugas Besok, Jadwal Besok, Jadwal Les, Jadwal Sekolah) */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)] flex items-center gap-2"><Layers3 size={16} /> Timeline Hari Ini</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)] flex items-center gap-2"><ContinuousMotion intensity="medium" className="inline-block"><Layers3 size={16} /></ContinuousMotion> Timeline Hari Ini</h3>
         <RandomMotion delayIndex={0}><Card className="p-5 overflow-hidden border border-[var(--tf-primary-subtle)]">
           <div className="mb-6"><CountdownTKA /></div>
           
@@ -353,7 +354,7 @@ export default function Dashboard() {
 
           {/* Jadwal Sekolah Vertikal */}
           <div>
-            <div className="studio-eyebrow mb-4"><Clock3 size={12}/> {now.getHours() >= 18 ? "Jadwal Sekolah Besok" : "Jadwal Sekolah"}</div>
+            <div className="studio-eyebrow mb-4"><ContinuousMotion intensity="low" className="inline-block"><Clock3 size={12} /></ContinuousMotion> {now.getHours() >= 18 ? "Jadwal Sekolah Besok" : "Jadwal Sekolah"}</div>
             {todayTimeline.length === 0 ? (
               <div className="text-sm text-[var(--tf-text-muted)]">Tidak ada jadwal tercatat hari ini.</div>
             ) : (
@@ -433,7 +434,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="relative border-t border-[var(--tf-border)] p-6 lg:border-l lg:border-t-0 lg:p-7">
-                  <div className="studio-eyebrow"><Heart size={13} /> Menuju anniversary</div>
+                  <div className="studio-eyebrow"><ContinuousMotion intensity="high" className="inline-block"><Heart size={13} /></ContinuousMotion> Menuju anniversary</div>
                   <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
                     <div className="romantic-countdown"><strong>{anniversaryCountdown.days}</strong><span>hari</span></div>
                     <div className="romantic-countdown"><strong>{two(anniversaryCountdown.hours)}</strong><span>jam</span></div>
