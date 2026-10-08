@@ -557,12 +557,7 @@ export default function MyMinee() {
                   </div>
                 )}
                 
-                {isFathur && mazetRequestStatus === 'pending' && (
-                  <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 mb-4 dark:bg-amber-900/20 dark:border-amber-800">
-                    <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 font-medium">Mazet meminta akses untuk membuka galeri ini.</p>
-                    <Button onClick={handleApproveAccess} disabled={unlocking} variant="primary" className="w-full bg-amber-500 hover:bg-amber-600 text-white">Setujui Akses</Button>
-                  </div>
-                )}
+
 
                 {accessStatus === 'none' && !isFathur ? (
                   <>
