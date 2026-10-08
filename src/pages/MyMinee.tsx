@@ -525,7 +525,7 @@ export default function MyMinee() {
                 <LockKeyhole size={28} />
               </div>
               <h2 className="text-2xl font-black">My Minee Terkunci</h2>
-              <p className="mt-2 text-sm text-white/80">Masukkan sandi dan token admin untuk membuka</p>
+              <p className="mt-2 text-sm text-white/80">Galeri rahasia My Minee</p>
             </div>
             
                           <div className="p-6 space-y-4">

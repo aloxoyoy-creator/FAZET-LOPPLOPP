@@ -3,6 +3,10 @@
     "admins": {
       ".write": "root.child('admins/' + auth.uid).exists()"
     },
+    "myminee_access": {
+      ".read": "true",
+      ".write": "true"
+    },
     "rooms": {
       "$roomId": {
         ".read": "auth != null",

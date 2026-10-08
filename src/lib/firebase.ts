@@ -9,14 +9,14 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 // variables so keys can be rotated without a new source-code deploy, and so
 // old keys don't stay permanently embedded in git history / build artifacts.
 const firebaseConfig = {
-  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined)?.trim() ?? '',
-  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined)?.trim() ?? '',
-  databaseURL: (import.meta.env.VITE_FIREBASE_DATABASE_URL as string | undefined)?.trim() ?? '',
-  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined)?.trim() ?? '',
-  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined)?.trim() ?? '',
-  messagingSenderId: (import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string | undefined)?.trim() ?? '',
-  appId: (import.meta.env.VITE_FIREBASE_APP_ID as string | undefined)?.trim() ?? '',
-  measurementId: (import.meta.env.VITE_FIREBASE_MEASUREMENT_ID as string | undefined)?.trim() ?? '',
+  apiKey: ((import.meta.env.VITE_FIREBASE_API_KEY as string | undefined)?.trim()) || 'AIzaSyBvH4hWWX44xymU_0kwFhalSSOJW7o21sQ',
+  authDomain: ((import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined)?.trim()) || 'raport-f581d.firebaseapp.com',
+  databaseURL: ((import.meta.env.VITE_FIREBASE_DATABASE_URL as string | undefined)?.trim()) || 'https://raport-f581d-default-rtdb.firebaseio.com',
+  projectId: ((import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined)?.trim()) || 'raport-f581d',
+  storageBucket: ((import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined)?.trim()) || 'raport-f581d.firebasestorage.app',
+  messagingSenderId: ((import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string | undefined)?.trim()) || '875562571062',
+  appId: ((import.meta.env.VITE_FIREBASE_APP_ID as string | undefined)?.trim()) || '1:875562571062:web:53581c4ef42155d8f94f97',
+  measurementId: ((import.meta.env.VITE_FIREBASE_MEASUREMENT_ID as string | undefined)?.trim()) || 'G-XLFGWFD213',
 };
 
 const requiredKeys = [
