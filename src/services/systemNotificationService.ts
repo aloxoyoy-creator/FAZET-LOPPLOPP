@@ -67,7 +67,6 @@ export async function showSystemNotification(title: string, body: string, action
     try {
       await ensureChannelExists();
       
-      // Fix: id in LocalNotifications must be Int32. new Date().getTime() exceeds Int32!
       const safeId = Math.floor(Math.random() * 2147483647);
       
       await LocalNotifications.schedule({
@@ -76,24 +75,22 @@ export async function showSystemNotification(title: string, body: string, action
             title,
             body,
             id: safeId,
-            schedule: { at: new Date(Date.now() + 500) }, // Schedule 500ms in future
-            channelId: 'fazet_default_channel', // Use the channel we created
-            actionTypeId: '',
+            channelId: 'fazet_default_channel',
             extra: { actionUrl }
           }
         ]
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error showing local notification', err);
-      alert("Error (LocalNotification): " + JSON.stringify(err));
+      // Fallback alert so user knows it failed
+      alert("Gagal memunculkan notifikasi HP: " + (err.message || JSON.stringify(err)));
     }
   } else {
     // Web
     try {
       // Remove missing icon path to prevent silent failures on some browsers
       const notification = new Notification(title, {
-        body,
-        icon: '/brand/fazet-icon.png' // Use fallback or let it be undefined if not exist
+        body
       });
 
       if (actionUrl) {
