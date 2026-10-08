@@ -14,15 +14,19 @@ export default function AdminToken() {
     try {
       await approveAccess();
       
-      const { data: mazetData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'mazet').single();
-      if (mazetData?.uid) {
-        await supabase.from('notifications').insert({
-          user_id: mazetData.uid,
-          title: 'Akses My Minee Disetujui',
-          message: 'Fathur telah menyetujui akses kamu ke My Minee!',
-          type: 'achievement',
-          read: false
-        });
+      try {
+        const { data: mazetData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'mazet').maybeSingle();
+        if (mazetData?.uid) {
+          await supabase.from('notifications').insert({
+            user_id: mazetData.uid,
+            title: 'Akses My Minee Disetujui',
+            message: 'Fathur telah menyetujui akses kamu ke My Minee!',
+            type: 'achievement',
+            read: false
+          });
+        }
+      } catch (notifErr) {
+        console.warn('Gagal kirim notif:', notifErr);
       }
     } catch (e) {
       console.error(e);

@@ -137,22 +137,29 @@ export default function MyMinee() {
 
   const handleRequestAccess = async () => {
     setUnlocking(true);
+    setUnlockError('');
     try {
       await requestAccess();
-      // Notifikasi tetap dikirim jika adminData ada (walau mungkin RLS gagalkan jika beda DB, tapi Firebase RTDB tetap jalan)
-      const { data: adminData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'fathur').single();
-      if (adminData?.uid) {
-        await supabase.from('notifications').insert({
-          user_id: adminData.uid,
-          title: 'Permintaan Akses My Minee',
-          message: 'Mazet meminta akses untuk membuka galeri My Minee.',
-          type: 'security',
-          read: false
-        });
+      
+      try {
+        // Coba kirim notif jika memungkinkan (gunakan maybeSingle agar tidak throw error jika tidak ada)
+        const { data: adminData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'fathur').maybeSingle();
+        if (adminData?.uid) {
+          await supabase.from('notifications').insert({
+            user_id: adminData.uid,
+            title: 'Permintaan Akses My Minee',
+            message: 'Mazet meminta akses untuk membuka galeri My Minee.',
+            type: 'security',
+            read: false
+          });
+        }
+      } catch (notifError) {
+        console.warn('Gagal mengirim notif, tapi akses tetap diminta:', notifError);
       }
+      
     } catch (e) {
       console.error(e);
-      setUnlockError('Gagal mengirim permintaan.');
+      setUnlockError('Gagal mengirim permintaan. Pastikan koneksi internet stabil.');
     } finally {
       setUnlocking(false);
     }
