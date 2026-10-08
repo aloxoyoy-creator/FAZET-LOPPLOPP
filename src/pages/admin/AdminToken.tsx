@@ -1,27 +1,18 @@
 import { ShieldAlert, Check, X, Loader2, KeyRound } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { supabase } from '../../lib/supabase';
+import { useMyMineeAccess } from '../../hooks/useMyMineeAccess';
 
 export default function AdminToken() {
-  const [status, setStatus] = useState<'none' | 'pending' | 'approved'>('none');
-  const [loading, setLoading] = useState(true);
+  const { status, loading, approveAccess, revokeAccess } = useMyMineeAccess();
   const [processing, setProcessing] = useState(false);
-
-  useEffect(() => {
-    supabase.from('app_config').select('value').eq('key', 'myminee_access_mazet').single().then(({data}) => {
-      if (data?.value?.status) {
-        setStatus(data.value.status);
-      }
-      setLoading(false);
-    });
-  }, []);
 
   const handleApprove = async () => {
     setProcessing(true);
     try {
-      await supabase.from('app_config').upsert({ key: 'myminee_access_mazet', value: { status: 'approved', approvedAt: Date.now() }, updated_at: new Date().toISOString() });
+      await approveAccess();
       
       const { data: mazetData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'mazet').single();
       if (mazetData?.uid) {
@@ -33,7 +24,6 @@ export default function AdminToken() {
           read: false
         });
       }
-      setStatus('approved');
     } catch (e) {
       console.error(e);
     }
@@ -43,8 +33,7 @@ export default function AdminToken() {
   const handleRevoke = async () => {
     setProcessing(true);
     try {
-      await supabase.from('app_config').upsert({ key: 'myminee_access_mazet', value: { status: 'none' }, updated_at: new Date().toISOString() });
-      setStatus('none');
+      await revokeAccess();
     } catch (e) {
       console.error(e);
     }

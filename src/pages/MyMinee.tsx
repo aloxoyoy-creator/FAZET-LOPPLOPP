@@ -132,24 +132,13 @@ function IconForFile({ type, name, size = 22 }: { type: string; name: string; si
 export default function MyMinee() {
   const { workspaceId } = useWorkspace();
   const isFathur = workspaceId === 'fathur';
-  const [accessStatus, setAccessStatus] = useState<'none' | 'pending' | 'approved'>('none');
-  const [mazetRequestStatus, setMazetRequestStatus] = useState<'none' | 'pending' | 'approved'>('none');
-
-  useEffect(() => {
-    supabase.from('app_config').select('value').eq('key', 'myminee_access_mazet').single().then(({data}) => {
-      if (data?.value?.status) {
-        setMazetRequestStatus(data.value.status);
-        if (!isFathur) setAccessStatus(data.value.status);
-      }
-    });
-  }, [isFathur]);
+  const { status: accessStatus, loading: checkingAccess, requestAccess } = useMyMineeAccess();
 
   const handleRequestAccess = async () => {
     setUnlocking(true);
     try {
-      await supabase.from('app_config').upsert({ key: 'myminee_access_mazet', value: { status: 'pending', requestedAt: Date.now() }, updated_at: new Date().toISOString() });
-      
-      // get admin user ID
+      await requestAccess();
+      // Notifikasi tetap dikirim jika adminData ada (walau mungkin RLS gagalkan jika beda DB, tapi Firebase RTDB tetap jalan)
       const { data: adminData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'fathur').single();
       if (adminData?.uid) {
         await supabase.from('notifications').insert({
@@ -160,7 +149,6 @@ export default function MyMinee() {
           read: false
         });
       }
-      setAccessStatus('pending');
     } catch (e) {
       console.error(e);
       setUnlockError('Gagal mengirim permintaan.');
