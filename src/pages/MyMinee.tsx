@@ -27,7 +27,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { validateAdminToken } from '../lib/token';
+import { useWorkspace } from '../context/WorkspaceContext';
 
 type GalleryItem = {
   id: string;
@@ -130,6 +130,62 @@ function IconForFile({ type, name, size = 22 }: { type: string; name: string; si
 }
 
 export default function MyMinee() {
+  const { workspaceId } = useWorkspace();
+  const isFathur = workspaceId === 'fathur';
+  const [accessStatus, setAccessStatus] = useState<'none' | 'pending' | 'approved'>(isFathur ? 'approved' : 'none');
+
+  useEffect(() => {
+    if (isFathur) return;
+    supabase.from('app_config').select('value').eq('key', 'myminee_access_mazet').single().then(({data}) => {
+      if (data?.value?.status) setAccessStatus(data.value.status);
+    });
+  }, [isFathur]);
+
+  const handleRequestAccess = async () => {
+    setUnlocking(true);
+    try {
+      await supabase.from('app_config').upsert({ key: 'myminee_access_mazet', value: { status: 'pending', requestedAt: Date.now() }, updated_at: new Date().toISOString() });
+      
+      // get admin user ID
+      const { data: adminData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'fathur').single();
+      if (adminData?.uid) {
+        await supabase.from('notifications').insert({
+          user_id: adminData.uid,
+          title: 'Permintaan Akses My Minee',
+          message: 'Mazet meminta akses untuk membuka galeri My Minee.',
+          type: 'security',
+          read: false
+        });
+      }
+      setAccessStatus('pending');
+    } catch (e) {
+      console.error(e);
+      setUnlockError('Gagal mengirim permintaan.');
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  const handleApproveAccess = async () => {
+    setUnlocking(true);
+    try {
+      await supabase.from('app_config').upsert({ key: 'myminee_access_mazet', value: { status: 'approved', approvedAt: Date.now() }, updated_at: new Date().toISOString() });
+      
+      const { data: mazetData } = await supabase.from('profiles').select('uid').eq('workspace_id', 'mazet').single();
+      if (mazetData?.uid) {
+        await supabase.from('notifications').insert({
+          user_id: mazetData.uid,
+          title: 'Akses My Minee Disetujui',
+          message: 'Fathur telah menyetujui akses kamu ke My Minee!',
+          type: 'achievement',
+          read: false
+        });
+      }
+      setAccessStatus('approved');
+    } catch (e) {}
+    setUnlocking(false);
+  };
+
   const { user, isAdmin } = useAuth();
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,26 +205,21 @@ export default function MyMinee() {
 
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [unlockPassword, setUnlockPassword] = useState('');
-  const [unlockToken, setUnlockToken] = useState('');
-  const [unlockError, setUnlockError] = useState('');
+    const [unlockError, setUnlockError] = useState('');
   const [unlocking, setUnlocking] = useState(false);
 
   const handleUnlock = async () => {
-    if (!unlockPassword || !unlockToken) {
-      setUnlockError('Password dan token admin wajib diisi.');
-      return;
-    }
-    if (!validateAdminToken(unlockToken)) {
-      setUnlockError('Token admin tidak valid atau sudah kedaluwarsa.');
+    if (!unlockPassword) {
+      setUnlockError('Password wajib diisi.');
       return;
     }
     setUnlocking(true);
     setUnlockError('');
     try {
       const email = user?.email;
-      if (!email) throw new Error('Email akun admin tidak tersedia.');
+      if (!email) throw new Error('Email akun tidak tersedia.');
       const { error: reauthError } = await supabase.auth.signInWithPassword({ email, password: unlockPassword });
-      if (reauthError) throw new Error('Password salah atau sesi tidak dapat diverifikasi.');
+      if (reauthError) throw new Error('Password salah.');
       setIsUnlocked(true);
       void load();
     } catch (err) {
@@ -496,43 +547,57 @@ export default function MyMinee() {
               <p className="mt-2 text-sm text-white/80">Masukkan sandi dan token admin untuk membuka</p>
             </div>
             
-            <div className="p-6 space-y-4">
-              {unlockError && (
-                <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
-                  {unlockError}
-                </div>
-              )}
-              
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">
-                Sandi Admin
-                <input
-                  type="password"
-                  value={unlockPassword}
-                  onChange={(e) => setUnlockPassword(e.target.value)}
-                  className="input mt-2 h-11 w-full px-3"
-                  placeholder="Masukkan sandi Anda"
-                />
-              </label>
+                          <div className="p-6 space-y-4">
+                {unlockError && (
+                  <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
+                    {unlockError}
+                  </div>
+                )}
+                
+                {isFathur && accessStatus === 'pending' && (
+                  <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 mb-4 dark:bg-amber-900/20 dark:border-amber-800">
+                    <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 font-medium">Mazet meminta akses untuk membuka galeri ini.</p>
+                    <Button onClick={handleApproveAccess} disabled={unlocking} variant="primary" className="w-full bg-amber-500 hover:bg-amber-600 text-white">Setujui Akses</Button>
+                  </div>
+                )}
 
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">
-                Token Admin
-                <input
-                  type="password"
-                  value={unlockToken}
-                  onChange={(e) => setUnlockToken(e.target.value)}
-                  className="input mt-2 h-11 w-full px-3"
-                  placeholder="MYMINEE-ADMIN-..."
-                />
-              </label>
+                {accessStatus === 'none' && !isFathur ? (
+                  <>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 text-center">Kamu belum memiliki akses ke brankas ini.</p>
+                    <Button onClick={handleRequestAccess} disabled={unlocking} className="w-full mt-2" variant="primary">
+                      {unlocking ? <Loader2 size={18} className="animate-spin" /> : <LockKeyhole size={18} />}
+                      Minta Akses ke Admin
+                    </Button>
+                  </>
+                ) : accessStatus === 'pending' && !isFathur ? (
+                  <div className="text-center p-4">
+                    <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Menunggu Persetujuan Admin...</p>
+                    <p className="text-xs text-slate-500 mt-2">Fathur belum menyetujui permintaanmu. Mohon tunggu.</p>
+                  </div>
+                ) : (
+                  <>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">
+                      Masukkan Sandi Akun Anda
+                      <input
+                        type="password"
+                        value={unlockPassword}
+                        onChange={(e) => setUnlockPassword(e.target.value)}
+                        className="input mt-2 h-11 w-full px-3"
+                        placeholder="Ketik sandi..."
+                      />
+                    </label>
 
-              <Button onClick={() => void handleUnlock()} className="mt-2 w-full" variant="primary" disabled={unlocking || !unlockPassword || !unlockToken}>
-                {unlocking ? <Loader2 size={18} className="animate-spin" /> : <LockKeyhole size={18} />}
-                Buka Brankas
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+                    <Button onClick={handleUnlock} className="mt-2 w-full" variant="primary" disabled={unlocking || !unlockPassword}>
+                      {unlocking ? <Loader2 size={18} className="animate-spin" /> : <LockKeyhole size={18} />}
+                      Buka Brankas
+                    </Button>
+                  </>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
+
 
       <div className={`my-minee-page space-y-6 ${!isUnlocked ? 'pointer-events-none select-none blur-md overflow-hidden h-[80vh]' : ''}`}>
         <section className="relative overflow-hidden rounded-[28px] border border-rose-200/70 bg-gradient-to-br from-rose-50 via-white to-fuchsia-50 p-6 shadow-[0_24px_70px_rgba(244,63,94,.10)] dark:border-rose-900/40 dark:from-rose-950/50 dark:via-slate-950 dark:to-fuchsia-950/35">

@@ -412,7 +412,6 @@ export default function Dashboard() {
       </div>
 
       {/* 4. ROMANTISS (Perjalanan Kita, Ulang Tahun, My Minee) */}
-      {workspaceId === 'fathur' && (
         <div className="space-y-4">
           <div className="dashboard-layout-romantic">
             <Card interactive className="overflow-hidden p-0 romantic-hero">
@@ -472,7 +471,6 @@ export default function Dashboard() {
             <MineePreviewCard />
           </div>
         </div>
-      )}
 
       <TaskForm open={taskOpen} initial={null} onClose={() => setTaskOpen(false)} onSaved={() => setTaskOpen(false)} />
     </div>
