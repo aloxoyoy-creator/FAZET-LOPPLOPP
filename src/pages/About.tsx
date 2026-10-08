@@ -9,7 +9,7 @@ export default function About() {
   const appInfo = {
     version: '2.0.0 (Total Redesign)',
     firstCreated: '30 September 2026',
-    lastUpdated: '8 Oktober 2026, 20:55 WIB',
+    lastUpdated: new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).format(new Date(__BUILD_TIME__)) + ' WIB (Otomatis)',
     developer: 'Aloxoyoy Creator (Fathur)',
     frameworks: ['React', 'TypeScript', 'Tailwind CSS', 'Vite', 'Supabase', 'Framer Motion'],
     codename: 'FAZET LOPLOP V2',
