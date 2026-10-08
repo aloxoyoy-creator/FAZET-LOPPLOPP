@@ -1,4 +1,5 @@
 import { useAppConfig } from '../context/AppConfigContext';
+import RandomMotion from '../components/ui/RandomMotion';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -315,7 +316,7 @@ export default function Dashboard() {
       {/* 1. TIMELINE VERTIKAL (TKA, Tugas Besok, Jadwal Besok, Jadwal Les, Jadwal Sekolah) */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)] flex items-center gap-2"><Layers3 size={16} /> Timeline Hari Ini</h3>
-        <Card className="p-5 overflow-hidden border border-[var(--tf-primary-subtle)]">
+        <RandomMotion delayIndex={0}><Card className="p-5 overflow-hidden border border-[var(--tf-primary-subtle)]">
           <div className="mb-6"><CountdownTKA /></div>
           
           {/* Status Pelajaran (Jam/Menit/Detik menuju pelajaran berikutnya) */}
@@ -396,7 +397,7 @@ export default function Dashboard() {
           <div className="col-span-1 md:col-span-2 lg:col-span-3 rounded-2xl overflow-hidden shadow-lg border border-[var(--tf-border)] bg-gradient-to-br from-[var(--tf-primary-subtle)] to-[var(--tf-bg-surface)] relative group">
             <div className="absolute inset-0 bg-[var(--tf-primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
             <div className="p-6 relative z-10">
-               <JadwalSholat />
+               <RandomMotion delayIndex={1}><JadwalSholat /></RandomMotion>
             </div>
           </div>
         </div>

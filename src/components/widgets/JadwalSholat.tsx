@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Sparkles, Navigation, Clock, Sunrise, Sun, Sunset, Moon, CalendarDays } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const WIDGETS = [
   { id: 'tasikmalaya', name: 'Tasikmalaya', apiId: '1227' },
@@ -228,7 +229,18 @@ export default function JadwalSholat() {
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+              <motion.div 
+                className="grid grid-cols-2 md:grid-cols-7 gap-3"
+                initial="hidden"
+                animate="show"
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.1 }
+                  }
+                }}
+              >
                 <TimeCard title="Imsak" time={activeJadwal.imsak} icon={<Moon size={20} />} isActive={currentPrayer === 'Imsak' && !isBesokUI} highlight />
                 <TimeCard title="Subuh" time={activeJadwal.subuh} icon={<Sunrise size={20} />} isActive={currentPrayer === 'Subuh' && !isBesokUI} highlight />
                 <TimeCard title="Dhuha" time={activeJadwal.dhuha} icon={<Sun size={20} />} isActive={currentPrayer === 'Dhuha' && !isBesokUI} highlight />
@@ -236,7 +248,7 @@ export default function JadwalSholat() {
                 <TimeCard title="Ashar" time={activeJadwal.ashar} icon={<Sun size={20} />} isActive={currentPrayer === 'Ashar' && !isBesokUI} highlight />
                 <TimeCard title="Maghrib" time={activeJadwal.maghrib} icon={<Sunset size={20} />} isActive={currentPrayer === 'Maghrib' && !isBesokUI} highlight />
                 <TimeCard title="Isya" time={activeJadwal.isya} icon={<Moon size={20} />} isActive={currentPrayer === 'Isya' && !isBesokUI} highlight />
-              </div>
+              </motion.div>
             </div>
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3">
@@ -250,8 +262,16 @@ export default function JadwalSholat() {
 }
 
 function TimeCard({ title, time, icon, highlight = false, isActive = false }: { title: string, time: string, icon: React.ReactNode, highlight?: boolean, isActive?: boolean }) {
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.9 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <div className={`flex flex-col items-center justify-center gap-2 rounded-2xl p-4 transition-transform hover:scale-105 ${
+    <motion.div 
+      variants={itemVariants}
+      whileHover={{ scale: 1.05, y: -5, transition: { type: "spring", stiffness: 400 } }}
+      className={`flex flex-col items-center justify-center gap-2 rounded-2xl p-4 cursor-default ${
       isActive
       ? 'bg-amber-100 border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)] dark:bg-amber-900/40 dark:border-amber-400 scale-105'
       : highlight 
@@ -275,6 +295,6 @@ function TimeCard({ title, time, icon, highlight = false, isActive = false }: { 
       }`}>
         {time}
       </div>
-    </div>
+    </motion.div>
   );
 }
