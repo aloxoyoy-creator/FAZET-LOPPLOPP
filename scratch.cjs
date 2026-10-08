@@ -1,1 +1,0 @@
-const fs=require('fs'); let c=fs.readFileSync('src/pages/MyMinee.tsx','utf-8'); c=c.replace(/\\{accessStatus === 'none' && !isFathur \\? \\([\\s\\S]*?\\) : accessStatus === 'pending' && !isFathur \\? \\([\\s\\S]*?\\) : \\(/m, '('); fs.writeFileSync('src/pages/MyMinee.tsx', c);
