@@ -112,3 +112,48 @@ export async function showSystemNotification(title: string, body: string, action
     }
   }
 }
+
+export async function scheduleSystemNotification(title: string, body: string, date: Date, actionUrl?: string, notificationId?: number) {
+  const perm = await checkNotificationPermission();
+  if (perm !== 'granted') return;
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await ensureChannelExists();
+      
+      const safeId = notificationId || Math.floor(Math.random() * 2147483647);
+      
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title,
+            body,
+            id: safeId,
+            channelId: 'fazet_default_channel',
+            extra: { actionUrl },
+            schedule: { at: date }
+          }
+        ]
+      });
+      console.log(`Scheduled notification "${title}" at ${date.toLocaleString()}`);
+    } catch (err: any) {
+      console.error('Error scheduling local notification', err);
+    }
+  } else {
+    // Fallback for Web: use setTimeout if the time is within the next 24 hours
+    // (Note: this only works if the app remains open!)
+    const delay = date.getTime() - Date.now();
+    if (delay > 0) {
+      console.log(`Scheduled web notification "${title}" for ${delay}ms from now`);
+      setTimeout(() => {
+        showSystemNotification(title, body, actionUrl);
+      }, delay);
+    }
+  }
+}
+
+export async function cancelSystemNotification(notificationId: number) {
+  if (Capacitor.isNativePlatform()) {
+    await LocalNotifications.cancel({ notifications: [{ id: notificationId }] });
+  }
+}

@@ -49,6 +49,7 @@ import type { ScheduleItem } from '../types';
 import DigitalIdCardBanner from '../components/dashboard/DigitalIdCardBanner';
 import AiPulseCard from '../components/dashboard/AiPulseCard';
 import AiBriefing from '../components/dashboard/AiBriefing';
+import DailyQuote from '../components/widgets/DailyQuote';
 import TaskForm from '../components/tasks/TaskForm';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -221,6 +222,30 @@ function MineePreviewCard() {
   );
 }
 
+
+function QuickActions() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <Link to="/tasks" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
+        <div className="p-3 bg-blue-500/10 rounded-full"><ListTodo size={24} className="text-blue-500"/></div>
+        <span className="text-sm font-semibold">Tugas</span>
+      </Link>
+      <Link to="/notes" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
+        <div className="p-3 bg-emerald-500/10 rounded-full"><StickyNote size={24} className="text-emerald-500"/></div>
+        <span className="text-sm font-semibold">Catatan</span>
+      </Link>
+      <Link to="/ai" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
+        <div className="p-3 bg-fuchsia-500/10 rounded-full"><Sparkles size={24} className="text-fuchsia-500"/></div>
+        <span className="text-sm font-semibold">Tanya AI</span>
+      </Link>
+      <Link to="/my-minee" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
+        <div className="p-3 bg-rose-500/10 rounded-full"><Heart size={24} className="text-rose-500"/></div>
+        <span className="text-sm font-semibold">My Minee</span>
+      </Link>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { profile } = useAuth();
   const { workspace, workspaceId } = useWorkspace();
@@ -313,6 +338,21 @@ export default function Dashboard() {
           <div className="mt-1 flex items-center gap-2"><h2 className="studio-page-title !text-xl sm:!text-2xl">Dashboard</h2></div>
         </div>
       </div>
+
+      {/* Daily Quote */}
+      <RandomMotion delayIndex={0}><DailyQuote /></RandomMotion>
+
+      {/* Quick Actions */}
+      <RandomMotion delayIndex={0}><QuickActions /></RandomMotion>
+
+      {/* Digital ID & Briefing */}
+      <RandomMotion delayIndex={1}>
+        <div className="space-y-4 mb-8">
+          <DigitalIdCardBanner />
+          <AiBriefing firstName={firstName} tasks={tasks} tomorrowSubjects={tomorrowSubjects} />
+          <AiPulseCard tomorrowSubjects={tomorrowSubjects} tomorrowDay={tomorrowDay} academicTimeline={todayTimeline} tutoring={todayTutoring} />
+        </div>
+      </RandomMotion>
 
       {/* 1. TIMELINE VERTIKAL (TKA, Tugas Besok, Jadwal Besok, Jadwal Les, Jadwal Sekolah) */}
       <div className="space-y-4">
