@@ -196,13 +196,29 @@ export function AppConfigProvider({ children }: { children: ReactNode }) {
 
   const save = useCallback(
     async (key: string, value: unknown) => {
+      // 1. Optimistic Update (UI langsung merespons)
+      setConfig((prev) => {
+        const next = { ...prev, [key]: value };
+        try {
+          localStorage.setItem(CACHE, JSON.stringify(next));
+        } catch { /* ignore */ }
+        return next;
+      });
+
+      // 2. Background Sync
       const { error } = await supabase
         .from("app_config")
         .upsert(
           { key, value, updated_at: new Date().toISOString() },
           { onConflict: "key" },
         );
-      if (error) { console.error(error); return; }
+        
+      if (error) {
+        console.warn("Failed to sync config to Supabase (RLS or offline), saved locally.", error);
+        return; 
+      }
+      
+      // Reload from server just to be perfectly synced
       await load();
     },
     [load],
