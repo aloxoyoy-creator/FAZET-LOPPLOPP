@@ -62,6 +62,8 @@ const AdminControl = lazy(() => import('./pages/admin/AdminControl'));
 const AdminHub = lazy(() => import('./pages/admin/AdminHub'));
 const AdminDigitalCards = lazy(() => import('./pages/admin/AdminDigitalCards'));
 
+import { AnimatePresence, motion } from 'framer-motion';
+
 function Page({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { isPathEnabled, branding } = useAppConfig();
@@ -72,19 +74,52 @@ function Page({ children }: { children: ReactNode }) {
   if (!isPathEnabled(pathname)) return (
     <AppShell><div className="grid min-h-[60vh] place-items-center p-6 text-center"><div><div className="text-lg font-bold">Fitur sedang dinonaktifkan</div><p className="mt-2 text-sm opacity-70">Admin menonaktifkan halaman ini untuk sementara.</p><a href="/" className="mt-4 inline-block font-bold text-blue-600">Kembali ke beranda</a></div></div></AppShell>
   );
+
   return (
     <AppShell>
       <RuntimeErrorBoundary>
-        <div key={window.location.pathname} className="page-transition">{children}</div>
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={pathname}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25, ease: "circOut" }}
+            className="h-full w-full"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </RuntimeErrorBoundary>
     </AppShell>
   );
 }
 
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
+
 function NativeBootstrap() {
   const navigate = useNavigate();
   const { push } = useToast();
-  useEffect(() => { void initNativeApp(); }, []);
+  
+  useEffect(() => { 
+    void initNativeApp(); 
+    
+    // Global Haptic Engine for "Tingkat Tinggi" feel
+    const handleTouch = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button') || target.closest('a') || target.closest('input[type="checkbox"]')) {
+        if (Capacitor.isNativePlatform()) {
+          Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
+        } else if (navigator.vibrate) {
+          navigator.vibrate(10);
+        }
+      }
+    };
+    document.addEventListener('touchstart', handleTouch, { passive: true });
+    return () => document.removeEventListener('touchstart', handleTouch);
+  }, []);
+  
   useHardwareBackButton(navigate, () => push({ tone: 'info', title: 'Tekan sekali lagi untuk keluar' }));
   return null;
 }
