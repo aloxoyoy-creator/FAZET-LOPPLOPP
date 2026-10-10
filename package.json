@@ -10,12 +10,12 @@
     "set:admin": "tsx scripts/setAdmin.ts",
     "create:admin": "tsx scripts/createAdmin.ts",
     "seed:supabase": "tsx scripts/seedSchedule.ts",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc",
     "dev:src": "vite",
-    "build:src": "tsc -b && vite build",
+    "build:src": "tsc && vite build",
     "dev": "vite",
     "start": "vite preview --port 5173 --host",
-    "build": "tsc -b && vite build"
+    "build": "tsc && vite build"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
