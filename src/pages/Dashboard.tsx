@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import JadwalSholat from '../components/widgets/JadwalSholat';
-import CountdownTKA from '../components/widgets/CountdownTKA';
+import TKADashboard from '../components/widgets/TKADashboard';
 import CurrentSubjectAlert from '../components/widgets/CurrentSubjectAlert';
 import YoutubeWidget from '../components/widgets/YoutubeWidget';
 import { useAuth } from '../context/AuthContext';
@@ -356,10 +356,10 @@ export default function Dashboard() {
 
       {/* 1. TIMELINE VERTIKAL (TKA, Tugas Besok, Jadwal Besok, Jadwal Les, Jadwal Sekolah) */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)] flex items-center gap-2"><ContinuousMotion intensity="medium" className="inline-block"><Layers3 size={16} /></ContinuousMotion> Timeline Hari Ini</h3>
-        <RandomMotion delayIndex={0}><Card className="p-5 overflow-hidden border border-[var(--tf-primary-subtle)]">
-          <div className="mb-6"><CountdownTKA /></div>
-          
+        <RandomMotion delayIndex={0}>
+          <TKADashboard />
+        </RandomMotion>
+        <RandomMotion delayIndex={1}><Card className="p-5 overflow-hidden border border-[var(--tf-primary-subtle)]">
           {/* Status Pelajaran (Jam/Menit/Detik menuju pelajaran berikutnya) */}
           <CurrentSubjectAlert />
           

@@ -61,6 +61,7 @@ const TimeBox = lazy(() => import('./pages/TimeBox'));
 const AdminControl = lazy(() => import('./pages/admin/AdminControl'));
 const AdminHub = lazy(() => import('./pages/admin/AdminHub'));
 const AdminDigitalCards = lazy(() => import('./pages/admin/AdminDigitalCards'));
+const TkaPage = lazy(() => import('./pages/TkaPage'));
 
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -163,6 +164,7 @@ export default function App() {
             <Route path="/schedule" element={<ProtectedRoute><Page><Schedule /></Page></ProtectedRoute>} />
             <Route path="/tutoring" element={<ProtectedRoute><Page><Tutoring /></Page></ProtectedRoute>} />
             <Route path="/simulasi-tka" element={<ProtectedRoute><Page><iframe src="/cbt_pusmendik_simulasi.html" style={{width: '100%', height: 'calc(100vh - 64px)', border: 'none', borderRadius: '8px'}}/></Page></ProtectedRoute>} />
+            <Route path="/tka" element={<ProtectedRoute><Page><TkaPage /></Page></ProtectedRoute>} />
             <Route path="/raport" element={<ProtectedRoute><Page><Raport /></Page></ProtectedRoute>} />
             <Route path="/rapor" element={<Navigate to="/raport" replace />} />
             <Route path="/calendar" element={<ProtectedRoute><Page><Calendar /></Page></ProtectedRoute>} />
