@@ -15,6 +15,7 @@ const primary = [
 const more = [
   { to: '/ai', label: 'FAZET AI', icon: Sparkles },
   { to: '/my-minee', label: 'My Minee', icon: Heart },
+  { to: '/lifestyle', label: 'Lifestyle', icon: Heart },
   { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
   { to: '/calendar', label: 'Timeline', icon: CalendarDays },
   { to: '/notes', label: 'Catatan', icon: StickyNote },

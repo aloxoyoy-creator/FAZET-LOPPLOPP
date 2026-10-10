@@ -25,6 +25,7 @@ export const getGroups = (workspaceId: WorkspaceId): NavGroup[] => [
       { to: '/chat', label: 'Chat', icon: MessageCircle },
       { to: '/ai', label: 'FAZET AI', icon: Sparkles },
       { to: '/my-minee', label: 'My Minee', icon: Heart },
+      { to: '/lifestyle', label: 'Lifestyle', icon: Heart },
     ],
   },
   {

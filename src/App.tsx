@@ -26,6 +26,7 @@ const Notifications = lazy(() => import('./pages/Notifications'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const About = lazy(() => import('./pages/About'));
+const Lifestyle = lazy(() => import('./pages/Lifestyle'));
 const Focus = lazy(() => import('./pages/Focus'));
 const SearchPage = lazy(() => import('./pages/Search'));
 const Insights = lazy(() => import('./pages/Insights'));
@@ -148,6 +149,7 @@ export default function App() {
             <Route path="/my-minee" element={<ProtectedRoute><Page><MyMinee /></Page></ProtectedRoute>} />
             <Route path="/timebox" element={<ProtectedRoute><TimeBox /></ProtectedRoute>} />
             <Route path="/mediabox" element={<ProtectedRoute><TimeBox /></ProtectedRoute>} />
+            <Route path="/lifestyle" element={<ProtectedRoute><Page><Lifestyle /></Page></ProtectedRoute>} />
             <Route path="/watch-party" element={<ProtectedRoute><TimeBox /></ProtectedRoute>} />
             <Route path="/remote" element={<RemotePage />} />
             <Route path="/join" element={<RemotePage />} />
