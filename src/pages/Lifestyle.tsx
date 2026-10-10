@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAppConfig } from '../context/AppConfigContext';
 import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import { Coffee, Heart, Moon, Sun, Utensils, BellRing, Sparkles, SwitchCamera, Play } from 'lucide-react';
-import { getNowWIB, getWIBDateForDay } from '../utils/timeUtils';
-import { getJadwalSholatHariIni } from '../utils/jadwalSholat';
+import { Coffee, Heart, Moon, Sun, Utensils, BellRing, Sparkles, Play } from 'lucide-react';
+import { getNowWIB } from '../utils/timeUtils';
+import { calculateOfflinePrayerTimes } from '../utils/jadwalSholat';
 import { showSystemNotification } from '../services/systemNotificationService';
 import { getRandomMessage } from '../utils/romanticMessages';
 
@@ -18,8 +17,11 @@ export default function Lifestyle() {
     return () => clearInterval(timer);
   }, []);
 
-  const todayStr = getWIBDateForDay(0).toISOString().split('T')[0];
-  const jadwal = getJadwalSholatHariIni(todayStr);
+  const prayerTimes = calculateOfflinePrayerTimes('Tuban', now);
+  const jadwal = {
+    imsak: prayerTimes.imsak,
+    maghrib: prayerTimes.maghrib
+  };
 
   const toggleFasting = (v: boolean) => {
     void appConfig.save('lifestyle', { ...lifestyle, isFasting: v });
@@ -30,15 +32,15 @@ export default function Lifestyle() {
   };
 
   const testNotifPagi = () => {
-    void showSystemNotification('Good Morning Sayang! ☀️', getRandomMessage('good_morning'), '/lifestyle', { soundType: 'reminder' });
+    void showSystemNotification('Good Morning Sayang! ☀️', getRandomMessage('goodMorning'), '/lifestyle', { soundType: 'reminder' });
   };
 
   const testNotifMakan = () => {
-    void showSystemNotification('Waktunya Makan! 🍽️', getRandomMessage('eat'), '/lifestyle', { soundType: 'reminder' });
+    void showSystemNotification('Waktunya Makan Siang! 🍽️', getRandomMessage('eatAfternoon'), '/lifestyle', { soundType: 'reminder' });
   };
 
   const testNotifMalam = () => {
-    void showSystemNotification('Good Night Sayang! 🌙', getRandomMessage('good_night'), '/lifestyle', { soundType: 'reminder' });
+    void showSystemNotification('Good Night Sayang! 🌙', getRandomMessage('goodNight'), '/lifestyle', { soundType: 'reminder' });
   };
 
   const testNotifSahur = () => {
@@ -103,8 +105,8 @@ export default function Lifestyle() {
           </p>
           {lifestyle.isFasting && jadwal && (
             <div className="space-y-2 mt-4 text-xs bg-white dark:bg-[#070b14] p-3 rounded-xl border border-amber-100 dark:border-amber-900/30">
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Coffee size={12}/> Sahur & Imsak ({jadwal.imsak} WIB)</span> <button onClick={testNotifSahur} className="flex items-center gap-1 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Utensils size={12}/> Buka ({jadwal.maghrib} WIB)</span> <button onClick={testNotifBuka} className="flex items-center gap-1 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
+              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Coffee size={12}/> Sahur & Imsak ({jadwal.imsak})</span> <button onClick={testNotifSahur} className="flex items-center gap-1 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
+              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Utensils size={12}/> Buka ({jadwal.maghrib})</span> <button onClick={testNotifBuka} className="flex items-center gap-1 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
             </div>
           )}
         </Card>
