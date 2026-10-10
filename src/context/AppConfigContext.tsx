@@ -57,6 +57,16 @@ export type AIConfig = { personalityName: string; systemPrompt: string; creativi
 
 export const DEFAULT_AI: AIConfig = { personalityName: 'FAZET AI', systemPrompt: 'Kamu adalah FAZET AI, asisten eksklusif dan setia milik Fathur dan Mazet. Tugasmu adalah membantu mereka dalam produktivitas, akademik, dan menjaga momen kebersamaan mereka. Jawablah dengan bahasa Indonesia yang hangat, cerdas, dan suportif.', creativityLevel: 0.7, greetingStyle: 'friendly' };
 
+export type LifestyleConfig = {
+  isFasting: boolean;
+  enableRomanticReminders: boolean;
+};
+
+export const DEFAULT_LIFESTYLE: LifestyleConfig = {
+  isFasting: false,
+  enableRomanticReminders: true,
+};
+
 export type BrandingConfig = {
   appName: string;
   announcement: string;
@@ -90,6 +100,7 @@ type Ctx = {
   dashboard: DashboardConfig;
   branding: BrandingConfig;
   ai: AIConfig;
+  lifestyle: LifestyleConfig;
   isPathEnabled: (path: string) => boolean;
   save: (key: string, value: unknown) => Promise<void>;
   ready: boolean;
@@ -170,6 +181,8 @@ export function AppConfigProvider({ children }: { children: ReactNode }) {
   );
 
   const ai = useMemo<AIConfig>(() => ({ ...DEFAULT_AI, ...((config.ai_config as Partial<AIConfig>) || {}) }), [config]);
+  
+  const lifestyle = useMemo<LifestyleConfig>(() => ({ ...DEFAULT_LIFESTYLE, ...((config.lifestyle as Partial<LifestyleConfig>) || {}) }), [config]);
 
   const isPathEnabled = useCallback(
     (path: string) => {
@@ -196,8 +209,8 @@ export function AppConfigProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ disabled, dashboard, branding, ai, isPathEnabled, save, ready }),
-    [disabled, dashboard, branding, ai, isPathEnabled, save, ready],
+    () => ({ disabled, dashboard, branding, ai, lifestyle, isPathEnabled, save, ready }),
+    [disabled, dashboard, branding, ai, lifestyle, isPathEnabled, save, ready],
   );
   return (
     <AppConfigContext.Provider value={value}>

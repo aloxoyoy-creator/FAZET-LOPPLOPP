@@ -7,6 +7,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { ACCENTS, AMBIENCES, FONT_SCALES, RADII, applyThemePrefs, isAccent, isAmbience, isDashboardLayout, isDashboardTheme, isFontScale, isHandedness, isMobileNavMode, isRadius, isSidebarMode, loadThemePrefs, saveThemePrefs, type Ambience, type DashboardLayout, type DashboardTheme, type FontScale, type Handedness, type MobileNavMode, type Radius, type SidebarMode } from '../lib/themePrefs';
+import { useAppConfig } from '../context/AppConfigContext';
 
 type ThemeMode = 'system' | 'light' | 'dark';
 type Density = 'compact' | 'comfortable' | 'spacious';
@@ -30,6 +31,7 @@ const LAYOUTS: Array<{ id: DashboardLayout; name: string; description: string; i
 export default function Settings() {
   const { user } = useAuth();
   const { push } = useToast();
+  const appConfig = useAppConfig();
   const stored = loadThemePrefs();
 
   const [loading, setLoading] = useState(true);
@@ -195,6 +197,27 @@ export default function Settings() {
               <ToggleRow label="Live status bar" value={showLiveBar ? 'on' : 'off'} options={[['on','Tampil'],['off','Sembunyikan']]} onChange={(v) => setShowLiveBar(v === 'on')} />
               <ToggleRow label="Watermark" value={showWatermark ? 'on' : 'off'} options={[['on','Tampil'],['off','Sembunyikan']]} onChange={(v) => setShowWatermark(v === 'on')} />
               <ToggleRow label="Awal minggu" value={weekStartsMonday ? 'monday' : 'sunday'} options={[['monday','Senin'],['sunday','Minggu']]} onChange={(v) => setWeekStartsMonday(v === 'monday')} />
+            </div>
+          </Card>
+
+          <Card className="p-4 sm:p-5 border-[var(--tf-primary)] bg-[var(--tf-primary-subtle)]/50">
+            <div className="studio-eyebrow text-[var(--tf-primary)]"><Sparkles size={13} /> Gaya Hidup & Romansa</div><h2 className="mt-1 text-lg font-semibold">Integrasi Lifestyle</h2>
+            <p className="mt-1 text-xs text-[var(--tf-text-muted)]">Pengaturan ini tersimpan ke Workspace (AppConfig) dan berlaku untuk notifikasi kalian berdua.</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <label className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1" checked={appConfig.lifestyle.enableRomanticReminders} onChange={(e) => void appConfig.save('lifestyle', { ...appConfig.lifestyle, enableRomanticReminders: e.target.checked })} />
+                <div>
+                  <div className="text-sm font-semibold">Reminders Romantis</div>
+                  <div className="text-[11px] text-[var(--tf-text-muted)]">Notifikasi manis di pagi, siang, dan malam.</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1" checked={appConfig.lifestyle.isFasting} onChange={(e) => void appConfig.save('lifestyle', { ...appConfig.lifestyle, isFasting: e.target.checked })} />
+                <div>
+                  <div className="text-sm font-semibold">Mode Puasa</div>
+                  <div className="text-[11px] text-[var(--tf-text-muted)]">Ganti notifikasi makan menjadi Sahur (Imsak -45m) & Berbuka (Maghrib).</div>
+                </div>
+              </label>
             </div>
           </Card>
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useAppConfig } from '../context/AppConfigContext';
 import {
   showSystemNotification,
   scheduleSystemNotification,
@@ -8,6 +9,8 @@ import {
   requestNotificationPermission
 } from '../services/systemNotificationService';
 import { calculateOfflinePrayerTimes, PRAYER_WISDOM } from '../utils/jadwalSholat';
+import { getWIBDateForDay } from '../utils/timeUtils';
+import { getRandomMessage } from '../utils/romanticMessages';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -30,6 +33,7 @@ const PRIORITY_LABELS: Record<string, string> = {
 
 export function usePushNotifications() {
   const { workspaceId } = useWorkspace();
+  const { lifestyle } = useAppConfig();
   const schedulingRef = useRef(false);
 
   useEffect(() => {
@@ -63,13 +67,16 @@ export function usePushNotifications() {
             }
           );
 
-          // Schedule D-1 reminder (at 18:00 the day before)
+          // Schedule D-1 reminder (at 18:00 WIB the day before)
           if (newTask.due_date) {
             const dueDate = new Date(newTask.due_date);
             if (!isNaN(dueDate.getTime())) {
-              const reminderDate = new Date(dueDate);
-              reminderDate.setDate(reminderDate.getDate() - 1);
-              reminderDate.setHours(18, 0, 0, 0);
+              // We need D-1 at 18:00 WIB. 
+              // We can calculate how many days from now dueDate is.
+              // But safer: get UTC time of due date, subtract 1 day, then get 18:00 WIB for that day.
+              const dMinus1 = new Date(dueDate);
+              dMinus1.setDate(dMinus1.getDate() - 1);
+              const reminderDate = getWIBDateForDay(0, 18, 0, dMinus1);
 
               if (reminderDate > new Date()) {
                 void scheduleSystemNotification(
@@ -83,9 +90,8 @@ export function usePushNotifications() {
                 );
               }
 
-              // Schedule Day-of morning reminder (at 06:30 on the due day)
-              const morningReminder = new Date(dueDate);
-              morningReminder.setHours(6, 30, 0, 0);
+              // Schedule Day-of morning reminder (at 06:30 WIB on the due day)
+              const morningReminder = getWIBDateForDay(0, 6, 30, dueDate);
               if (morningReminder > new Date()) {
                 void scheduleSystemNotification(
                   `🚨 Batas Pengumpulan Hari Ini: ${newTask.title}`,
@@ -114,11 +120,11 @@ export function usePushNotifications() {
       )
       .subscribe();
 
-    // 3. Setup Scheduled Events (Prayers with Detailed Hadith & Reminders)
+    // 3. Setup Scheduled Events (Prayers, Lifestyle, Fasting)
     const setupScheduledEvents = async () => {
-      if (schedulingRef.current) return;
-      schedulingRef.current = true;
-
+      // Force reschedule when lifestyle changes by not returning early here if we already scheduled?
+      // Actually we should clear and reschedule if config changes. 
+      // But we use a ref. Let's just allow it to run again if it's called.
       try {
         if (Capacitor.isNativePlatform()) {
           const pending = await LocalNotifications.getPending();
@@ -130,20 +136,18 @@ export function usePushNotifications() {
         const now = new Date();
         const city = workspaceId === 'fathur' ? 'Tuban' : 'Tasikmalaya';
 
-        // Pre-schedule prayers for the next 3 days
+        // Pre-schedule for the next 3 days
         for (let i = 0; i < 3; i++) {
           const targetDate = new Date(now);
           targetDate.setDate(targetDate.getDate() + i);
-
+          const todayStr = targetDate.toLocaleDateString('en-CA');
+          
           const dd = String(targetDate.getDate()).padStart(2, '0');
           const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
           const yyyy = targetDate.getFullYear();
-          const todayStr = targetDate.toLocaleDateString('en-CA');
 
           // Evening Briefing (18:00 WIB)
-          const eveningReminder = new Date(targetDate);
-          eveningReminder.setHours(18, 0, 0, 0);
-
+          const eveningReminder = getWIBDateForDay(i, 18, 0);
           if (eveningReminder > now) {
             void scheduleSystemNotification(
               `🎒 Agenda & Persiapan Besok (${city})`,
@@ -154,6 +158,83 @@ export function usePushNotifications() {
               'fazet_default_channel',
               'reminder'
             );
+          }
+
+          // ---- ROMANTIC & LIFESTYLE REMINDERS ----
+          if (lifestyle?.enableRomanticReminders) {
+             // Good Morning (05:30 WIB)
+             const gmDate = getWIBDateForDay(i, 5, 30);
+             if (gmDate > now) {
+                void scheduleSystemNotification(
+                  `☀️ Selamat Pagi Sayang`,
+                  getRandomMessage('goodMorning'),
+                  gmDate,
+                  '/',
+                  generateStringId(`gm-${todayStr}`),
+                  'fazet_default_channel',
+                  'reminder'
+                );
+             }
+             
+             // Good Night (22:00 WIB)
+             const gnDate = getWIBDateForDay(i, 22, 0);
+             if (gnDate > now) {
+                void scheduleSystemNotification(
+                  `🌙 Selamat Malam Sayang`,
+                  getRandomMessage('goodNight'),
+                  gnDate,
+                  '/',
+                  generateStringId(`gn-${todayStr}`),
+                  'fazet_default_channel',
+                  'reminder'
+                );
+             }
+
+             // Makan Pagi / Sarapan (07:00 WIB) - if not fasting
+             if (!lifestyle?.isFasting) {
+                 const eatMDate = getWIBDateForDay(i, 7, 0);
+                 if (eatMDate > now) {
+                    void scheduleSystemNotification(
+                      `🍳 Waktunya Sarapan!`,
+                      getRandomMessage('eatMorning'),
+                      eatMDate,
+                      '/',
+                      generateStringId(`eat-m-${todayStr}`),
+                      'fazet_default_channel',
+                      'reminder'
+                    );
+                 }
+
+                 // Makan Siang (12:30 WIB)
+                 const eatADate = getWIBDateForDay(i, 12, 30);
+                 if (eatADate > now) {
+                    void scheduleSystemNotification(
+                      `🍱 Waktunya Makan Siang!`,
+                      getRandomMessage('eatAfternoon'),
+                      eatADate,
+                      '/',
+                      generateStringId(`eat-a-${todayStr}`),
+                      'fazet_default_channel',
+                      'reminder'
+                    );
+                 }
+             }
+
+             // Makan Malam / Dinner (19:30 WIB) - if not fasting (fasting usually eats at Maghrib)
+             if (!lifestyle?.isFasting) {
+                 const eatEDate = getWIBDateForDay(i, 19, 30);
+                 if (eatEDate > now) {
+                    void scheduleSystemNotification(
+                      `🍛 Waktunya Makan Malam!`,
+                      getRandomMessage('eatEvening'),
+                      eatEDate,
+                      '/',
+                      generateStringId(`eat-e-${todayStr}`),
+                      'fazet_default_channel',
+                      'reminder'
+                    );
+                 }
+             }
           }
 
           // Prayer times: try online API, fallback to accurate offline calculation
@@ -192,6 +273,46 @@ export function usePushNotifications() {
           }
 
           if (timings) {
+            // -- Fasting / Puasa Reminders based on Prayer Times --
+            if (lifestyle?.isFasting) {
+               // Sahur at Imsak - 45 mins
+               if (timings.Imsak) {
+                  const [ih, im] = timings.Imsak.split(':').map(Number);
+                  const sahurDate = getWIBDateForDay(i, ih, im);
+                  sahurDate.setMinutes(sahurDate.getMinutes() - 45); // 45 mins before Imsak
+
+                  if (sahurDate > now) {
+                     void scheduleSystemNotification(
+                       `🍽️ Waktunya Sahur Sayang!`,
+                       getRandomMessage('sahur'),
+                       sahurDate,
+                       '/',
+                       generateStringId(`sahur-${todayStr}`),
+                       'fazet_default_channel',
+                       'reminder'
+                     );
+                  }
+               }
+
+               // Iftar / Buka Puasa at Maghrib exact
+               if (timings.Maghrib) {
+                  const [mh, mm_min] = timings.Maghrib.split(':').map(Number);
+                  const iftarDate = getWIBDateForDay(i, mh, mm_min);
+                  
+                  if (iftarDate > now) {
+                     void scheduleSystemNotification(
+                       `🌅 Waktunya Berbuka Puasa!`,
+                       getRandomMessage('iftar'),
+                       iftarDate,
+                       '/',
+                       generateStringId(`iftar-${todayStr}`),
+                       'fazet_default_channel',
+                       'alert'
+                     );
+                  }
+               }
+            }
+
             const prayers = [
               { key: 'Fajr', label: 'Subuh' },
               { key: 'Dhuhr', label: 'Dzuhur' },
@@ -205,8 +326,7 @@ export function usePushNotifications() {
               if (!timeStr) continue;
 
               const [hStr, mStr] = timeStr.split(':');
-              const prayerTime = new Date(targetDate);
-              prayerTime.setHours(parseInt(hStr, 10), parseInt(mStr, 10), 0, 0);
+              const prayerTime = getWIBDateForDay(i, parseInt(hStr, 10), parseInt(mStr, 10));
 
               const wisdom = PRAYER_WISDOM[label] || {
                 prepAdvice: `Waktu ${label} di ${city} kurang 10 menit lagi.`,
@@ -250,10 +370,11 @@ export function usePushNotifications() {
       }
     };
 
+    // Whenever workspaceId or lifestyle changes, we recalculate schedules
     void setupScheduledEvents();
 
     return () => {
       supabase.removeChannel(tasksSubscription);
     };
-  }, [workspaceId]);
+  }, [workspaceId, lifestyle]); // Dependency array updated to re-run when lifestyle changes
 }
