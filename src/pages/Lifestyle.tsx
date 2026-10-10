@@ -8,7 +8,7 @@ import { showSystemNotification } from '../services/systemNotificationService';
 import { getRandomMessage } from '../utils/romanticMessages';
 
 export default function Lifestyle() {
-  const { appConfig } = useAppConfig();
+  const appConfig = useAppConfig();
   const { lifestyle } = appConfig;
   const [now, setNow] = useState(getNowWIB());
 
