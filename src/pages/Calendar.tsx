@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpenCheck, CalendarDays, UserRound, ChevronLeft, ChevronRight, CircleAlert, Download, GraduationCap, PartyPopper, Sun, Clock, BookOpen, AlertCircle, FileText, CheckCircle2 } from 'lucide-react';
+import { BookOpenCheck, CalendarDays, UserRound, ChevronLeft, ChevronRight, CircleAlert, Download, GraduationCap, PartyPopper, Sun, Clock, BookOpen, AlertCircle, FileText, CheckCircle2, Target } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -406,8 +406,39 @@ export default function Calendar() {
                 </section>
               )}
 
+              {/* Sesi Fokus Belajar Hari Ini */}
+              {selectedFocus.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Target size={16} className="text-indigo-500" />
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Sesi Fokus Belajar</h3>
+                    <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800"></div>
+                  </div>
+                  <div className="space-y-2.5">
+                    {selectedFocus.map((f, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30">
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <Target size={16} />
+                          </div>
+                          <div>
+                            <div className="text-xs font-extrabold text-slate-900 dark:text-white">
+                              {f.minutes} Menit Fokus
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-medium">
+                              Selesai jam {new Date(f.started_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="primary" size="sm">Selesai</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* Empty State */}
-              {selectedTasks.length === 0 && selectedHoliday.length === 0 && selectedTutoring.length === 0 && (!schoolDay || selectedSchedule.length === 0) && !isWeekend(selected) && (
+              {selectedTasks.length === 0 && selectedHoliday.length === 0 && selectedTutoring.length === 0 && selectedFocus.length === 0 && (!schoolDay || selectedSchedule.length === 0) && !isWeekend(selected) && (
                 <div className="flex flex-col items-center justify-center py-10 text-center px-4 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
                   <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-full mb-3 text-slate-400">
                     <CalendarDays size={24} />

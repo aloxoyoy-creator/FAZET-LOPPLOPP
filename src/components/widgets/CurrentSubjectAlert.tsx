@@ -18,8 +18,8 @@ export default function CurrentSubjectAlert() {
     return () => clearInterval(timer);
   }, []);
 
+  const todayDay = jakartaWeekday(now);
   const todayTimeline = useMemo(() => {
-    const todayDay = jakartaWeekday(now);
     const todayItems = schedule
       .filter((item) => item.active && item.day === todayDay)
       .sort((a, b) => minutes(a.startTime) - minutes(b.startTime));
@@ -38,7 +38,7 @@ export default function CurrentSubjectAlert() {
       }
     }
     return groups;
-  }, [now, schedule]);
+  }, [todayDay, schedule]);
 
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
