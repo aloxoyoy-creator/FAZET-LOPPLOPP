@@ -4,13 +4,15 @@ import Card from '../components/ui/Card';
 import { Coffee, Heart, Moon, Sun, Utensils, BellRing, Sparkles, Play } from 'lucide-react';
 import { getNowWIB } from '../utils/timeUtils';
 import { calculateOfflinePrayerTimes } from '../utils/jadwalSholat';
-import { showSystemNotification } from '../services/systemNotificationService';
+import { showSystemNotification, checkNotificationPermission, requestNotificationPermission } from '../services/systemNotificationService';
 import { getRandomMessage } from '../utils/romanticMessages';
+import { useToast } from '../components/ui/Toast';
 
 export default function Lifestyle() {
   const appConfig = useAppConfig();
   const { lifestyle } = appConfig;
   const [now, setNow] = useState(getNowWIB());
+  const toast = useToast();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(getNowWIB()), 60000);
@@ -31,25 +33,24 @@ export default function Lifestyle() {
     void appConfig.save('lifestyle', { ...lifestyle, enableRomanticReminders: v });
   };
 
-  const testNotifPagi = () => {
-    void showSystemNotification('Good Morning Sayang! ☀️', getRandomMessage('goodMorning'), '/lifestyle', { soundType: 'reminder' });
+  const handleTest = async (title: string, message: string, soundType: 'reminder' | 'prayer' | 'success') => {
+    let perm = await checkNotificationPermission();
+    if (perm !== 'granted') {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        toast.push({ tone: 'error', title: 'Izin Ditolak', message: 'Tidak dapat menampilkan notifikasi percobaan. Izinkan notifikasi di pengaturan browser/HP kamu.' });
+        return;
+      }
+    }
+    toast.push({ tone: 'info', title: 'Menguji Notifikasi...', message: 'Notifikasi akan segera muncul.' });
+    void showSystemNotification(title, message, '/lifestyle', { soundType });
   };
 
-  const testNotifMakan = () => {
-    void showSystemNotification('Waktunya Makan Siang! 🍽️', getRandomMessage('eatAfternoon'), '/lifestyle', { soundType: 'reminder' });
-  };
-
-  const testNotifMalam = () => {
-    void showSystemNotification('Good Night Sayang! 🌙', getRandomMessage('goodNight'), '/lifestyle', { soundType: 'reminder' });
-  };
-
-  const testNotifSahur = () => {
-    void showSystemNotification('Waktunya Sahur! ☕', getRandomMessage('sahur'), '/lifestyle', { soundType: 'prayer' });
-  };
-
-  const testNotifBuka = () => {
-    void showSystemNotification('Alhamdulillah Waktunya Berbuka! 🍽️', getRandomMessage('iftar'), '/lifestyle', { soundType: 'success' });
-  };
+  const testNotifPagi = () => handleTest('Good Morning Sayang! ☀️', getRandomMessage('goodMorning'), 'reminder');
+  const testNotifMakan = () => handleTest('Waktunya Makan Siang! 🍽️', getRandomMessage('eatAfternoon'), 'reminder');
+  const testNotifMalam = () => handleTest('Good Night Sayang! 🌙', getRandomMessage('goodNight'), 'reminder');
+  const testNotifSahur = () => handleTest('Waktunya Sahur! ☕', getRandomMessage('sahur'), 'prayer');
+  const testNotifBuka = () => handleTest('Alhamdulillah Waktunya Berbuka! 🍽️', getRandomMessage('iftar'), 'success');
 
   return (
     <div className="space-y-6 max-w-3xl">

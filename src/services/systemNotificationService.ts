@@ -228,8 +228,11 @@ export async function showSystemNotification(
   actionUrl?: string,
   options?: Partial<SystemNotificationOptions>
 ) {
-  const perm = await checkNotificationPermission();
-  if (perm !== 'granted') return;
+  let perm = await checkNotificationPermission();
+  if (perm !== 'granted') {
+    const granted = await requestNotificationPermission();
+    if (!granted) return;
+  }
 
   const soundType = options?.soundType || (options?.channelId === 'fazet_prayer_channel' ? 'prayer' : options?.channelId === 'fazet_task_channel' ? 'task' : 'reminder');
   playNotificationSound(soundType);
@@ -300,8 +303,11 @@ export async function scheduleSystemNotification(
   channelId: 'fazet_prayer_channel' | 'fazet_task_channel' | 'fazet_default_channel' = 'fazet_default_channel',
   soundType: NotificationSoundType = 'reminder'
 ) {
-  const perm = await checkNotificationPermission();
-  if (perm !== 'granted') return;
+  let perm = await checkNotificationPermission();
+  if (perm !== 'granted') {
+    const granted = await requestNotificationPermission();
+    if (!granted) return;
+  }
 
   if (Capacitor.isNativePlatform()) {
     try {
