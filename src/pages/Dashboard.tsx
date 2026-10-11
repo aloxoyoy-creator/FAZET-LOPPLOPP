@@ -1,4 +1,5 @@
 import { useAppConfig } from '../context/AppConfigContext';
+import { SmoothCard } from '../components/ui/Motion';
 import RandomMotion from '../components/ui/RandomMotion';
 import ContinuousMotion from '../components/ui/ContinuousMotion';
 import { Fragment, useEffect, useMemo, useState } from 'react';
