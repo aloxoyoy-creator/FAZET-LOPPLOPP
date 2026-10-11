@@ -7,7 +7,7 @@ export default function TKADashboard() {
   const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
   
   useEffect(() => {
-    const targetDate = new Date(2026, 9, 26, 0, 0, 0).getTime();
+    const targetDate = new Date(2026, 11, 15, 0, 0, 0).getTime();
     const interval = setInterval(() => {
       const distance = targetDate - new Date().getTime();
       if (distance < 0) {
@@ -42,13 +42,13 @@ export default function TKADashboard() {
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-6 sm:p-8 gap-8">
           <div className="flex-1 text-center md:text-left">
             <Badge variant="warning" className="mb-4 inline-flex shadow-[0_0_15px_rgba(251,146,60,0.4)]">
-              <Flame size={14} className="mr-1" /> Ujian TKA & SNBT
+              <Flame size={14} className="mr-1" /> Event Terbesar Tahun Ini
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/70 mb-2">
-              Tes Kemampuan Akademik
+              BAZAR EDSA 2026
             </h2>
             <p className="text-slate-400 font-medium flex items-center justify-center md:justify-start gap-2">
-              <Calendar size={16} /> 26 Oktober 2026
+              <Calendar size={16} /> 15 Desember 2026
             </p>
           </div>
 
