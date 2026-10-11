@@ -13,6 +13,7 @@ import { errorMessage, formatDateTime } from '../lib/utils';
 import { useToast } from '../components/ui/Toast';
 import { useTasks } from '../hooks/useTasks';
 import { getRecentLoginSessions, type LoginSession } from '../services/loginSessionService';
+import MazetTaskHistory from '../components/profile/MazetTaskHistory';
 
 export default function Profile() {
   const { user, profile, refreshProfile, isAdmin } = useAuth();
@@ -226,6 +227,12 @@ export default function Profile() {
             <Card className="p-5"><div className="flex items-center justify-between gap-3"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">User ID (Cari chat)</div><button type="button" onClick={() => void copyUserId()} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800" aria-label="Salin User ID"><Copy size={14}/></button></div><div className="mt-2 break-all font-mono text-xs text-slate-600 dark:text-slate-300">{user?.id}</div></Card>
           </div>
       </div>
+
+      {/* RIWAYAT TUGAS MAZET */}
+      <MazetTaskHistory 
+        userId={user?.id} 
+        isMazetView={workspaceId === 'mazet' || profile?.workspaceId === 'mazet' || (profile?.name || '').toLowerCase().includes('mazet')} 
+      />
       
       {/* CHANGE PASSWORD SECTION */}
       <Card className="p-6 mb-6">
