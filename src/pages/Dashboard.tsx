@@ -164,46 +164,53 @@ function MineePreviewCard() {
 
   return (
     <Card interactive className="overflow-hidden p-0 rounded-3xl border border-[var(--tf-border)] shadow-sm">
-      <div className="border-b border-[var(--tf-border)] p-5">
-        <div className="flex items-start justify-between gap-3">
+      <div className="border-b border-[var(--tf-border)] p-5 sm:p-6 bg-gradient-to-r from-rose-500/10 via-[var(--tf-bg-surface)] to-[var(--tf-bg-surface)]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="studio-eyebrow flex items-center gap-1.5 text-rose-500 font-bold">
-              <ContinuousMotion intensity="low" className="inline-block"><Images size={13} /></ContinuousMotion> My Minee
+              <ContinuousMotion intensity="low" className="inline-block"><Images size={14} /></ContinuousMotion> My Minee • Galeri Kenangan Kita
             </div>
-            <h3 className="mt-1 text-base font-bold text-[var(--tf-text-primary)]">Foto-foto perjalanan kita</h3>
+            <h3 className="mt-1 text-lg font-bold text-[var(--tf-text-primary)]">Momen & Foto Perjalanan Kita Berdua</h3>
             <p className="mt-0.5 text-xs text-[var(--tf-text-muted)]">
-              Koleksi kenangan dan momen manis kita berdua tersimpan di galeri
+              Koleksi foto romantis yang tersimpan di cloud gallery My Minee
             </p>
           </div>
-          <Link to="/my-minee" className="studio-action studio-action--soft shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl">Buka</Link>
+          <Link to="/my-minee" className="studio-action studio-action--soft self-start sm:self-center shrink-0 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-xs">
+            <Heart size={13} fill="currentColor" /> Buka Galeri Lengkap
+          </Link>
         </div>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-4 gap-2 p-3">
-          {Array.from({ length: 8 }).map((_, index) => <div key={index} className="aspect-square animate-pulse rounded-xl bg-[var(--tf-bg-subtle)]" />)}
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5 p-4 sm:p-5">
+          {Array.from({ length: 8 }).map((_, index) => <div key={index} className="aspect-square animate-pulse rounded-2xl bg-[var(--tf-bg-subtle)]" />)}
         </div>
       ) : items.length ? (
-        <div className="grid grid-cols-4 gap-2 p-3">
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5 p-4 sm:p-5">
           {items.map((item) => (
-            <Link key={item.id} to="/my-minee" className="group relative aspect-square overflow-hidden rounded-xl bg-[var(--tf-bg-subtle)]">
+            <Link key={item.id} to="/my-minee" className="group relative aspect-square overflow-hidden rounded-2xl bg-[var(--tf-bg-subtle)] border border-[var(--tf-border)] shadow-xs">
               {urls[item.id] ? (
-                <img src={urls[item.id]} alt={item.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                <img src={urls[item.id]} alt={item.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
               ) : (
                 <div className="grid h-full w-full place-items-center text-[var(--tf-text-muted)]"><Heart size={16} /></div>
               )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                <span className="text-[10px] text-white font-medium truncate">{item.title}</span>
+              </div>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="p-5 text-xs text-center text-[var(--tf-text-muted)]">
+        <div className="p-6 text-xs text-center text-[var(--tf-text-muted)]">
           Koleksi foto belum dapat dipreview dari sesi ini. Halaman My Minee tetap terhubung ke galeri storage.
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 border-t border-[var(--tf-border)] px-5 py-3 text-xs text-[var(--tf-text-muted)] bg-[var(--tf-bg-subtle)]/40">
-        <span>{count == null ? 'Koleksi My Minee' : `${count} item tersimpan`}</span>
-        <Link to="/my-minee" className="font-semibold text-[var(--tf-primary)] hover:underline">Lihat semua →</Link>
+      <div className="flex items-center justify-between gap-3 border-t border-[var(--tf-border)] px-5 sm:px-6 py-3 text-xs text-[var(--tf-text-muted)] bg-[var(--tf-bg-subtle)]/40">
+        <span>{count == null ? 'Koleksi My Minee' : `${count} foto tersimpan di galeri`}</span>
+        <Link to="/my-minee" className="font-semibold text-rose-500 hover:underline flex items-center gap-1">
+          Lihat semua foto →
+        </Link>
       </div>
     </Card>
   );
@@ -346,7 +353,7 @@ export default function Dashboard() {
             Selamat {now.getHours() < 11 ? 'Pagi' : now.getHours() < 15 ? 'Siang' : now.getHours() < 18 ? 'Sore' : 'Malam'}, {firstName}! ✨
           </h1>
           <p className="text-xs sm:text-sm text-[var(--tf-text-muted)] mt-0.5">
-            {new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(now)} • Semoga harimu menyenangkan dan selalu semangat! ❤️
+            {new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(now)} • Semoga harimu menyenangkan dan selalu berkah! ❤️
           </p>
         </div>
 
@@ -375,7 +382,23 @@ export default function Dashboard() {
       {/* 3. Quick Actions Menu (6 Buttons) */}
       <RandomMotion delayIndex={0}><QuickActions /></RandomMotion>
 
-      {/* 4. Digital ID Banner & AI Assistants */}
+      {/* 4. WAKTU SHOLAT & IBADAH (PALING ATAS SESUAI PERMINTAAN USER) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--tf-text-secondary)]">
+            <Clock3 size={15} className="text-emerald-500" />
+            <span>Waktu Sholat & Ibadah ({workspaceId === 'fathur' ? 'Tuban' : 'Tasikmalaya'})</span>
+          </div>
+          <Link to="/lifestyle" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+            Buka Jadwal Lengkap →
+          </Link>
+        </div>
+        <div className="rounded-3xl overflow-hidden shadow-sm border border-[var(--tf-border)] bg-gradient-to-br from-emerald-500/10 via-[var(--tf-bg-surface)] to-[var(--tf-bg-surface)] p-5 sm:p-6">
+          <RandomMotion delayIndex={1}><JadwalSholat /></RandomMotion>
+        </div>
+      </div>
+
+      {/* 5. Digital ID Banner & AI Assistants */}
       <RandomMotion delayIndex={1}>
         <div className="space-y-4">
           <DigitalIdCardBanner />
@@ -386,10 +409,10 @@ export default function Dashboard() {
         </div>
       </RandomMotion>
 
-      {/* 5. TATA LETAK BENTO DUAL-COLUMN (LEBIH KECE, CASUAL & SEIMBANG) */}
+      {/* 6. TATA LETAK BENTO DUAL-COLUMN (AKADEMIK & ROMANTIS) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* KOLOM KIRI (7-8 Kolom): AKADEMIK, JADWAL, TUGAS, HIBURAN & SHOLAT */}
+        {/* KOLOM KIRI (7-8 Kolom): AKADEMIK, JADWAL & TUGAS */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
           
           {/* A. TKA Dashboard (Target & Countdown TKA) */}
@@ -516,29 +539,9 @@ export default function Dashboard() {
             </Card>
           </RandomMotion>
 
-          {/* C. Hiburan & Fokus Belajar */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--tf-text-secondary)]">
-              <Tv size={14} className="text-indigo-500" />
-              <span>Hiburan & Fokus Belajar</span>
-            </div>
-            <YoutubeWidget />
-          </div>
-
-          {/* D. Waktu Sholat */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--tf-text-secondary)]">
-              <Clock3 size={14} className="text-emerald-500" />
-              <span>Waktu Sholat & Ibadah</span>
-            </div>
-            <div className="rounded-3xl overflow-hidden shadow-sm border border-[var(--tf-border)] bg-gradient-to-br from-[var(--tf-primary-subtle)]/30 via-[var(--tf-bg-surface)] to-[var(--tf-bg-surface)] p-5 sm:p-6">
-              <RandomMotion delayIndex={1}><JadwalSholat /></RandomMotion>
-            </div>
-          </div>
-
         </div>
 
-        {/* KOLOM KANAN (4-5 Kolom): HUB ROMANTIS, ANNIVERSARY, ULANG TAHUN & MY MINEE */}
+        {/* KOLOM KANAN (4-5 Kolom): HUB ROMANTIS, ANNIVERSARY & ULANG TAHUN */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
           
           {/* A. Romantic Hero Card */}
@@ -659,10 +662,21 @@ export default function Dashboard() {
             </Link>
           </Card>
 
-          {/* D. My Minee Gallery Preview */}
-          <MineePreviewCard />
-
         </div>
+      </div>
+
+      {/* 7. MY MINEE (TENGAH SESUAI PERMINTAAN USER) */}
+      <div className="space-y-3">
+        <MineePreviewCard />
+      </div>
+
+      {/* 8. HIBURAN & FOKUS BELAJAR (YOUTUBE) (PALING BAWAH SESUAI PERMINTAAN USER) */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--tf-text-secondary)]">
+          <Tv size={15} className="text-indigo-500" />
+          <span>Hiburan & Fokus Belajar (YouTube)</span>
+        </div>
+        <YoutubeWidget />
       </div>
 
       {/* Task Modal Form */}
