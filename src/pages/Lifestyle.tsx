@@ -7,6 +7,7 @@ import { calculateOfflinePrayerTimes } from '../utils/jadwalSholat';
 import { showSystemNotification, checkNotificationPermission, requestNotificationPermission } from '../services/systemNotificationService';
 import { getRandomMessage } from '../utils/romanticMessages';
 import { useToast } from '../components/ui/Toast';
+import GoodMorningMessage from '../components/widgets/GoodMorningMessage';
 
 export default function Lifestyle() {
   const appConfig = useAppConfig();
@@ -63,7 +64,7 @@ export default function Lifestyle() {
           Pusat kontrol rutinitas manis dan ibadah kalian berdua. Notifikasi akan disinkronisasi dalam waktu WIB.
         </p>
       </header>
-
+      <GoodMorningMessage />
       <div className="grid sm:grid-cols-2 gap-4">
         {/* Card Romantis */}
         <Card className={`p-5 border-2 transition-all ${lifestyle.enableRomanticReminders ? 'border-rose-400 bg-rose-50/50 dark:bg-rose-950/20' : 'border-transparent'}`}>
