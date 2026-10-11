@@ -32,6 +32,7 @@ import {
   Timer,
   Tv,
   Layers3,
+  Target,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import JadwalSholat from '../components/widgets/JadwalSholat';
@@ -225,23 +226,39 @@ function MineePreviewCard() {
 
 
 function QuickActions() {
+  const { workspaceId } = useWorkspace();
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-      <Link to="/tasks" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-3 bg-blue-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><ListTodo size={24} className="text-blue-500"/></div>
-        <span className="text-sm font-semibold transition-colors group-hover:text-blue-600">Tugas</span>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
+      <Link to="/tasks" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-2.5 bg-blue-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><ListTodo size={22} className="text-blue-500"/></div>
+        <span className="text-xs font-semibold transition-colors group-hover:text-blue-600">Tugas</span>
       </Link>
-      <Link to="/notes" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-3 bg-emerald-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><StickyNote size={24} className="text-emerald-500"/></div>
-        <span className="text-sm font-semibold transition-colors group-hover:text-emerald-600">Catatan</span>
+      <Link to="/notes" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-2.5 bg-emerald-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><StickyNote size={22} className="text-emerald-500"/></div>
+        <span className="text-xs font-semibold transition-colors group-hover:text-emerald-600">Catatan</span>
       </Link>
-      <Link to="/ai" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-3 bg-fuchsia-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:animate-pulse"><Sparkles size={24} className="text-fuchsia-500"/></div>
-        <span className="text-sm font-semibold transition-colors group-hover:text-fuchsia-600">Tanya AI</span>
+      <Link to="/lifestyle" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-2.5 bg-rose-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><CalendarHeart size={22} className="text-rose-500"/></div>
+        <span className="text-xs font-semibold transition-colors group-hover:text-rose-600">Romansa</span>
       </Link>
-      <Link to="/my-minee" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-3 bg-rose-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><Heart size={24} className="text-rose-500 group-hover:animate-ping" style={{ animationDuration: '2s' }} /></div>
-        <span className="text-sm font-semibold transition-colors group-hover:text-rose-600">My Minee</span>
+      {workspaceId !== 'mazet' ? (
+        <Link to="/tka" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+          <div className="p-2.5 bg-amber-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><Target size={22} className="text-amber-500"/></div>
+          <span className="text-xs font-semibold transition-colors group-hover:text-amber-600">CBT TKA</span>
+        </Link>
+      ) : (
+        <Link to="/schedule" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+          <div className="p-2.5 bg-indigo-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><CalendarClock size={22} className="text-indigo-500"/></div>
+          <span className="text-xs font-semibold transition-colors group-hover:text-indigo-600">Kuliah</span>
+        </Link>
+      )}
+      <Link to="/ai" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-2.5 bg-fuchsia-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:animate-pulse"><Sparkles size={22} className="text-fuchsia-500"/></div>
+        <span className="text-xs font-semibold transition-colors group-hover:text-fuchsia-600">Tanya AI</span>
+      </Link>
+      <Link to="/my-minee" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-2.5 bg-rose-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><Heart size={22} className="text-rose-500 group-hover:animate-ping" style={{ animationDuration: '2s' }} /></div>
+        <span className="text-xs font-semibold transition-colors group-hover:text-rose-600">My Minee</span>
       </Link>
     </div>
   );

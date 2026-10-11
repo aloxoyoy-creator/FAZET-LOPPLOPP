@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useAppConfig } from '../context/AppConfigContext';
 import Card from '../components/ui/Card';
-import { Coffee, Heart, Moon, Sun, Utensils, BellRing, Sparkles, Play } from 'lucide-react';
+import { Coffee, Heart, Moon, Sun, Utensils, BellRing, Sparkles, Play, Headphones, BookOpen } from 'lucide-react';
 import { getNowWIB } from '../utils/timeUtils';
 import { calculateOfflinePrayerTimes } from '../utils/jadwalSholat';
 import { showSystemNotification, checkNotificationPermission, requestNotificationPermission } from '../services/systemNotificationService';
 import { getRandomMessage } from '../utils/romanticMessages';
 import { useToast } from '../components/ui/Toast';
+
+// Imported Real Lifestyle Modules
 import GoodMorningMessage from '../components/widgets/GoodMorningMessage';
+import LoveMilestoneTracker from '../components/lifestyle/LoveMilestoneTracker';
+import LoveLettersVault from '../components/lifestyle/LoveLettersVault';
+import CoupleMoodTracker from '../components/lifestyle/CoupleMoodTracker';
+import CoupleBucketList from '../components/lifestyle/CoupleBucketList';
+import CoupleSoundscape from '../components/lifestyle/CoupleSoundscape';
+import WaterIntakeTracker from '../components/lifestyle/WaterIntakeTracker';
+import CouplePrayersAndRoutines from '../components/lifestyle/CouplePrayersAndRoutines';
 
 export default function Lifestyle() {
   const appConfig = useAppConfig();
   const { lifestyle } = appConfig;
   const [now, setNow] = useState(getNowWIB());
   const toast = useToast();
+  const [activeTab, setActiveTab] = useState<'romansa' | 'ibadah' | 'suasana'>('romansa');
 
   useEffect(() => {
     const timer = setInterval(() => setNow(getNowWIB()), 60000);
@@ -43,7 +53,7 @@ export default function Lifestyle() {
         return;
       }
     }
-    toast.push({ tone: 'info', title: 'Menguji Notifikasi...', message: 'Notifikasi akan segera muncul.' });
+    toast.push({ tone: 'info', title: 'Menguji Notifikasi...', message: 'Notifikasi akan segera muncul di layar.' });
     void showSystemNotification(title, message, '/lifestyle', { soundType });
   };
 
@@ -54,76 +64,180 @@ export default function Lifestyle() {
   const testNotifBuka = () => handleTest('Alhamdulillah Waktunya Berbuka! 🍽️', getRandomMessage('iftar'), 'success');
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-5xl mx-auto pb-24">
+      {/* Header */}
       <header className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <Heart className="text-rose-500" />
-          Lifestyle & Romansa
+        <div className="flex items-center gap-2 text-rose-500 font-bold text-xs tracking-widest uppercase mb-2">
+          <Sparkles size={16} /> Ruang Cinta & Kehidupan Berdua
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-black flex items-center gap-3 text-slate-900 dark:text-white">
+          <Heart className="text-rose-500 fill-rose-500" />
+          Lifestyle & Romansa Fathur & Mazet
         </h1>
-        <p className="text-[var(--tf-text-muted)] mt-2">
-          Pusat kontrol rutinitas manis dan ibadah kalian berdua. Notifikasi akan disinkronisasi dalam waktu WIB.
+        <p className="text-[var(--tf-text-muted)] mt-2 text-sm max-w-2xl">
+          Pusat komando kebiasaan manis, jejak milestone cinta, brankas surat rahasia, suasana belajar, dan ibadah harian berdua.
         </p>
       </header>
-      <GoodMorningMessage />
-      <div className="grid sm:grid-cols-2 gap-4">
-        {/* Card Romantis */}
-        <Card className={`p-5 border-2 transition-all ${lifestyle.enableRomanticReminders ? 'border-rose-400 bg-rose-50/50 dark:bg-rose-950/20' : 'border-transparent'}`}>
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2.5 bg-rose-100 dark:bg-rose-900 rounded-xl text-rose-600 dark:text-rose-300">
-              <Sun size={24} />
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked={lifestyle.enableRomanticReminders} onChange={(e) => toggleRomantic(e.target.checked)} />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-rose-500"></div>
-            </label>
-          </div>
-          <h2 className="text-lg font-bold">Reminders Romantis</h2>
-          <p className="text-sm text-[var(--tf-text-muted)] mt-1 mb-4">
-            Notifikasi spesial pengingat Good Morning, Makan Siang, dan Good Night yang tidak akan monoton.
-          </p>
-          {lifestyle.enableRomanticReminders && (
-            <div className="space-y-2 mt-4 text-xs bg-white dark:bg-[#070b14] p-3 rounded-xl border border-rose-100 dark:border-rose-900/30">
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Sun size={12}/> Pagi (05:30)</span> <button onClick={testNotifPagi} className="flex items-center gap-1 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Utensils size={12}/> Siang (12:30)</span> <button onClick={testNotifMakan} className="flex items-center gap-1 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Moon size={12}/> Malam (22:00)</span> <button onClick={testNotifMalam} className="flex items-center gap-1 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
-            </div>
-          )}
-        </Card>
 
-        {/* Card Puasa */}
-        <Card className={`p-5 border-2 transition-all ${lifestyle.isFasting ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20' : 'border-transparent'}`}>
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2.5 bg-amber-100 dark:bg-amber-900 rounded-xl text-amber-600 dark:text-amber-300">
-              <Coffee size={24} />
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked={lifestyle.isFasting} onChange={(e) => toggleFasting(e.target.checked)} />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
-            </label>
-          </div>
-          <h2 className="text-lg font-bold">Mode Puasa</h2>
-          <p className="text-sm text-[var(--tf-text-muted)] mt-1 mb-4">
-            Sesuaikan pengingat makan menjadi peringatan Sahur (45 menit sebelum Imsak) dan Berbuka (saat Maghrib).
-          </p>
-          {lifestyle.isFasting && jadwal && (
-            <div className="space-y-2 mt-4 text-xs bg-white dark:bg-[#070b14] p-3 rounded-xl border border-amber-100 dark:border-amber-900/30">
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Coffee size={12}/> Sahur & Imsak ({jadwal.imsak})</span> <button onClick={testNotifSahur} className="flex items-center gap-1 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2"><Utensils size={12}/> Buka ({jadwal.maghrib})</span> <button onClick={testNotifBuka} className="flex items-center gap-1 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded-md"><Play size={10}/> Test</button></div>
-            </div>
-          )}
-        </Card>
+      {/* Navigation Tabs */}
+      <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl w-full sm:w-fit gap-1 text-xs font-bold">
+        <button
+          onClick={() => setActiveTab('romansa')}
+          className={`flex-1 sm:px-6 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'romansa'
+              ? 'bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-300 shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <Heart size={14} className={activeTab === 'romansa' ? 'fill-rose-500 text-rose-500' : ''} />
+          Romansa & Hubungan
+        </button>
+
+        <button
+          onClick={() => setActiveTab('ibadah')}
+          className={`flex-1 sm:px-6 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'ibadah'
+              ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-300 shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <BookOpen size={14} />
+          Ibadah & Kesehatan
+        </button>
+
+        <button
+          onClick={() => setActiveTab('suasana')}
+          className={`flex-1 sm:px-6 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'suasana'
+              ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-300 shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <Headphones size={14} />
+          Suasana & Belajar
+        </button>
       </div>
 
-      <Card className="p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BellRing size={16} className="text-[var(--tf-primary)]" />
-          <h2 className="font-bold">Info Sinkronisasi WIB</h2>
+      {/* TAB 1: ROMANSA & HUBUNGAN */}
+      {activeTab === 'romansa' && (
+        <div className="space-y-6 fade-up">
+          {/* Milestone & Days Together */}
+          <LoveMilestoneTracker />
+
+          {/* Sapaan Manja Pagi */}
+          <GoodMorningMessage />
+
+          {/* Mood Check-In */}
+          <CoupleMoodTracker />
+
+          {/* Brankas Surat Cinta */}
+          <LoveLettersVault />
+
+          {/* Bucket List & Wishlist */}
+          <CoupleBucketList />
         </div>
-        <p className="text-sm text-[var(--tf-text-muted)] leading-relaxed">
-          Seluruh waktu notifikasi di FAZET LOPP LOPP secara ketat disinkronisasi ke <strong>Waktu Indonesia Barat (WIB)</strong>. 
-          Meski sistem HP kalian berada di WITA atau WIT, notifikasi akan berbunyi tepat waktu secara bersamaan untuk kalian berdua sesuai zona waktu Fathur (WIB).
-        </p>
-      </Card>
+      )}
+
+      {/* TAB 2: IBADAH & KESEHATAN */}
+      {activeTab === 'ibadah' && (
+        <div className="space-y-6 fade-up">
+          {/* Doa Harian & Jadwal Sholat */}
+          <CouplePrayersAndRoutines />
+
+          {/* Water Intake Tracker */}
+          <WaterIntakeTracker />
+
+          {/* Mode Puasa Card */}
+          <Card className={`p-6 border-2 transition-all ${lifestyle.isFasting ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20' : 'border-slate-200 dark:border-slate-800'}`}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-amber-100 dark:bg-amber-900 rounded-2xl text-amber-600 dark:text-amber-300">
+                <Coffee size={24} />
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={lifestyle.isFasting} onChange={(e) => toggleFasting(e.target.checked)} />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+            <h2 className="text-lg font-bold">Mode Puasa (Sahur & Iftar)</h2>
+            <p className="text-sm text-[var(--tf-text-muted)] mt-1 mb-4">
+              Sesuaikan jadwal pengingat makan menjadi peringatan Sahur (sebelum Imsak) dan Berbuka (saat Maghrib).
+            </p>
+            {lifestyle.isFasting && jadwal && (
+              <div className="space-y-2 mt-4 text-xs bg-white dark:bg-[#070b14] p-3.5 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-semibold">
+                    <Coffee size={14}/> Sahur & Imsak ({jadwal.imsak} WIB)
+                  </span>
+                  <button onClick={testNotifSahur} className="flex items-center gap-1 text-amber-600 hover:bg-amber-50 px-2.5 py-1 rounded-lg font-bold">
+                    <Play size={10}/> Test Notif
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-semibold">
+                    <Utensils size={14}/> Buka Puasa ({jadwal.maghrib} WIB)
+                  </span>
+                  <button onClick={testNotifBuka} className="flex items-center gap-1 text-amber-600 hover:bg-amber-50 px-2.5 py-1 rounded-lg font-bold">
+                    <Play size={10}/> Test Notif
+                  </button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* TAB 3: SUASANA & BELAJAR */}
+      {activeTab === 'suasana' && (
+        <div className="space-y-6 fade-up">
+          {/* Soundscape Synthesizer */}
+          <CoupleSoundscape />
+
+          {/* Notifikasi Pengingat Romantis */}
+          <Card className={`p-6 border-2 transition-all ${lifestyle.enableRomanticReminders ? 'border-rose-400 bg-rose-50/50 dark:bg-rose-950/20' : 'border-slate-200 dark:border-slate-800'}`}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-rose-100 dark:bg-rose-900 rounded-2xl text-rose-600 dark:text-rose-300">
+                <Sun size={24} />
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={lifestyle.enableRomanticReminders} onChange={(e) => toggleRomantic(e.target.checked)} />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-rose-500"></div>
+              </label>
+            </div>
+            <h2 className="text-lg font-bold">Reminders Romantis Otomatis</h2>
+            <p className="text-sm text-[var(--tf-text-muted)] mt-1 mb-4">
+              Notifikasi spesial pengingat Good Morning, Makan Siang, dan Good Night dengan kata-kata manis yang variatif.
+            </p>
+            {lifestyle.enableRomanticReminders && (
+              <div className="space-y-2 mt-4 text-xs bg-white dark:bg-[#070b14] p-3.5 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-semibold"><Sun size={14}/> Pagi Hari (05:30 WIB)</span>
+                  <button onClick={testNotifPagi} className="flex items-center gap-1 text-rose-600 hover:bg-rose-50 px-2.5 py-1 rounded-lg font-bold"><Play size={10}/> Test</button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-semibold"><Utensils size={14}/> Siang Hari (12:30 WIB)</span>
+                  <button onClick={testNotifMakan} className="flex items-center gap-1 text-rose-600 hover:bg-rose-50 px-2.5 py-1 rounded-lg font-bold"><Play size={10}/> Test</button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-semibold"><Moon size={14}/> Malam Hari (22:00 WIB)</span>
+                  <button onClick={testNotifMalam} className="flex items-center gap-1 text-rose-600 hover:bg-rose-50 px-2.5 py-1 rounded-lg font-bold"><Play size={10}/> Test</button>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Info Sinkronisasi WIB */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <BellRing size={18} className="text-[var(--tf-primary)]" />
+              <h2 className="font-bold text-sm">Info Sinkronisasi Waktu Indonesia Barat (WIB)</h2>
+            </div>
+            <p className="text-xs text-[var(--tf-text-muted)] leading-relaxed">
+              Seluruh jadwal dan notifikasi di FAZET LOPP LOPP disinkronisasi ke <strong>Waktu Indonesia Barat (WIB)</strong>. 
+              Meski salah satu dari kalian berada di zona WITA atau WIT saat bepergian, jadwal dan notifikasi akan tetap berjalan serentak.
+            </p>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

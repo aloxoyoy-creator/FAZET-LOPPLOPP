@@ -11,6 +11,7 @@ export interface Question {
   text: string;
   options: QuestionOption[];
   correctAnswerId: string;
+  explanation?: string;
 }
 
 export const tkaQuestions: Question[] = [
@@ -351,6 +352,114 @@ export const tkaQuestions: Question[] = [
       { id: "d", text: "It makes teenagers overly anxious about money." },
       { id: "e", text: "It is unnecessary if teens have wealthy parents." }
     ],
-    correctAnswerId: "c"
+    correctAnswerId: "c",
+    explanation: "Pada paragraf penutup teks, penulis menekankan pentingnya pendidikan keuangan sedini mungkin bagi remaja agar mereka memiliki kesiapan menghadapi tantangan dunia nyata."
+  },
+
+  // SUBTES: Penalaran Umum (PU)
+  {
+    id: "pu_1",
+    subject: "Penalaran Umum (PU)",
+    text: "Semua peserta ujian yang lulus dengan predikat memuaskan belajar secara teratur setiap hari. Sebagian peserta ujian yang memiliki mentor belajar secara teratur setiap hari. Kesimpulan yang paling tepat adalah ....",
+    options: [
+      { id: "a", text: "Semua peserta yang memiliki mentor lulus dengan predikat memuaskan." },
+      { id: "b", text: "Sebagian peserta yang memiliki mentor lulus dengan predikat memuaskan." },
+      { id: "c", text: "Peserta yang tidak memiliki mentor pasti tidak lulus ujian." },
+      { id: "d", text: "Semua peserta yang belajar teratur setiap hari memiliki mentor." },
+      { id: "e", text: "Sebagian peserta ujian yang belajar secara teratur setiap hari mungkin memiliki mentor." }
+    ],
+    correctAnswerId: "e",
+    explanation: "Premis 1: Semua yang lulus memuaskan -> belajar teratur. Premis 2: Sebagian yang punya mentor -> belajar teratur. Maka kesimpulan logis yang tidak melompat adalah sebagian peserta yang belajar teratur setiap hari mungkin memiliki mentor."
+  },
+  {
+    id: "pu_2",
+    subject: "Penalaran Umum (PU)",
+    text: "Perhatikan pola barisan bilangan berikut:\n3, 5, 9, 17, 33, X\nNilai X yang memenuhi pola tersebut adalah ....",
+    options: [
+      { id: "a", text: "49" },
+      { id: "b", text: "65" },
+      { id: "c", text: "67" },
+      { id: "d", text: "71" },
+      { id: "e", text: "81" }
+    ],
+    correctAnswerId: "b",
+    explanation: "Selisih antarsuku berturut-turut adalah:\n5 - 3 = 2\n9 - 5 = 4\n17 - 9 = 8\n33 - 17 = 16\nPola selisih berlipat ganda (2, 4, 8, 16, 32).\nMaka X = 33 + 32 = 65."
+  },
+  {
+    id: "pu_3",
+    subject: "Penalaran Umum (PU)",
+    text: "KAMERA : FOTO = PENA : ....",
+    options: [
+      { id: "a", text: "Tinta" },
+      { id: "b", text: "Kertas" },
+      { id: "c", text: "Tulisan" },
+      { id: "d", text: "Penulis" },
+      { id: "e", text: "Buku" }
+    ],
+    correctAnswerId: "c",
+    explanation: "Hubungan analogi instrumen dan hasil karya ciptaannya: Kamera digunakan untuk menghasilkan Foto, sedangkan Pena digunakan untuk menghasilkan Tulisan."
+  },
+
+  // SUBTES: Pengetahuan Kuantitatif (PK)
+  {
+    id: "pk_1",
+    subject: "Pengetahuan Kuantitatif (PK)",
+    text: "Jika x + 1/x = 4, maka nilai dari x² + 1/x² adalah ....",
+    options: [
+      { id: "a", text: "12" },
+      { id: "b", text: "14" },
+      { id: "c", text: "16" },
+      { id: "d", text: "18" },
+      { id: "e", text: "20" }
+    ],
+    correctAnswerId: "b",
+    explanation: "Kuadratkan kedua ruas persamaan:\n(x + 1/x)² = 4²\nx² + 2(x)(1/x) + 1/x² = 16\nx² + 2 + 1/x² = 16\nx² + 1/x² = 16 - 2 = 14."
+  },
+  {
+    id: "pk_2",
+    subject: "Pengetahuan Kuantitatif (PK)",
+    text: "Sebuah segitiga siku-siku memiliki panjang sisi miring (hipotenusa) 25 cm. Jika salah satu sisi tegaknya memiliki panjang 7 cm, berapakah luas segitiga tersebut?",
+    options: [
+      { id: "a", text: "84 cm²" },
+      { id: "b", text: "96 cm²" },
+      { id: "c", text: "168 cm²" },
+      { id: "d", text: "175 cm²" },
+      { id: "e", text: "300 cm²" }
+    ],
+    correctAnswerId: "a",
+    explanation: "Berdasarkan teorema Pythagoras:\nSisi tegak kedua = √(25² - 7²) = √(625 - 49) = √576 = 24 cm.\nLuas segitiga = 1/2 × alas × tinggi = 1/2 × 7 × 24 = 84 cm²."
+  },
+
+  // SUBTES: Literasi Bahasa Indonesia
+  {
+    id: "lit_id_1",
+    subject: "Literasi Bahasa Indonesia",
+    passage: "Transisi energi menuju energi baru dan terbarukan (EBT) kini menjadi keniscayaan global demi menekan laju emisi gas rumah kaca. Indonesia memiliki potensi luar biasa dari tenaga surya, bayu, hidro, dan panas bumi. Kendati demikian, tantangan terbesar terletak pada tingginya biaya investasi awal serta integrasi jaringan transmisi listrik kepulauan yang belum merata. Dibutuhkan regulasi yang adaptif dan kepastian iklim investasi untuk mendorong partisipasi sektor privat.",
+    text: "Gagasan pokok paragraf di atas adalah ....",
+    options: [
+      { id: "a", text: "Penurunan emisi gas rumah kaca di Indonesia." },
+      { id: "b", text: "Besarnya potensi energi surya dan panas bumi di Indonesia." },
+      { id: "c", text: "Urgensi dan tantangan transisi energi baru terbarukan di Indonesia." },
+      { id: "d", text: "Biaya investasi infrastruktur kelistrikan kepulauan." },
+      { id: "e", text: "Peran sektor swasta dalam pengembangan pembangkit listrik." }
+    ],
+    correctAnswerId: "c",
+    explanation: "Paragraf tersebut membahas mengapa transisi EBT merupakan keniscayaan (urgensi) sekaligus memaparkan kendala investasi dan jaringan (tantangan) yang dihadapi Indonesia."
+  },
+
+  // SUBTES: Penalaran Matematika (PM)
+  {
+    id: "pm_1",
+    subject: "Penalaran Matematika",
+    text: "Sebuah toko buku memberikan diskon beruntun untuk pembelian paket belajar: Diskon pertama sebesar 20%, kemudian dari harga sisa diberikan diskon tambahan sebesar 10%. Jika harga awal paket adalah Rp 500.000, berapakah harga akhir yang harus dibayar pembeli?",
+    options: [
+      { id: "a", text: "Rp 350.000" },
+      { id: "b", text: "Rp 360.000" },
+      { id: "c", text: "Rp 375.000" },
+      { id: "d", text: "Rp 380.000" },
+      { id: "e", text: "Rp 400.000" }
+    ],
+    correctAnswerId: "b",
+    explanation: "Langkah 1: Diskon 20% dari Rp 500.000 = Rp 100.000. Harga setelah diskon 1 = Rp 400.000.\nLangkah 2: Diskon tambahan 10% dari Rp 400.000 = Rp 40.000.\nHarga akhir = Rp 400.000 - Rp 40.000 = Rp 360.000."
   }
 ];
