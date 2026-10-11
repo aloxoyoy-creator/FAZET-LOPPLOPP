@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
+import CanvasBackground from '../vendor/schoolhub-ui/components/ui/backgrounds/CanvasBackground';
 
 export default function AnimatedBackground() {
   const glowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Only run on desktop/devices with a pointer
+    // Only run cursor glow on desktop/devices with a pointer
     if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
       return;
     }
@@ -28,6 +29,12 @@ export default function AnimatedBackground() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[var(--tf-bg)] transition-colors duration-700">
+      {/* Global Canvas Particle Background (Optimized for Mobile) */}
+      <CanvasBackground 
+        className="w-full h-full opacity-60 dark:opacity-40" 
+        // Menggunakan mode constellations yang ringan untuk mobile
+        type="constellations" 
+      />
       
       {/* 
         Sembunyikan blob animasi di mobile (hidden md:block) karena 

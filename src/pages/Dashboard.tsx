@@ -226,21 +226,21 @@ function MineePreviewCard() {
 function QuickActions() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-      <Link to="/tasks" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
-        <div className="p-3 bg-blue-500/10 rounded-full"><ListTodo size={24} className="text-blue-500"/></div>
-        <span className="text-sm font-semibold">Tugas</span>
+      <Link to="/tasks" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-3 bg-blue-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><ListTodo size={24} className="text-blue-500"/></div>
+        <span className="text-sm font-semibold transition-colors group-hover:text-blue-600">Tugas</span>
       </Link>
-      <Link to="/notes" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
-        <div className="p-3 bg-emerald-500/10 rounded-full"><StickyNote size={24} className="text-emerald-500"/></div>
-        <span className="text-sm font-semibold">Catatan</span>
+      <Link to="/notes" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-3 bg-emerald-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><StickyNote size={24} className="text-emerald-500"/></div>
+        <span className="text-sm font-semibold transition-colors group-hover:text-emerald-600">Catatan</span>
       </Link>
-      <Link to="/ai" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
-        <div className="p-3 bg-fuchsia-500/10 rounded-full"><Sparkles size={24} className="text-fuchsia-500"/></div>
-        <span className="text-sm font-semibold">Tanya AI</span>
+      <Link to="/ai" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-3 bg-fuchsia-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:animate-pulse"><Sparkles size={24} className="text-fuchsia-500"/></div>
+        <span className="text-sm font-semibold transition-colors group-hover:text-fuchsia-600">Tanya AI</span>
       </Link>
-      <Link to="/my-minee" className="flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-105 transition-all shadow-sm">
-        <div className="p-3 bg-rose-500/10 rounded-full"><Heart size={24} className="text-rose-500"/></div>
-        <span className="text-sm font-semibold">My Minee</span>
+      <Link to="/my-minee" className="group flex flex-col justify-center items-center gap-2 p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
+        <div className="p-3 bg-rose-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><Heart size={24} className="text-rose-500 group-hover:animate-ping" style={{ animationDuration: '2s' }} /></div>
+        <span className="text-sm font-semibold transition-colors group-hover:text-rose-600">My Minee</span>
       </Link>
     </div>
   );
@@ -408,16 +408,16 @@ export default function Dashboard() {
                   const past = !isPast18 && currentMinutes > atEnd; 
                   
                   return (
-                    <div key={`${item.id}-${index}`} className="relative group">
-                      <span className={`absolute -left-[37px] top-1 h-3.5 w-3.5 rounded-full border-[3px] transition-colors ${isNow ? 'border-[var(--tf-primary-subtle)] bg-[var(--tf-primary)] shadow-[0_0_0_2px_var(--tf-primary)]' : past ? 'border-[var(--tf-border)] bg-[var(--tf-text-muted)]' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] group-hover:border-[var(--tf-primary)]'}`} />
-                      <div className={`rounded-[var(--tf-radius-md)] border p-3.5 transition-colors ${isNow ? 'border-[var(--tf-primary)] bg-[var(--tf-primary-subtle)]/55' : past ? 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/45 opacity-80' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] hover:bg-[var(--tf-bg-subtle)]/50'}`}>
+                    <div key={`${item.id}-${index}`} className="relative group transition-all duration-300 hover:-translate-y-1">
+                      <span className={`absolute -left-[37px] top-1 h-3.5 w-3.5 rounded-full border-[3px] transition-colors duration-300 ${isNow ? 'border-[var(--tf-primary-subtle)] bg-[var(--tf-primary)] shadow-[0_0_0_2px_var(--tf-primary)]' : past ? 'border-[var(--tf-border)] bg-[var(--tf-text-muted)]' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] group-hover:border-[var(--tf-primary)]'}`} />
+                      <div className={`rounded-[var(--tf-radius-md)] border p-3.5 transition-all duration-300 group-hover:shadow-md ${isNow ? 'border-[var(--tf-primary)] bg-[var(--tf-primary-subtle)]/55' : past ? 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/45 opacity-80' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] hover:bg-[var(--tf-bg-subtle)]/50 hover:border-[var(--tf-primary-subtle)]'}`}>
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className={`font-mono text-xs font-bold ${isNow ? 'text-[var(--tf-primary)]' : ''}`}>{item.startTime} - {item.endTime}</span>
+                              <span className={`font-mono text-xs font-bold transition-colors ${isNow ? 'text-[var(--tf-primary)]' : 'group-hover:text-[var(--tf-primary)]'}`}>{item.startTime} - {item.endTime}</span>
                               {isNow && <Badge variant="primary" size="sm" className="animate-pulse">Sedang Berlangsung</Badge>}
                             </div>
-                            <div className="mt-1.5 text-base font-semibold truncate">{item.subject}</div>
+                            <div className="mt-1.5 text-base font-semibold truncate transition-colors group-hover:text-[var(--tf-primary)]">{item.subject}</div>
                             {item.teacher && <div className="mt-0.5 text-xs text-[var(--tf-text-muted)] truncate">{item.teacher}</div>}
                           </div>
                         </div>
@@ -454,36 +454,36 @@ export default function Dashboard() {
       {/* 4. ROMANTISS (Perjalanan Kita, Ulang Tahun, My Minee) */}
         <div className="space-y-4">
           <div className="dashboard-layout-romantic">
-            <Card interactive className="overflow-hidden p-0 romantic-hero">
+            <SmoothCard className="overflow-hidden p-0 romantic-hero">
               <div className="romantic-hero__glow" />
               <div className="relative grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_360px]">
                 <div className="p-6 sm:p-8">
                   <div className="studio-eyebrow"><CalendarHeart size={14} /> Perjalanan kita</div>
                   <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <div className="romantic-avatar romantic-avatar--fathur">F</div>
-                    <Heart size={20} className="romantic-heart" fill="currentColor" />
-                    <div className="romantic-avatar romantic-avatar--mazet">M</div>
+                    <div className="romantic-avatar romantic-avatar--fathur transition-transform hover:rotate-6 hover:scale-110">F</div>
+                    <Heart size={20} className="romantic-heart animate-pulse" fill="currentColor" />
+                    <div className="romantic-avatar romantic-avatar--mazet transition-transform hover:-rotate-6 hover:scale-110">M</div>
                   </div>
                   <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Fathur <span className="romantic-script">&</span> Mazet</h1>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--tf-text-muted)]">Kita mulai pada <strong className="text-[var(--tf-text-primary)]">{relationshipStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}, {two(relationshipStart.getHours())}:{two(relationshipStart.getMinutes())} WIB</strong>. Dashboard ini menghitung perjalanan sejak momen itu dan terus menuju anniversary berikutnya.</p>
                   <div className="mt-6 grid grid-cols-3 gap-2 sm:max-w-lg">
-                    <div className="romantic-stat"><strong>{relationshipElapsed.days}</strong><span>hari</span></div>
-                    <div className="romantic-stat"><strong>{two(relationshipElapsed.hours)}</strong><span>jam</span></div>
-                    <div className="romantic-stat"><strong>{two(relationshipElapsed.minutes)}</strong><span>menit</span></div>
+                    <div className="romantic-stat hover:bg-[var(--tf-bg-subtle)] transition-colors rounded-lg p-2"><strong>{relationshipElapsed.days}</strong><span>hari</span></div>
+                    <div className="romantic-stat hover:bg-[var(--tf-bg-subtle)] transition-colors rounded-lg p-2"><strong>{two(relationshipElapsed.hours)}</strong><span>jam</span></div>
+                    <div className="romantic-stat hover:bg-[var(--tf-bg-subtle)] transition-colors rounded-lg p-2"><strong>{two(relationshipElapsed.minutes)}</strong><span>menit</span></div>
                   </div>
                 </div>
                 <div className="relative border-t border-[var(--tf-border)] p-6 lg:border-l lg:border-t-0 lg:p-7">
                   <div className="studio-eyebrow"><ContinuousMotion intensity="high" className="inline-block"><Heart size={13} /></ContinuousMotion> Menuju anniversary</div>
                   <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
-                    <div className="romantic-countdown"><strong>{anniversaryCountdown.days}</strong><span>hari</span></div>
-                    <div className="romantic-countdown"><strong>{two(anniversaryCountdown.hours)}</strong><span>jam</span></div>
-                    <div className="romantic-countdown"><strong>{two(anniversaryCountdown.minutes)}</strong><span>menit</span></div>
-                    <div className="romantic-countdown"><strong>{two(anniversaryCountdown.seconds)}</strong><span>detik</span></div>
+                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default"><strong>{anniversaryCountdown.days}</strong><span>hari</span></div>
+                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default"><strong>{two(anniversaryCountdown.hours)}</strong><span>jam</span></div>
+                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default"><strong>{two(anniversaryCountdown.minutes)}</strong><span>menit</span></div>
+                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default text-rose-500"><strong>{two(anniversaryCountdown.seconds)}</strong><span>detik</span></div>
                   </div>
                   <div className="mt-4 rounded-[var(--tf-radius-md)] bg-[var(--tf-primary-subtle)] p-3 text-[11px] leading-5 text-[var(--tf-primary)]"><strong>2 Juni {relationshipAnniversary.getFullYear()}</strong> · 18:55 WIB · satu tahun perjalanan berikutnya.</div>
                 </div>
               </div>
-            </Card>
+            </SmoothCard>
             
             <div className="grid gap-4 md:grid-cols-2">
               {birthdayCountdowns.map((birthday) => (
