@@ -34,6 +34,7 @@ import {
   Tv,
   Layers3,
   Target,
+  UserRound,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import JadwalSholat from '../components/widgets/JadwalSholat';
@@ -58,17 +59,9 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { formatDate } from '../lib/utils';
-import { loadThemePrefs, saveThemePrefs, type DashboardLayout } from '../lib/themePrefs';
 import { supabase } from '../lib/supabase';
 
 const SCHOOL_WEEK_DAYS: SchoolDay[] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-
-const LAYOUTS: Array<{ id: DashboardLayout; label: string; icon: typeof LayoutGrid }> = [
-  { id: 'focus', label: 'Romantis', icon: Heart },
-  { id: 'bento', label: 'Bento', icon: LayoutGrid },
-  { id: 'timeline', label: 'Timeline', icon: Layers3 },
-  { id: 'duo', label: 'Duo', icon: Columns3 },
-];
 
 function minutes(value: string) {
   const [h, m] = value.split(':').map(Number);
@@ -79,21 +72,6 @@ function dayAfter(date: Date): SchoolDay {
   const today = jakartaWeekday(date);
   const index = SCHOOL_WEEK_DAYS.indexOf(today as SchoolDay);
   return index >= 0 ? SCHOOL_WEEK_DAYS[(index + 1) % SCHOOL_WEEK_DAYS.length] : 'Senin';
-}
-
-function nextSubject(items: ScheduleItem[], now: Date) {
-  const today = jakartaWeekday(now);
-  const current = minutes(
-    new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Jakarta',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(now),
-  );
-  return items
-    .filter((item) => item.active && item.day === today && item.type === 'subject' && minutes(item.endTime) > current)
-    .sort((a, b) => minutes(a.startTime) - minutes(b.startTime))[0] ?? null;
 }
 
 function localDate(year: number, month: number, day: number, hour = 0, minute = 0) {
@@ -185,75 +163,82 @@ function MineePreviewCard() {
   }, []);
 
   return (
-    <Card interactive className="overflow-hidden p-0">
+    <Card interactive className="overflow-hidden p-0 rounded-3xl border border-[var(--tf-border)] shadow-sm">
       <div className="border-b border-[var(--tf-border)] p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="studio-eyebrow"><ContinuousMotion intensity="low" className="inline-block"><Images size={13} /></ContinuousMotion> My Minee</div>
-            <h2 className="mt-1 text-lg font-semibold">Foto-foto perjalanan kita</h2>
-            <p className="mt-1 max-w-xl text-xs leading-5 text-[var(--tf-text-muted)]">
-              Preview otomatis mengambil koleksi yang tersimpan di galeri My Minee, jadi foto lama tetap ikut muncul tanpa dibundel ulang ke aplikasi.
+            <div className="studio-eyebrow flex items-center gap-1.5 text-rose-500 font-bold">
+              <ContinuousMotion intensity="low" className="inline-block"><Images size={13} /></ContinuousMotion> My Minee
+            </div>
+            <h3 className="mt-1 text-base font-bold text-[var(--tf-text-primary)]">Foto-foto perjalanan kita</h3>
+            <p className="mt-0.5 text-xs text-[var(--tf-text-muted)]">
+              Koleksi kenangan dan momen manis kita berdua tersimpan di galeri
             </p>
           </div>
-          <Link to="/my-minee" className="studio-action studio-action--soft shrink-0">Buka</Link>
+          <Link to="/my-minee" className="studio-action studio-action--soft shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl">Buka</Link>
         </div>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, index) => <div key={index} className="aspect-square animate-pulse rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)]" />)}
+        <div className="grid grid-cols-4 gap-2 p-3">
+          {Array.from({ length: 8 }).map((_, index) => <div key={index} className="aspect-square animate-pulse rounded-xl bg-[var(--tf-bg-subtle)]" />)}
         </div>
       ) : items.length ? (
-        <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4">
+        <div className="grid grid-cols-4 gap-2 p-3">
           {items.map((item) => (
-            <Link key={item.id} to="/my-minee" className="group relative aspect-square overflow-hidden rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)]">
-              {urls[item.id] ? <img src={urls[item.id]} alt={item.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /> : <div className="grid h-full w-full place-items-center text-[var(--tf-text-muted)]"><Heart size={20} /></div>}
+            <Link key={item.id} to="/my-minee" className="group relative aspect-square overflow-hidden rounded-xl bg-[var(--tf-bg-subtle)]">
+              {urls[item.id] ? (
+                <img src={urls[item.id]} alt={item.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" />
+              ) : (
+                <div className="grid h-full w-full place-items-center text-[var(--tf-text-muted)]"><Heart size={16} /></div>
+              )}
             </Link>
           ))}
         </div>
       ) : (
-        <div className="p-5 text-xs leading-5 text-[var(--tf-text-muted)]">
-          Koleksi foto belum dapat dipreview dari sesi ini. Halaman My Minee tetap terhubung ke galeri storage yang sama.
+        <div className="p-5 text-xs text-center text-[var(--tf-text-muted)]">
+          Koleksi foto belum dapat dipreview dari sesi ini. Halaman My Minee tetap terhubung ke galeri storage.
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 border-t border-[var(--tf-border)] px-5 py-3 text-[11px] text-[var(--tf-text-muted)]">
+      <div className="flex items-center justify-between gap-3 border-t border-[var(--tf-border)] px-5 py-3 text-xs text-[var(--tf-text-muted)] bg-[var(--tf-bg-subtle)]/40">
         <span>{count == null ? 'Koleksi My Minee' : `${count} item tersimpan`}</span>
-        <Link to="/my-minee" className="font-semibold text-[var(--tf-primary)]">Lihat semua</Link>
+        <Link to="/my-minee" className="font-semibold text-[var(--tf-primary)] hover:underline">Lihat semua →</Link>
       </div>
     </Card>
   );
 }
 
-
 function QuickActions() {
   const { workspaceId } = useWorkspace();
+  const actions = [
+    { to: '/tasks', label: 'Tugas', icon: ListTodo, color: 'text-blue-500', bg: 'bg-blue-500/10 group-hover:bg-blue-500/20', hoverText: 'group-hover:text-blue-600' },
+    { to: '/notes', label: 'Catatan', icon: StickyNote, color: 'text-emerald-500', bg: 'bg-emerald-500/10 group-hover:bg-emerald-500/20', hoverText: 'group-hover:text-emerald-600' },
+    { to: '/lifestyle', label: 'Lifestyle', icon: Coffee, color: 'text-cyan-500', bg: 'bg-cyan-500/10 group-hover:bg-cyan-500/20', hoverText: 'group-hover:text-cyan-600' },
+    { to: '/schedule', label: workspaceId === 'mazet' ? 'Kuliah' : 'Sekolah', icon: CalendarClock, color: 'text-indigo-500', bg: 'bg-indigo-500/10 group-hover:bg-indigo-500/20', hoverText: 'group-hover:text-indigo-600' },
+    { to: '/ai', label: 'Tanya AI', icon: Sparkles, color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10 group-hover:bg-fuchsia-500/20', hoverText: 'group-hover:text-fuchsia-600' },
+    { to: '/my-minee', label: 'My Minee', icon: Heart, color: 'text-rose-500', bg: 'bg-rose-500/10 group-hover:bg-rose-500/20', hoverText: 'group-hover:text-rose-600' },
+  ];
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-      <Link to="/tasks" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-2.5 bg-blue-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><ListTodo size={22} className="text-blue-500"/></div>
-        <span className="text-xs font-semibold transition-colors group-hover:text-blue-600">Tugas</span>
-      </Link>
-      <Link to="/notes" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-2.5 bg-emerald-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><StickyNote size={22} className="text-emerald-500"/></div>
-        <span className="text-xs font-semibold transition-colors group-hover:text-emerald-600">Catatan</span>
-      </Link>
-      <Link to="/lifestyle" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-2.5 bg-cyan-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><Coffee size={22} className="text-cyan-500"/></div>
-        <span className="text-xs font-semibold transition-colors group-hover:text-cyan-600">Lifestyle</span>
-      </Link>
-      <Link to="/schedule" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-2.5 bg-indigo-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><CalendarClock size={22} className="text-indigo-500"/></div>
-        <span className="text-xs font-semibold transition-colors group-hover:text-indigo-600">{workspaceId === 'mazet' ? 'Kuliah' : 'Sekolah'}</span>
-      </Link>
-      <Link to="/ai" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-2.5 bg-fuchsia-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:animate-pulse"><Sparkles size={22} className="text-fuchsia-500"/></div>
-        <span className="text-xs font-semibold transition-colors group-hover:text-fuchsia-600">Tanya AI</span>
-      </Link>
-      <Link to="/my-minee" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-2.5 bg-rose-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><Heart size={22} className="text-rose-500 group-hover:animate-ping" style={{ animationDuration: '2s' }} /></div>
-        <span className="text-xs font-semibold transition-colors group-hover:text-rose-600">My Minee</span>
-      </Link>
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      {actions.map((act) => {
+        const Icon = act.icon;
+        return (
+          <Link
+            key={act.to}
+            to={act.to}
+            className="group flex flex-col items-center justify-center gap-2 p-3.5 sm:p-4 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:border-[var(--tf-primary-subtle)] hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-300"
+          >
+            <div className={`p-2.5 rounded-2xl transition-all duration-300 ${act.bg} group-hover:scale-110`}>
+              <Icon size={20} className={act.color} />
+            </div>
+            <span className={`text-xs font-semibold text-[var(--tf-text-primary)] transition-colors ${act.hoverText}`}>
+              {act.label}
+            </span>
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -264,8 +249,8 @@ export default function Dashboard() {
   const { dashboard } = useAppConfig();
   const RELATIONSHIP_START = dashboard.relationshipStart;
   const BIRTHDAYS = dashboard.birthdays;
-  const { items: schedule, loading: scheduleLoading } = useSchedule();
-  const { tasks, loading: tasksLoading } = useTasks();
+  const { items: schedule } = useSchedule();
+  const { tasks } = useTasks();
   const { streak } = useFocusStreak();
   const [now, setNow] = useState(() => new Date());
   const [taskOpen, setTaskOpen] = useState(false);
@@ -285,7 +270,6 @@ export default function Dashboard() {
   }, [tasks, tomorrowDateString]);
 
   // Jadwal Besok Harinya
-  const showTomorrowSchedule = now.getHours() >= 18;
   const tomorrowSubjects = useMemo(() => {
     const unique: string[] = [];
     for (const item of schedule) {
@@ -323,7 +307,6 @@ export default function Dashboard() {
 
       const lastGroup = groups[groups.length - 1];
       if (lastGroup && lastGroup.subject.trim().toLowerCase() === item.subject.trim().toLowerCase()) {
-        // Gabungkan karena sama (misal 3 jam pelajaran bahasa inggris kepotong istirahat)
         lastGroup.endTime = item.endTime;
       } else {
         groups.push({ ...item });
@@ -342,188 +325,347 @@ export default function Dashboard() {
   const birthdayCountdowns = useMemo(() => BIRTHDAYS.map((birthday) => ({ ...birthday, target: nextBirthday(birthday.month, birthday.day, now), countdown: countdownParts(nextBirthday(birthday.month, birthday.day, now), now) })), [now, BIRTHDAYS]);
 
   return (
-    <div className="studio-page space-y-8 fade-up pb-24">
-      {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-[var(--tf-border)] pb-3 md:flex-row md:items-center md:justify-between">
+    <div className="studio-page space-y-6 sm:space-y-8 fade-up pb-24">
+      {/* 1. Header Bar: Casual, Modern & Personal Greeting */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[var(--tf-border)] pb-4">
         <div>
-          <div className="studio-eyebrow"><ContinuousMotion intensity="high" className="inline-block"><Sparkles size={13} /></ContinuousMotion> FAZET Studio</div>
-          <div className="mt-1 flex items-center gap-2"><h2 className="studio-page-title !text-xl sm:!text-2xl">Dashboard</h2></div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+              <ContinuousMotion intensity="high" className="inline-block"><Sparkles size={12} /></ContinuousMotion> FAZET Studio
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--tf-text-muted)]">
+              • {workspace.name} ({workspaceId === 'mazet' ? 'Mahasiswi' : 'Siswa'})
+            </span>
+            {streak.currentStreak > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Flame size={11} className="fill-amber-500 text-amber-500" /> {streak.currentStreak} Hari
+              </span>
+            )}
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--tf-text-primary)]">
+            Selamat {now.getHours() < 11 ? 'Pagi' : now.getHours() < 15 ? 'Siang' : now.getHours() < 18 ? 'Sore' : 'Malam'}, {firstName}! ✨
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--tf-text-muted)] mt-0.5">
+            {new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(now)} • Semoga harimu menyenangkan dan selalu semangat! ❤️
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] shadow-sm">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono text-xs font-bold text-[var(--tf-text-primary)]">
+              {two(now.getHours())}:{two(now.getMinutes())}:{two(now.getSeconds())} WIB
+            </span>
+          </div>
+
+          <Button
+            size="sm"
+            onClick={() => setTaskOpen(true)}
+            icon={<ListTodo size={15} />}
+            className="rounded-2xl shadow-sm"
+          >
+            + Tugas
+          </Button>
         </div>
       </div>
 
-      {/* Daily Quote */}
+      {/* 2. Daily Quote */}
       <RandomMotion delayIndex={0}><DailyQuote /></RandomMotion>
 
-      {/* Quick Actions */}
+      {/* 3. Quick Actions Menu (6 Buttons) */}
       <RandomMotion delayIndex={0}><QuickActions /></RandomMotion>
 
-      {/* Digital ID & Briefing */}
+      {/* 4. Digital ID Banner & AI Assistants */}
       <RandomMotion delayIndex={1}>
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4">
           <DigitalIdCardBanner />
-          <AiBriefing firstName={firstName} tasks={tasks} tomorrowSubjects={tomorrowSubjects} />
-          <AiPulseCard tomorrowSubjects={tomorrowSubjects} tomorrowDay={tomorrowDay} academicTimeline={todayTimeline} tutoring={todayTutoring} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <AiBriefing firstName={firstName} tasks={tasks} tomorrowSubjects={tomorrowSubjects} />
+            <AiPulseCard tomorrowSubjects={tomorrowSubjects} tomorrowDay={tomorrowDay} academicTimeline={todayTimeline} tutoring={todayTutoring} />
+          </div>
         </div>
       </RandomMotion>
 
-      {/* 1. TIMELINE VERTIKAL (TKA, Tugas Besok, Jadwal Besok, Jadwal Les, Jadwal Sekolah) */}
-      <div className="space-y-4">
-        <RandomMotion delayIndex={0}>
-          <TKADashboard />
-        </RandomMotion>
-        <RandomMotion delayIndex={1}><Card className="p-5 overflow-hidden border border-[var(--tf-primary-subtle)]">
-          {/* Status Pelajaran (Jam/Menit/Detik menuju pelajaran berikutnya) */}
-          <CurrentSubjectAlert />
+      {/* 5. TATA LETAK BENTO DUAL-COLUMN (LEBIH KECE, CASUAL & SEIMBANG) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* KOLOM KIRI (7-8 Kolom): AKADEMIK, JADWAL, TUGAS, HIBURAN & SHOLAT */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
           
-          {/* Tugas Besok */}
-          {tomorrowTasks.length > 0 && (
-            <div className="mb-6 rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)] p-4 border-l-4 border-orange-500">
-              <div className="studio-eyebrow text-orange-600 mb-2">Tugas Besok</div>
-              <div className="space-y-2">
-                {tomorrowTasks.map(t => (
-                  <div key={t.id} className="text-sm font-semibold">{t.title}</div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* A. TKA Dashboard (Target & Countdown TKA) */}
+          <RandomMotion delayIndex={0}>
+            <TKADashboard />
+          </RandomMotion>
 
-          
-
-          {/* Jadwal Les Hari Ini */}
-          {todayTutoring.length > 0 && (
-            <div className="mb-6 rounded-[var(--tf-radius-md)] bg-purple-500/10 p-4 border-l-4 border-purple-500">
-              <div className="studio-eyebrow text-purple-600 mb-2"><GraduationCap size={12}/> Jadwal Les Hari Ini</div>
-              <div className="space-y-2">
-                {todayTutoring.map((t, i) => (
-                  <div key={i} className="flex justify-between items-center text-sm">
-                    <span className="font-semibold">{t.subjectName}</span>
-                    <span className="text-[var(--tf-text-muted)] font-mono">{t.startTimeLabel}</span>
+          {/* B. Agenda & Timeline Pelajaran Hari Ini / Besok */}
+          <RandomMotion delayIndex={1}>
+            <Card className="p-5 sm:p-6 overflow-hidden border border-[var(--tf-border)] shadow-sm rounded-3xl bg-[var(--tf-bg-surface)] backdrop-blur-md">
+              {/* Card Header */}
+              <div className="flex items-center justify-between border-b border-[var(--tf-border)] pb-4 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-2xl bg-indigo-500/10 text-indigo-500">
+                    <CalendarClock size={18} />
                   </div>
-                ))}
+                  <div>
+                    <h3 className="font-bold text-base text-[var(--tf-text-primary)]">
+                      {now.getHours() >= 18 ? (workspaceId === 'mazet' ? "Agenda Kuliah Besok" : "Agenda Sekolah Besok") : (workspaceId === 'mazet' ? "Agenda Kuliah Hari Ini" : "Agenda Sekolah Hari Ini")}
+                    </h3>
+                    <p className="text-xs text-[var(--tf-text-muted)]">
+                      {new Intl.DateTimeFormat('id-ID', { dateStyle: 'full', timeZone: 'Asia/Jakarta' }).format(now)}
+                    </p>
+                  </div>
+                </div>
+                <Link to="/schedule" className="text-xs font-semibold text-[var(--tf-primary)] hover:underline flex items-center gap-1">
+                  Lihat Semua <ChevronRight size={14} />
+                </Link>
               </div>
-            </div>
-          )}
 
-          {/* Jadwal Sekolah Vertikal */}
-          <div>
-            <div className="studio-eyebrow mb-4"><ContinuousMotion intensity="low" className="inline-block"><Clock3 size={12} /></ContinuousMotion> {now.getHours() >= 18 ? (workspaceId === 'mazet' ? "Jadwal Kuliah Besok" : "Jadwal Sekolah Besok") : (workspaceId === 'mazet' ? "Jadwal Kuliah" : "Jadwal Sekolah")}</div>
-            {todayTimeline.length === 0 ? (
-              <div className="text-sm text-[var(--tf-text-muted)]">Tidak ada jadwal tercatat hari ini.</div>
-            ) : (
-              <div className="relative space-y-6 pl-8">
-                <div className="absolute bottom-1 left-3 top-1 w-px bg-[var(--tf-border)]" />
-                {todayTimeline.map((item, index) => { 
-                  const isPast18 = now.getHours() >= 18;
-                  const atStart = minutes(item.startTime); 
-                  const atEnd = minutes(item.endTime);
-                  const isNow = !isPast18 && currentMinutes >= atStart && currentMinutes <= atEnd; 
-                  const past = !isPast18 && currentMinutes > atEnd; 
-                  
-                  return (
-                    <div key={`${item.id}-${index}`} className="relative group transition-all duration-300 hover:-translate-y-1">
-                      <span className={`absolute -left-[37px] top-1 h-3.5 w-3.5 rounded-full border-[3px] transition-colors duration-300 ${isNow ? 'border-[var(--tf-primary-subtle)] bg-[var(--tf-primary)] shadow-[0_0_0_2px_var(--tf-primary)]' : past ? 'border-[var(--tf-border)] bg-[var(--tf-text-muted)]' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] group-hover:border-[var(--tf-primary)]'}`} />
-                      <div className={`rounded-[var(--tf-radius-md)] border p-3.5 transition-all duration-300 group-hover:shadow-md ${isNow ? 'border-[var(--tf-primary)] bg-[var(--tf-primary-subtle)]/55' : past ? 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/45 opacity-80' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] hover:bg-[var(--tf-bg-subtle)]/50 hover:border-[var(--tf-primary-subtle)]'}`}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className={`font-mono text-xs font-bold transition-colors ${isNow ? 'text-[var(--tf-primary)]' : 'group-hover:text-[var(--tf-primary)]'}`}>{item.startTime} - {item.endTime}</span>
-                              {isNow && <Badge variant="primary" size="sm" className="animate-pulse">Sedang Berlangsung</Badge>}
+              {/* Status Pelajaran (Jam/Menit/Detik menuju pelajaran berikutnya) */}
+              <CurrentSubjectAlert />
+              
+              {/* Tugas Besok */}
+              {tomorrowTasks.length > 0 && (
+                <div className="mb-6 rounded-2xl bg-amber-500/10 p-4 border-l-4 border-amber-500">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                      <AlertTriangle size={13} /> Tugas Deadline Besok
+                    </span>
+                    <Badge variant="warning" size="sm">{tomorrowTasks.length} Tugas</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {tomorrowTasks.map(t => (
+                      <div key={t.id} className="flex items-center justify-between text-sm bg-white/60 dark:bg-slate-900/40 p-2.5 rounded-xl border border-amber-200/40 dark:border-amber-900/30">
+                        <span className="font-semibold text-slate-800 dark:text-slate-100">{t.title}</span>
+                        <span className="text-xs text-amber-700 dark:text-amber-300 font-mono font-medium">{t.dueTime || '23:59'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Jadwal Les Hari Ini */}
+              {todayTutoring.length > 0 && (
+                <div className="mb-6 rounded-2xl bg-purple-500/10 p-4 border-l-4 border-purple-500">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                      <GraduationCap size={14}/> Jadwal Les Hari Ini
+                    </span>
+                    <Badge variant="neutral" size="sm">{todayTutoring.length} Sesi</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {todayTutoring.map((t, i) => (
+                      <div key={i} className="flex justify-between items-center text-sm bg-white/60 dark:bg-slate-900/40 p-2.5 rounded-xl border border-purple-200/40 dark:border-purple-900/30">
+                        <span className="font-semibold">{t.subjectName}</span>
+                        <span className="text-purple-600 dark:text-purple-400 font-mono font-medium">{t.startTimeLabel}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Jadwal Sekolah/Kuliah Vertikal */}
+              <div>
+                {todayTimeline.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-[var(--tf-border)] p-6 text-center text-sm text-[var(--tf-text-muted)]">
+                    Tidak ada jam pelajaran aktif yang tercatat hari ini. Selamat beristirahat atau belajar mandiri! ✨
+                  </div>
+                ) : (
+                  <div className="relative space-y-4 pl-6 sm:pl-8">
+                    <div className="absolute bottom-2 left-2.5 sm:left-3.5 top-2 w-0.5 bg-gradient-to-b from-[var(--tf-primary)] via-[var(--tf-border)] to-transparent" />
+                    {todayTimeline.map((item, index) => { 
+                      const isPast18 = now.getHours() >= 18;
+                      const atStart = minutes(item.startTime); 
+                      const atEnd = minutes(item.endTime);
+                      const isNow = !isPast18 && currentMinutes >= atStart && currentMinutes <= atEnd; 
+                      const past = !isPast18 && currentMinutes > atEnd; 
+                      
+                      return (
+                        <div key={`${item.id}-${index}`} className="relative group transition-all duration-300 hover:-translate-y-0.5">
+                          <span className={`absolute -left-[27px] sm:-left-[31px] top-3.5 h-3.5 w-3.5 rounded-full border-2 transition-all duration-300 ${isNow ? 'border-white dark:border-slate-900 bg-[var(--tf-primary)] ring-4 ring-[var(--tf-primary)]/20 animate-pulse' : past ? 'border-[var(--tf-border)] bg-[var(--tf-text-muted)] opacity-60' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] group-hover:border-[var(--tf-primary)]'}`} />
+                          <div className={`rounded-2xl border p-4 transition-all duration-300 group-hover:shadow-md ${isNow ? 'border-[var(--tf-primary)] bg-[var(--tf-primary-subtle)]/60 shadow-sm' : past ? 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 opacity-75' : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] hover:bg-[var(--tf-bg-subtle)]/50'}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                  <span className={`font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg ${isNow ? 'bg-[var(--tf-primary)] text-white' : 'bg-[var(--tf-bg-subtle)] text-[var(--tf-text-muted)]'}`}>
+                                    {item.startTime} - {item.endTime}
+                                  </span>
+                                  {isNow && <Badge variant="primary" size="sm" className="animate-pulse">Sedang Berlangsung</Badge>}
+                                </div>
+                                <div className="text-base font-bold text-[var(--tf-text-primary)] truncate group-hover:text-[var(--tf-primary)] transition-colors">
+                                  {item.subject}
+                                </div>
+                                {item.teacher && (
+                                  <div className="mt-0.5 text-xs text-[var(--tf-text-muted)] flex items-center gap-1.5">
+                                    <UserRound size={12} /> {item.teacher}
+                                  </div>
+                                )}
+                              </div>
+                              {item.location && (
+                                <span className="self-start sm:self-center text-xs font-semibold px-2.5 py-1 rounded-xl bg-[var(--tf-bg-subtle)] text-[var(--tf-text-muted)] border border-[var(--tf-border)]">
+                                  {item.location}
+                                </span>
+                              )}
                             </div>
-                            <div className="mt-1.5 text-base font-semibold truncate transition-colors group-hover:text-[var(--tf-primary)]">{item.subject}</div>
-                            {item.teacher && <div className="mt-0.5 text-xs text-[var(--tf-text-muted)] truncate">{item.teacher}</div>}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </Card></RandomMotion></div>
+            </Card>
+          </RandomMotion>
 
-      {/* 2. BENTO KITA (Waktu Sholat & Animasi) */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)]">Waktu Sholat</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="col-span-1 md:col-span-2 lg:col-span-3 rounded-2xl overflow-hidden shadow-lg border border-[var(--tf-border)] bg-gradient-to-br from-[var(--tf-primary-subtle)] to-[var(--tf-bg-surface)] relative group">
-            <div className="absolute inset-0 bg-[var(--tf-primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-            <div className="p-6 relative z-10">
-               <RandomMotion delayIndex={1}><JadwalSholat /></RandomMotion>
+          {/* C. Hiburan & Fokus Belajar */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--tf-text-secondary)]">
+              <Tv size={14} className="text-indigo-500" />
+              <span>Hiburan & Fokus Belajar</span>
+            </div>
+            <YoutubeWidget />
+          </div>
+
+          {/* D. Waktu Sholat */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--tf-text-secondary)]">
+              <Clock3 size={14} className="text-emerald-500" />
+              <span>Waktu Sholat & Ibadah</span>
+            </div>
+            <div className="rounded-3xl overflow-hidden shadow-sm border border-[var(--tf-border)] bg-gradient-to-br from-[var(--tf-primary-subtle)]/30 via-[var(--tf-bg-surface)] to-[var(--tf-bg-surface)] p-5 sm:p-6">
+              <RandomMotion delayIndex={1}><JadwalSholat /></RandomMotion>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* 3. HIBURAN & FOKUS (YOUTUBE) */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--tf-text-secondary)]">Hiburan & Fokus Belajar</h3>
-        <div className="grid grid-cols-1 gap-4">
-          <YoutubeWidget />
         </div>
-      </div>
 
-      {/* 4. ROMANTISS (Perjalanan Kita, Ulang Tahun, My Minee) */}
-        <div className="space-y-4">
-          <div className="dashboard-layout-romantic">
-            <SmoothCard className="overflow-hidden p-0 romantic-hero">
-              <div className="romantic-hero__glow" />
-              <div className="relative grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_360px]">
-                <div className="p-6 sm:p-8">
-                  <div className="studio-eyebrow"><CalendarHeart size={14} /> Perjalanan kita</div>
-                  <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <div className="romantic-avatar romantic-avatar--fathur transition-transform hover:rotate-6 hover:scale-110">F</div>
-                    <Heart size={20} className="romantic-heart animate-pulse" fill="currentColor" />
-                    <div className="romantic-avatar romantic-avatar--mazet transition-transform hover:-rotate-6 hover:scale-110">M</div>
-                  </div>
-                  <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Fathur <span className="romantic-script">&</span> Mazet</h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--tf-text-muted)]">Kita mulai pada <strong className="text-[var(--tf-text-primary)]">{relationshipStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}, {two(relationshipStart.getHours())}:{two(relationshipStart.getMinutes())} WIB</strong>. Dashboard ini menghitung perjalanan sejak momen itu dan terus menuju anniversary berikutnya.</p>
-                  <div className="mt-6 grid grid-cols-3 gap-2 sm:max-w-lg">
-                    <div className="romantic-stat hover:bg-[var(--tf-bg-subtle)] transition-colors rounded-lg p-2"><strong>{relationshipElapsed.days}</strong><span>hari</span></div>
-                    <div className="romantic-stat hover:bg-[var(--tf-bg-subtle)] transition-colors rounded-lg p-2"><strong>{two(relationshipElapsed.hours)}</strong><span>jam</span></div>
-                    <div className="romantic-stat hover:bg-[var(--tf-bg-subtle)] transition-colors rounded-lg p-2"><strong>{two(relationshipElapsed.minutes)}</strong><span>menit</span></div>
-                  </div>
+        {/* KOLOM KANAN (4-5 Kolom): HUB ROMANTIS, ANNIVERSARY, ULANG TAHUN & MY MINEE */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+          
+          {/* A. Romantic Hero Card */}
+          <SmoothCard className="overflow-hidden p-0 romantic-hero rounded-3xl border border-[var(--tf-border)] shadow-sm">
+            <div className="romantic-hero__glow" />
+            <div className="p-6 sm:p-7">
+              <div className="studio-eyebrow flex items-center gap-1.5 text-rose-500 font-bold">
+                <CalendarHeart size={14} /> Perjalanan Kita
+              </div>
+              
+              <div className="mt-4 flex items-center gap-3">
+                <div className="romantic-avatar romantic-avatar--fathur transition-transform hover:scale-110 shadow-md">F</div>
+                <Heart size={22} className="romantic-heart animate-pulse text-rose-500" fill="currentColor" />
+                <div className="romantic-avatar romantic-avatar--mazet transition-transform hover:scale-110 shadow-md">M</div>
+              </div>
+
+              <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
+                Fathur <span className="romantic-script text-rose-500">&</span> Mazet
+              </h2>
+              <p className="mt-2 text-xs leading-5 text-[var(--tf-text-muted)]">
+                Dimulai sejak <strong className="text-[var(--tf-text-primary)]">{relationshipStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}, {two(relationshipStart.getHours())}:{two(relationshipStart.getMinutes())} WIB</strong>.
+              </p>
+
+              {/* Elapsed Time Pills */}
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                <div className="romantic-stat rounded-2xl p-2.5 text-center bg-white/50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/50">
+                  <strong className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">{relationshipElapsed.days}</strong>
+                  <span className="text-[10px] uppercase font-bold text-[var(--tf-text-muted)]">hari</span>
                 </div>
-                <div className="relative border-t border-[var(--tf-border)] p-6 lg:border-l lg:border-t-0 lg:p-7">
-                  <div className="studio-eyebrow"><ContinuousMotion intensity="high" className="inline-block"><Heart size={13} /></ContinuousMotion> Menuju anniversary</div>
-                  <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
-                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default"><strong>{anniversaryCountdown.days}</strong><span>hari</span></div>
-                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default"><strong>{two(anniversaryCountdown.hours)}</strong><span>jam</span></div>
-                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default"><strong>{two(anniversaryCountdown.minutes)}</strong><span>menit</span></div>
-                    <div className="romantic-countdown hover:scale-105 transition-transform cursor-default text-rose-500"><strong>{two(anniversaryCountdown.seconds)}</strong><span>detik</span></div>
-                  </div>
-                  <div className="mt-4 rounded-[var(--tf-radius-md)] bg-[var(--tf-primary-subtle)] p-3 text-[11px] leading-5 text-[var(--tf-primary)]"><strong>2 Juni {relationshipAnniversary.getFullYear()}</strong> · 18:55 WIB · satu tahun perjalanan berikutnya.</div>
+                <div className="romantic-stat rounded-2xl p-2.5 text-center bg-white/50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/50">
+                  <strong className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">{two(relationshipElapsed.hours)}</strong>
+                  <span className="text-[10px] uppercase font-bold text-[var(--tf-text-muted)]">jam</span>
+                </div>
+                <div className="romantic-stat rounded-2xl p-2.5 text-center bg-white/50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/50">
+                  <strong className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">{two(relationshipElapsed.minutes)}</strong>
+                  <span className="text-[10px] uppercase font-bold text-[var(--tf-text-muted)]">menit</span>
                 </div>
               </div>
-            </SmoothCard>
-            
-            <div className="grid gap-4 md:grid-cols-2">
+            </div>
+
+            {/* Anniversary Countdown Section */}
+            <div className="border-t border-[var(--tf-border)] bg-rose-50/40 dark:bg-rose-950/20 p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="studio-eyebrow text-rose-600 flex items-center gap-1.5 font-bold">
+                  <ContinuousMotion intensity="high" className="inline-block"><Heart size={13} fill="currentColor" /></ContinuousMotion> Menuju Anniversary
+                </div>
+                <span className="text-[11px] font-mono font-bold text-rose-500">2 Juni</span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="p-2 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-rose-200/40 dark:border-rose-900/30">
+                  <strong className="block text-base sm:text-lg font-black text-slate-900 dark:text-white">{anniversaryCountdown.days}</strong>
+                  <span className="text-[10px] uppercase font-semibold text-[var(--tf-text-muted)]">Hari</span>
+                </div>
+                <div className="p-2 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-rose-200/40 dark:border-rose-900/30">
+                  <strong className="block text-base sm:text-lg font-black text-slate-900 dark:text-white">{two(anniversaryCountdown.hours)}</strong>
+                  <span className="text-[10px] uppercase font-semibold text-[var(--tf-text-muted)]">Jam</span>
+                </div>
+                <div className="p-2 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-rose-200/40 dark:border-rose-900/30">
+                  <strong className="block text-base sm:text-lg font-black text-slate-900 dark:text-white">{two(anniversaryCountdown.minutes)}</strong>
+                  <span className="text-[10px] uppercase font-semibold text-[var(--tf-text-muted)]">Mnt</span>
+                </div>
+                <div className="p-2 rounded-2xl bg-rose-500/10 border border-rose-300/50 dark:border-rose-800/50">
+                  <strong className="block text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 animate-pulse">{two(anniversaryCountdown.seconds)}</strong>
+                  <span className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400">Detik</span>
+                </div>
+              </div>
+
+              <div className="mt-3.5 rounded-2xl bg-rose-100/60 dark:bg-rose-900/30 p-2.5 text-[11px] leading-relaxed text-rose-800 dark:text-rose-200 text-center font-medium">
+                ✨ <strong>2 Juni {relationshipAnniversary.getFullYear()}</strong> • 18:55 WIB • Satu tahun perjalanan berikutnya.
+              </div>
+            </div>
+          </SmoothCard>
+
+          {/* B. Birthday Countdowns */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--tf-text-secondary)]">
+              <Cake size={13} className="text-amber-500" />
+              <span>Ulang Tahun Mendatang</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
               {birthdayCountdowns.map((birthday) => (
-                <Card interactive key={birthday.key} className="romantic-birthday-card h-full p-5">
-                  <div className="flex items-center justify-between gap-3"><div className="studio-eyebrow"><Cake size={13} /> Ulang tahun</div><Badge variant="neutral">{birthday.target.getFullYear()}</Badge></div>
-                  <div className="mt-3 flex items-end justify-between gap-4"><div><h2 className="text-xl font-semibold">{birthday.name}</h2><p className="mt-1 text-xs text-[var(--tf-text-muted)]">{birthday.label}</p></div><div className="romantic-birthday-chip">{birthday.countdown.days}<span>hari</span></div></div>
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-center"><div className="rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)] p-2"><strong>{two(birthday.countdown.hours)}</strong><span>jam</span></div><div className="rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)] p-2"><strong>{two(birthday.countdown.minutes)}</strong><span>menit</span></div><div className="rounded-[var(--tf-radius-md)] bg-[var(--tf-bg-subtle)] p-2"><strong>{two(birthday.countdown.seconds)}</strong><span>detik</span></div></div>
+                <Card interactive key={birthday.key} className="romantic-birthday-card p-4 rounded-2xl border border-[var(--tf-border)] shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="studio-eyebrow flex items-center gap-1 font-bold"><Cake size={12} /> {birthday.name}</div>
+                    <Badge variant="neutral" size="sm">{birthday.countdown.days} Hari Lagi</Badge>
+                  </div>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <p className="text-xs text-[var(--tf-text-muted)] font-medium">{birthday.label}</p>
+                    <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+                      {two(birthday.countdown.hours)}j {two(birthday.countdown.minutes)}m {two(birthday.countdown.seconds)}s
+                    </span>
+                  </div>
                 </Card>
               ))}
             </div>
-            
-            <div className="grid gap-4">
-              <Card interactive className="p-5">
-                <div className="studio-eyebrow"><CalendarHeart size={13} /> Tanggal penting</div>
-                <div className="mt-4 space-y-3">
-                  <div className="romantic-date-row"><span>Hubungan</span><strong>{relationshipStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} —  {two(relationshipStart.getHours())}:{two(relationshipStart.getMinutes())}</strong></div>
-                  {BIRTHDAYS.map(b => <div key={b.key} className="romantic-date-row"><span>Ulang tahun {b.name}</span><strong>{b.label}</strong></div>)}
-                </div>
-                <Link to="/calendar" className="studio-action studio-action--soft mt-5 w-full">Buka Academic Timeline</Link>
-              </Card>
-            </div>
           </div>
-          
-          <div className="mb-8">
-            <MineePreviewCard />
-          </div>
-        </div>
 
+          {/* C. Tanggal Penting Card */}
+          <Card interactive className="p-5 rounded-3xl border border-[var(--tf-border)] shadow-sm">
+            <div className="studio-eyebrow flex items-center gap-1.5 text-indigo-500 font-bold">
+              <CalendarHeart size={14} /> Tanggal Penting Kita
+            </div>
+            <div className="mt-3 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center p-2.5 rounded-2xl bg-[var(--tf-bg-subtle)]">
+                <span className="text-[var(--tf-text-muted)]">Mulai Hubungan</span>
+                <strong className="text-[var(--tf-text-primary)]">2 Juni 2024 (18:55 WIB)</strong>
+              </div>
+              {BIRTHDAYS.map(b => (
+                <div key={b.key} className="flex justify-between items-center p-2.5 rounded-2xl bg-[var(--tf-bg-subtle)]">
+                  <span className="text-[var(--tf-text-muted)]">Ultah {b.name}</span>
+                  <strong className="text-[var(--tf-text-primary)]">{b.label}</strong>
+                </div>
+              ))}
+            </div>
+            <Link to="/calendar" className="studio-action studio-action--soft mt-4 w-full justify-center text-center text-xs font-bold py-2.5 rounded-2xl">
+              Buka Academic Timeline →
+            </Link>
+          </Card>
+
+          {/* D. My Minee Gallery Preview */}
+          <MineePreviewCard />
+
+        </div>
+      </div>
+
+      {/* Task Modal Form */}
       <TaskForm open={taskOpen} initial={null} onClose={() => setTaskOpen(false)} onSaved={() => setTaskOpen(false)} />
     </div>
   );
