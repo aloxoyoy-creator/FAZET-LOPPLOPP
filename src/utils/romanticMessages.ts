@@ -1,43 +1,49 @@
 export const LIFESTYLE_MESSAGES = {
   goodMorning: [
-    "Selamat pagi, Sayang! ☀️ Jangan lupa senyum hari ini, dunia butuh energi positifmu.",
-    "Pagi! Awali harimu dengan Bismillah dan rasa syukur. Semangat ya belajarnya! ❤️",
-    "Good morning, cantik/gantengku! 🌹 Semoga hari ini berjalan lancar dan penuh berkah.",
-    "Pagi ini cerah, secerah harapan kita ke depan. Jangan lupa sarapan ya! 🥞",
-    "Selamat pagi! Buka mata, tarik napas panjang, dan yuk taklukkan hari ini bersama-sama. ✨",
-    "Pagi sayangku! Ingat, setiap langkah kecilmu hari ini sangat berharga. Semangat terus! 🥰"
+    "Selamat pagi bidadari manisnya aku! 🥺💖 Bangun yuk cintaaa, kangen banget tauu... peluk jauh bertubi-tubi muaaach!",
+    "Good monwiiing pacar lucunya akuuu! ☀️ Bangun tidur jangan cemberut yaa, senyum gemesmu itu sumber energi duniaku hari ini! 🥰",
+    "Pagi sayangku cintaku semestaku! ✨ Hari ini harus hepi yaa, jangan cape-cape belajarnya. Inget ada aku yang selalu sayang & bangga banget sama kamu ❤️",
+    "Ayanggg udah bangun beluum? Kalo belum bangun aku ciumin pipinya sampai melek nih! 😚 Semangat beraktivitas ya cintaku tersayang!",
+    "Selamat pagi bayik besarku! 🧸 Minum air putih dulu yuk manis, terus sarapan yang enak. Hari ini kita berjuang bareng lagi ya sayaaang! 🌸",
+    "Good morning cinta hatiku! 🌹 Dari detik pertama buka mata sampai nanti mau tidur lagi, pikiran dan doa aku selalu isinya kamu seorang.",
+    "Pagi maniss! Boleh minta senyum pertamamu hari ini gak? Buat jadi jimat penyemangat aku seharian ini hehehe... I love you so much! 💖",
+    "Halo kesayangan aku! 🥞 Jangan lupa sarapan yaa sayang, perutnya jangan dibiarin kosong, nanti lemes aku yang sedih & kepikiran 🥺",
+    "Selamat pagi rumah ternyamanku. Apapun yang terjadi hari ini, inget ya sayang kalau kamu punya aku yang selalu ada buat kamu. Semangat ya cinta! 💕",
+    "Pagi cintaaa! Yuk bangun yuk, hirup udara pagi yang segar. Dunia beruntung banget punya kamu yang secantik, seimut, dan sebaik ini! ☀️🥰",
+    "Good monwing ayangku yang gemoyyy! 🐣 Hari ini kalau ada hal berat, tarik napas dan bayangin aku lagi elus rambut kamu yaa. Love you pol! ❤️",
+    "Pagi sayang! Jangan lupa senyum manisnya yaa, biar harimu semanis tatapan mata kamu ke aku saat kita lagi barengan. Muaaach! 💋"
   ],
   goodNight: [
-    "Selamat tidur, Sayang. 🌙 Maafkan semua lelah hari ini, besok kita mulai lagi dengan semangat baru.",
-    "Good night! Jangan begadang ya, istirahat yang cukup biar besok badannya segar lagi. ❤️",
-    "Malam telah tiba, waktunya mengistirahatkan pikiran. Mimpi indah ya, see you tomorrow! 🌌",
-    "Selamat istirahat. Terima kasih sudah berjuang keras hari ini. Aku bangga padamu! 🥰",
-    "Tidur yang nyenyak ya. Semoga besok harimu jauh lebih baik dari hari ini. Good night! ✨"
+    "Selamat bobo ayang cintakuuu! 🌙 Tarik selimutnya yang rapi yaa, bayangin aku lagi meluk kamu erat-erat. Mimpiin aku ya manis! 🥺💖",
+    "Good night kesayangan hatiku! Capek ya hari ini? Sini rebahan, istirahat yang nyenyak. Terima kasih sudah berjuang hebat hari ini sayang, aku bangga banget sama kamu! 🥰✨",
+    "Malam manissku~ Jangan begadang ya cintaaa, mata indahnya dipejemin yuk. Besok pagi kita ketemu lagi, love you so much to the moon and back! ❤️",
+    "Tidur yang nyenyak bidadariku/pangeranku. Semoga semua lelahmu hari ini digantikan mimpi indah dan kebahagiaan besok. Cup jauh di keningmu muaaach! 😚🌹",
+    "Good night bayik besarku! 🧸 Jangan kepikiran apa-apa lagi yaa, semuanya bakal baik-baik aja karena ada aku di sampingmu. I love you endlessly! 🌌💫"
   ],
   eatMorning: [
-    "Waktunya sarapan! 🍳 Jangan biarkan perut kosong, kamu butuh energi buat jalani hari yang padat.",
-    "Jangan lupa sarapan sayang, nanti sakit loh. Sedikit aja gapapa, yang penting diisi. 🥪",
-    "Hei, sudah sarapan belum? Jangan ditunda-tunda ya, kesehatanmu nomor satu! 🥛"
+    "Ayanggg, waktunya sarapan yuk! 🍳 Jangan dibiarin perutnya kosong ya maniss, nanti asam lambung naik aku kepikiran terus loh. Makan yang enak ya sayang! 🥪❤️",
+    "Good morning baby! Udah sarapan belum? Sedikit aja gapapa asal perutnya terisi ya cinta. Jaga kesehatan buat aku yaa! 🥛🥰",
+    "Waktunya sarapan kesayangankuu! 🥞 Makannya pelan-pelan, jangan lupa minum air putih yang cukup. Semangat energi paginya cintaaa! ✨"
   ],
   eatAfternoon: [
-    "Waktunya makan siang! 🍱 Istirahat sebentar yuk, jangan dipaksa terus belajarnya.",
-    "Selamat makan siang, Sayang! Nikmati makanannya, rehat sejenak biar nanti semangat lagi. 🍲",
-    "Jam segini perut pasti udah keroncongan. Jangan telat makan siang ya! 🍝"
+    "Waktunya makan siang sayangkuuu! 🍱 Tinggalin dulu tugas atau belajarnya sebentar yaa, rehat yuk cintaaa. Perut kamu harus kenyang biar tetep gemoy! 🍲❤️",
+    "Ayang manis, udah jam makan siang nih! Jangan ditunda-tunda ya makannya. Mau disuapin gak nih? Hehehe cepat makan ya cintaaa! 🍝🥰",
+    "Istirahat makan siang dulu pacar tercantik/tergantengku! 🥗 Minum yang banyak, makan yang bergizi yaa. Aku temenin dari jauh, selamat makaaan sayang! 💖"
   ],
   eatEvening: [
-    "Udah makan malam? 🍛 Jangan malam-malam makannya biar pencernaan terjaga. Selamat makan!",
-    "Makan malam yuk! Jangan sampai kelaparan di tengah malam. Jaga kesehatan terus ya. 🍜",
-    "Waktunya dinner! Tutup hari ini dengan perut kenyang dan hati yang senang. 🥗"
+    "Ayang udah makan malam belum? 🍛 Jangan malem-malem ya makannya biar perutnya nyaman pas bobo nanti. Makan yang banyak ya cintaku! 🍜💕",
+    "Waktunya dinner bareng virtual yuk! 🍲 Jangan diet-diet berlebihan ya manis, kamu udah sempurna dan menggemaskan banget di mataku. Selamat makan sayang! 💖",
+    "Sayangku jangan sampai kelaparan ya malam ini! Kalau belum makan yuk cari makan sekarang, aku ingetin terus karena aku sayang banget sama kamu. 🍕🥰"
   ],
   sahur: [
-    "Waktunya sahur, Sayang! 🌙 Bangun yuk, isi energi dulu biar puasanya lancar seharian.",
-    "Sahur sahur! Jangan sampai kelewatan ya, biar kuat jalanin harinya. Semangat puasanya! ✨",
-    "Bangun sayang, waktunya sahur. Semoga puasanya hari ini penuh berkah dan lancar. 🍚"
+    "Ayanggg bangun sahur yukk! 🌙 Buka matanya pelan-pelan cintaku, minum air putih dulu. Semangat puasanya hari ini ya manis, aku temenin sahur bareng! 🍚❤️",
+    "Sahur sahur kesayanganku! ⏰ Jangan malas makan ya sayang biar kuat sampai maghrib nanti. Peluk hangat biar gak ngantuk lagi yaa! 🥰✨",
+    "Bangun manisku, waktunya sahur! Semoga puasa hari ini lancar berkah dan penuh pahala untuk kita berdua ya cintaaa. Bismillah! 🥛🌸"
   ],
   iftar: [
-    "Alhamdulillah, waktunya berbuka! 🌅 Selamat berbuka puasa ya sayang. Awali dengan yang manis, semanis senyummu.",
-    "Yeay, udah maghrib! Selamat berbuka puasa. Jangan lupa doa dan minum air putih dulu ya. 🍹",
-    "Waktu buka puasa tiba! Selamat menikmati hidangannya. Semoga puasamu hari ini diterima Allah. 🍲"
+    "Alhamdulillah waktunya berbuka puasa cintakuuu! 🌅 Selamat berbuka puasa ya sayangku! Buka puasa sama yang manis-manis dulu, semanis senyuman kamu. 🍹🥰",
+    "Yeayyy udah maghrib sayang! Selamat berbuka puasa, minum air hangat dan makan kurma/takjilnya dulu yaa. Hebat banget ayang bisa puasa penuh hari ini! 🍉💖",
+    "Alhamdulillah! Waktunya buka puasa ayangku yang sholeh/sholehah. Nikmatin makanannya ya cinta, selamat berbuka puasa kesayangan hatiku! 🍲✨"
   ]
 };
 
