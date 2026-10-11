@@ -74,65 +74,67 @@ export default function TKADashboard() {
       </div>
 
       {/* 2. STATISTIK & MATERI */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="p-5 border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold flex items-center gap-2 text-slate-800">
-              <Target className="text-rose-500" size={20} /> Progres Penguasaan Materi
-            </h3>
-            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">Target: 750</span>
-          </div>
-          <div className="space-y-4">
-            {subjects.map((sub, i) => (
-              <div key={i}>
-                <div className="flex justify-between text-xs font-bold mb-1.5">
-                  <span className="text-slate-700">{sub.name}</span>
-                  <span className="text-slate-500">{sub.progress}%</span>
+      {!isMazet && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="p-5 border-slate-200 shadow-sm relative overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold flex items-center gap-2 text-slate-800">
+                <Target className="text-rose-500" size={20} /> Progres Penguasaan Materi
+              </h3>
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">Target: 750</span>
+            </div>
+            <div className="space-y-4">
+              {subjects.map((sub, i) => (
+                <div key={i}>
+                  <div className="flex justify-between text-xs font-bold mb-1.5">
+                    <span className="text-slate-700">{sub.name}</span>
+                    <span className="text-slate-500">{sub.progress}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${sub.color} rounded-full transition-all duration-1000 ease-out`} style={{ width: `${sub.progress}%` }} />
+                  </div>
                 </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${sub.color} rounded-full transition-all duration-1000 ease-out`} style={{ width: `${sub.progress}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <button className="mt-5 w-full bg-slate-50 hover:bg-slate-100 text-blue-600 font-bold text-sm py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1">
-            Lihat Semua Materi <ChevronRight size={16} />
-          </button>
-        </Card>
+              ))}
+            </div>
+            <button className="mt-5 w-full bg-slate-50 hover:bg-slate-100 text-blue-600 font-bold text-sm py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1">
+              Lihat Semua Materi <ChevronRight size={16} />
+            </button>
+          </Card>
 
-        <Card className="p-5 border-slate-200 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50/50">
-          <h3 className="font-bold flex items-center gap-2 text-slate-800 mb-4">
-            <TrendingUp className="text-blue-600" size={20} /> Hasil TryOut Terakhir
-          </h3>
-          <div className="flex items-end gap-4 mb-6">
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Skor Rata-Rata</div>
-              <div className="text-4xl font-black text-slate-900 tracking-tight">640<span className="text-lg text-slate-400">/1000</span></div>
+          <Card className="p-5 border-slate-200 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50/50">
+            <h3 className="font-bold flex items-center gap-2 text-slate-800 mb-4">
+              <TrendingUp className="text-blue-600" size={20} /> Hasil TryOut Terakhir
+            </h3>
+            <div className="flex items-end gap-4 mb-6">
+              <div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Skor Rata-Rata</div>
+                <div className="text-4xl font-black text-slate-900 tracking-tight">640<span className="text-lg text-slate-400">/1000</span></div>
+              </div>
+              <Badge variant="success" className="mb-2">Naik +25 Poin</Badge>
             </div>
-            <Badge variant="success" className="mb-2">Naik +25 Poin</Badge>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-              <div className="text-xs text-slate-500 font-bold mb-1">Tertinggi</div>
-              <div className="text-sm font-black text-emerald-600">Literasi (710)</div>
+            
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                <div className="text-xs text-slate-500 font-bold mb-1">Tertinggi</div>
+                <div className="text-sm font-black text-emerald-600">Literasi (710)</div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                <div className="text-xs text-slate-500 font-bold mb-1">Terendah</div>
+                <div className="text-sm font-black text-rose-600">Kuantitatif (510)</div>
+              </div>
             </div>
-            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-              <div className="text-xs text-slate-500 font-bold mb-1">Terendah</div>
-              <div className="text-sm font-black text-rose-600">Kuantitatif (510)</div>
+            
+            <div className="flex gap-2">
+              <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors flex justify-center items-center gap-2 text-sm shadow-lg shadow-blue-600/20">
+                <BrainCircuit size={16} /> Mulai Latihan
+              </button>
+              <button className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-colors flex justify-center items-center gap-2 text-sm">
+                <BookOpen size={16} /> Bank Soal
+              </button>
             </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors flex justify-center items-center gap-2 text-sm shadow-lg shadow-blue-600/20">
-              <BrainCircuit size={16} /> Mulai Latihan
-            </button>
-            <button className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-colors flex justify-center items-center gap-2 text-sm">
-              <BookOpen size={16} /> Bank Soal
-            </button>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
