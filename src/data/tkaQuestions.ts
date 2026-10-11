@@ -7,6 +7,7 @@ export interface Question {
   id: string;
   subject: string;
   passage?: string;
+  imageUrl?: string;
   text: string;
   options: QuestionOption[];
   correctAnswerId: string;
@@ -83,6 +84,7 @@ export const tkaQuestions: Question[] = [
   // Passage 2: Effective Study Techniques (Questions 6-10)
   {
     id: "en_6", subject: "Bahasa Inggris",
+    imageUrl: "/media_1.png",
     passage: "Effective Study Techniques\n\n1. Know Your Learning Style: Understand whether you learn best by reading, listening, or watching.\n2. Set a Consistent Study Schedule: Study at the same time every day. Regularity helps build strong habits.\n3. Create a Comfortable Study Space: Find a quiet, well-lit, and distraction-free area. Have all your materials ready.\n4. Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. This keeps your mind fresh and focused.\n5. Take Effective Notes: Write key points using methods like mind maps or tables to help remember important information.\n6. Practice and Repeat: Regularly review your material and do practice questions to deepen understanding.\n7. Join a Study Group: Discuss topics with friends to gain new insights and solve problems together.\n8. Leverage Technology: Use apps and websites for flashcards, video lessons, and online quizzes to support your routine.\n9. Get Enough Sleep: Aim for 7-8 hours.\n10. Be Patient and Persistent: Learning takes time.",
     text: "Based on the information given, we can keep our mind focused and fresh by ....",
     options: [
@@ -96,6 +98,7 @@ export const tkaQuestions: Question[] = [
   },
   {
     id: "en_7", subject: "Bahasa Inggris",
+    imageUrl: "/media_1.png",
     passage: "Effective Study Techniques\n\n(See previous passage)",
     text: "Which of the following best categorizes 'Set a Consistent Study Schedule'?",
     options: [
@@ -109,6 +112,7 @@ export const tkaQuestions: Question[] = [
   },
   {
     id: "en_8", subject: "Bahasa Inggris",
+    imageUrl: "/media_1.png",
     passage: "Effective Study Techniques\n\n(See previous passage)",
     text: "Which of the following statements best reflect the author's purpose in writing the text?",
     options: [
@@ -122,6 +126,7 @@ export const tkaQuestions: Question[] = [
   },
   {
     id: "en_9", subject: "Bahasa Inggris",
+    imageUrl: "/media_1.png",
     passage: "Effective Study Techniques\n\n(See previous passage)",
     text: "If you are preparing for an important exam and want to improve your study routine, which of the following techniques helps you build strong habits?",
     options: [
@@ -135,6 +140,7 @@ export const tkaQuestions: Question[] = [
   },
   {
     id: "en_10", subject: "Bahasa Inggris",
+    imageUrl: "/media_1.png",
     passage: "Effective Study Techniques\n\n(See previous passage)",
     text: "According to the text, what is the main benefit of joining a study group?",
     options: [

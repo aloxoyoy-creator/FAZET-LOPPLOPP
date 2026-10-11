@@ -77,6 +77,11 @@ export default function TkaPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3 space-y-6">
             <Card className="p-6 md:p-8 border-slate-200 shadow-sm text-slate-800">
+              {currentQ.imageUrl && (
+                <div className="mb-6 flex justify-center">
+                  <img src={currentQ.imageUrl} alt="Ilustrasi Soal" className="max-w-full max-h-[300px] object-contain rounded-xl border border-slate-100 shadow-sm" />
+                </div>
+              )}
               {currentQ.passage && (
                 <div className="mb-6 pb-6 border-b border-slate-100">
                   <div className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wider">Bacaan</div>
