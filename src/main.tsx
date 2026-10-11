@@ -9,6 +9,7 @@ import App from './App';
 import RuntimeErrorBoundary from './components/ui/RuntimeErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
 import { registerPWA } from './pwa';
+import { ThemeProvider } from './vendor/schoolhub-ui/context/ThemeContext';
 
 registerPWA();
 
@@ -19,9 +20,11 @@ applyThemePrefs();
 createRoot(root).render(
   <StrictMode>
     <RuntimeErrorBoundary>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </ThemeProvider>
     </RuntimeErrorBoundary>
   </StrictMode>
 );
