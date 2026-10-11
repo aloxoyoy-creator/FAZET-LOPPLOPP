@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import CanvasBackground from '../vendor/schoolhub-ui/components/ui/backgrounds/CanvasBackground';
+import CanvasBackground from '../../vendor/schoolhub-ui/components/ui/backgrounds/CanvasBackground';
 
 export default function AnimatedBackground() {
   const glowRef = useRef<HTMLDivElement>(null);
