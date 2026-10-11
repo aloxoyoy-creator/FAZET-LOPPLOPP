@@ -36,6 +36,7 @@ export default function YoutubeWidget() {
     playFromUrlOrSearch,
     setFloating,
     setAutoPlayEnabled,
+    requestExternalPiP,
   } = useYoutubePlayer();
 
   const [inputQuery, setInputQuery] = useState('');
@@ -88,6 +89,9 @@ export default function YoutubeWidget() {
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
                 <Radio size={11} className="animate-pulse" />
                 Radio Sesuai Lagu
+              </span>
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                🎧 Putar di Latar Belakang & Keluar Aplikasi
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -199,9 +203,12 @@ export default function YoutubeWidget() {
                 {/* Tombol Layar Mengambang */}
                 <button 
                   type="button"
-                  onClick={() => setFloating(true)}
+                  onClick={() => {
+                    setFloating(true);
+                    void requestExternalPiP();
+                  }}
                   className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-md"
-                  title="Buka Layar Mengambang (Picture in Picture) agar bisa membuka menu tugas atau jadwal sambil mendengarkan"
+                  title="Buka Layar Mengambang agar bisa membuka menu lain atau meminimalkan aplikasi"
                 >
                   <Tv size={15} />
                   <span>Layar Mengambang</span>

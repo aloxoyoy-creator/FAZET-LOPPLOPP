@@ -6,6 +6,7 @@ import {
   searchYouTube,
   STARTER_CATEGORIES
 } from '../services/youtubeRadioService';
+import { backgroundMedia } from '../services/backgroundMediaService';
 
 export { type VideoItem, STARTER_CATEGORIES } from '../services/youtubeRadioService';
 
@@ -28,6 +29,7 @@ interface YoutubePlayerContextType {
   setMinimized: (minimized: boolean) => void;
   setAutoPlayEnabled: (enabled: boolean) => void;
   closePlayer: () => void;
+  requestExternalPiP: () => Promise<void>;
 
   // Backward-compatible properties
   playlist: VideoItem[];
@@ -171,6 +173,12 @@ export function YoutubePlayerProvider({ children }: { children: React.ReactNode 
     setActiveVideo(null);
     setIsFloating(false);
     setIsMinimized(false);
+    backgroundMedia.syncMediaSession(null, {});
+  }, []);
+
+  // Request Document PiP or OS floating window
+  const requestExternalPiP = useCallback(async () => {
+    await backgroundMedia.requestDocumentPiP(380, 260);
   }, []);
 
   // Backward compatibility: selectGenre plays first track in category
@@ -183,6 +191,30 @@ export function YoutubePlayerProvider({ children }: { children: React.ReactNode 
       void playVideo(first, others);
     }
   }, [playVideo]);
+
+  // Synchronize active track with mobile notification center & lockscreen MediaSession
+  useEffect(() => {
+    backgroundMedia.syncMediaSession(activeVideo, {
+      onPlay: () => {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach((ifr) => {
+          ifr.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*');
+        });
+      },
+      onPause: () => {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach((ifr) => {
+          ifr.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo' }), '*');
+        });
+      },
+      onNext: () => {
+        playNext();
+      },
+      onPrev: () => {
+        playPrev();
+      },
+    });
+  }, [activeVideo, playNext, playPrev]);
 
   // Listen to postMessage from YouTube IFrame for seamless auto-play next!
   useEffect(() => {
@@ -225,6 +257,7 @@ export function YoutubePlayerProvider({ children }: { children: React.ReactNode 
         setMinimized: setIsMinimized,
         setAutoPlayEnabled,
         closePlayer,
+        requestExternalPiP,
 
         // Backward compatibility bindings
         playlist: autoPlaylist,
