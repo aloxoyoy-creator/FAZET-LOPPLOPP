@@ -14,6 +14,7 @@ import { useToast } from '../components/ui/Toast';
 import { useTasks } from '../hooks/useTasks';
 import { getRecentLoginSessions, type LoginSession } from '../services/loginSessionService';
 import MazetTaskHistory from '../components/profile/MazetTaskHistory';
+import TKADashboard from '../components/widgets/TKADashboard';
 
 export default function Profile() {
   const { user, profile, refreshProfile, isAdmin } = useAuth();
@@ -228,11 +229,16 @@ export default function Profile() {
           </div>
       </div>
 
-      {/* RIWAYAT TUGAS MAZET */}
+      {/* RIWAYAT TUGAS MAZET (Khusus Akun Mazet) */}
       <MazetTaskHistory 
         userId={user?.id} 
         isMazetView={workspaceId === 'mazet' || profile?.workspaceId === 'mazet' || (profile?.name || '').toLowerCase().includes('mazet')} 
       />
+
+      {/* JADWAL & COUNTDOWN TKA FATHUR (Khusus Akun/Profil Fathur) */}
+      {!(workspaceId === 'mazet' || profile?.workspaceId === 'mazet' || (profile?.name || '').toLowerCase().includes('mazet')) && (
+        <TKADashboard />
+      )}
       
       {/* CHANGE PASSWORD SECTION */}
       <Card className="p-6 mb-6">

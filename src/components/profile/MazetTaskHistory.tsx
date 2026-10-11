@@ -154,6 +154,10 @@ export default function MazetTaskHistory({ userId, isMazetView }: Props) {
     }
   };
 
+  if (!isMazetView) {
+    return null;
+  }
+
   return (
     <Card className="p-6 border-2 border-rose-200/90 dark:border-rose-900/40 bg-white dark:bg-[#0a0f1d] shadow-sm space-y-6">
       {/* Header Section */}

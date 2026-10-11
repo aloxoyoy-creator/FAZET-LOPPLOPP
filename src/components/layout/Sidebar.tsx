@@ -33,10 +33,6 @@ export const getGroups = (workspaceId: WorkspaceId): NavGroup[] => [
       { to: '/schedule', label: workspaceId === 'mazet' ? 'Jadwal Kuliah' : 'Jadwal Sekolah', icon: CalendarClock },
       { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
       { to: '/calendar', label: 'Academic Timeline', icon: CalendarDays },
-      ...(workspaceId === 'mazet' ? [] : [
-        { to: '/simulasi-tka', label: 'Simulasi TKA', icon: ClipboardList },
-        { to: '/tka', label: 'Materi TKA & SNBT', icon: BookOpen }
-      ]),
       { to: '/tasks', label: 'Tugas', icon: ClipboardList },
       { to: '/notes', label: 'Catatan', icon: StickyNote },
       { to: '/focus', label: 'Focus Mode', icon: Timer },
