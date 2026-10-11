@@ -294,6 +294,8 @@ export async function showSystemNotification(
   }
 }
 
+const webTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
+
 export async function scheduleSystemNotification(
   title: string,
   body: string,
@@ -309,10 +311,11 @@ export async function scheduleSystemNotification(
     if (!granted) return;
   }
 
+  const safeId = notificationId || Math.floor(Math.random() * 2147483647);
+
   if (Capacitor.isNativePlatform()) {
     try {
       await ensureChannelsExist();
-      const safeId = notificationId || Math.floor(Math.random() * 2147483647);
 
       await LocalNotifications.schedule({
         notifications: [
@@ -332,12 +335,18 @@ export async function scheduleSystemNotification(
       console.error('Error scheduling local notification', err);
     }
   } else {
-    // Web fallback using setTimeout if schedule is within 24 hours
+    // Web fallback using setTimeout if schedule is within 2 days
     const delay = date.getTime() - Date.now();
-    if (delay > 0 && delay < 86400000 * 2) {
-      setTimeout(() => {
-        void showSystemNotification(title, body, actionUrl, { channelId, soundType, id: notificationId });
+    if (delay > 0 && delay < 86400000 * 3) {
+      // Clear any prior timer for the same ID
+      const prior = webTimeouts.get(safeId);
+      if (prior) clearTimeout(prior);
+
+      const timer = setTimeout(() => {
+        webTimeouts.delete(safeId);
+        void showSystemNotification(title, body, actionUrl, { channelId, soundType, id: safeId });
       }, delay);
+      webTimeouts.set(safeId, timer);
       console.log(`[Web Notification] Scheduled: "${title}" in ${(delay / 60000).toFixed(1)} mins`);
     }
   }
@@ -350,5 +359,10 @@ export async function cancelSystemNotification(notificationId: number) {
     } catch (err) {
       console.warn('Error cancelling local notification:', err);
     }
+  }
+  const timer = webTimeouts.get(notificationId);
+  if (timer) {
+    clearTimeout(timer);
+    webTimeouts.delete(notificationId);
   }
 }
