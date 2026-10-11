@@ -10,7 +10,6 @@ import {
 } from '../services/systemNotificationService';
 import { calculateOfflinePrayerTimes, PRAYER_WISDOM } from '../utils/jadwalSholat';
 import { getWIBDateForDay } from '../utils/timeUtils';
-import { getRandomMessage } from '../utils/romanticMessages';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -158,83 +157,6 @@ export function usePushNotifications() {
               'fazet_default_channel',
               'reminder'
             );
-          }
-
-          // ---- ROMANTIC & LIFESTYLE REMINDERS ----
-          if (lifestyle?.enableRomanticReminders) {
-             // Good Morning (05:30 WIB)
-             const gmDate = getWIBDateForDay(i, 5, 30);
-             if (gmDate > now) {
-                void scheduleSystemNotification(
-                  `☀️ Selamat Pagi Sayang`,
-                  getRandomMessage('goodMorning'),
-                  gmDate,
-                  '/',
-                  generateStringId(`gm-${todayStr}`),
-                  'fazet_default_channel',
-                  'reminder'
-                );
-             }
-             
-             // Good Night (22:00 WIB)
-             const gnDate = getWIBDateForDay(i, 22, 0);
-             if (gnDate > now) {
-                void scheduleSystemNotification(
-                  `🌙 Selamat Malam Sayang`,
-                  getRandomMessage('goodNight'),
-                  gnDate,
-                  '/',
-                  generateStringId(`gn-${todayStr}`),
-                  'fazet_default_channel',
-                  'reminder'
-                );
-             }
-
-             // Makan Pagi / Sarapan (07:00 WIB) - if not fasting
-             if (!lifestyle?.isFasting) {
-                 const eatMDate = getWIBDateForDay(i, 7, 0);
-                 if (eatMDate > now) {
-                    void scheduleSystemNotification(
-                      `🍳 Waktunya Sarapan!`,
-                      getRandomMessage('eatMorning'),
-                      eatMDate,
-                      '/',
-                      generateStringId(`eat-m-${todayStr}`),
-                      'fazet_default_channel',
-                      'reminder'
-                    );
-                 }
-
-                 // Makan Siang (12:30 WIB)
-                 const eatADate = getWIBDateForDay(i, 12, 30);
-                 if (eatADate > now) {
-                    void scheduleSystemNotification(
-                      `🍱 Waktunya Makan Siang!`,
-                      getRandomMessage('eatAfternoon'),
-                      eatADate,
-                      '/',
-                      generateStringId(`eat-a-${todayStr}`),
-                      'fazet_default_channel',
-                      'reminder'
-                    );
-                 }
-             }
-
-             // Makan Malam / Dinner (19:30 WIB) - if not fasting (fasting usually eats at Maghrib)
-             if (!lifestyle?.isFasting) {
-                 const eatEDate = getWIBDateForDay(i, 19, 30);
-                 if (eatEDate > now) {
-                    void scheduleSystemNotification(
-                      `🍛 Waktunya Makan Malam!`,
-                      getRandomMessage('eatEvening'),
-                      eatEDate,
-                      '/',
-                      generateStringId(`eat-e-${todayStr}`),
-                      'fazet_default_channel',
-                      'reminder'
-                    );
-                 }
-             }
           }
 
           // Prayer times: try online API, fallback to accurate offline calculation

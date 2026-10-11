@@ -4,10 +4,10 @@ import { Headphones, Play, Square, Volume2, Clock, Sparkles } from 'lucide-react
 import { soundSynthesizer, type AmbienceType } from '../../utils/audioSynthesizer';
 
 const SOUNDS: Array<{ type: AmbienceType; name: string; emoji: string; desc: string }> = [
-  { type: 'rain', name: 'Hujan Romantis', emoji: '🌧️', desc: 'Deru hujan rintik-rintik yang menenangkan dan syahdu.' },
-  { type: 'fire', name: 'Api Unggun Hangat', emoji: '🪵', desc: 'Kretek api unggun yang hangat menemani malam belajar berdua.' },
-  { type: 'cafe', name: 'Kafe Belajar Santai', emoji: '☕', desc: 'Suasana kedai kopi favorit untuk fokus ngerjain tugas.' },
-  { type: 'binaural', name: 'Gelombang Fokus Theta', emoji: '🎧', desc: 'Frekuensi binaural 6Hz untuk ketenangan batin & fokus tajam.' },
+  { type: 'rain', name: 'Hujan Alami', emoji: '🌧️', desc: 'Deru hujan rintik-rintik yang menenangkan dan membantu konsentrasi belajar.' },
+  { type: 'fire', name: 'Api Unggun', emoji: '🪵', desc: 'Suasana hangat yang tenang untuk membaca atau mengerjakan tugas.' },
+  { type: 'cafe', name: 'Kedai Kopi', emoji: '☕', desc: 'Ambience kafe santai untuk fokus bekerja dan belajar.' },
+  { type: 'binaural', name: 'Gelombang Fokus Theta', emoji: '🎧', desc: 'Frekuensi binaural 6Hz untuk ketenangan batin dan fokus tajam.' },
 ];
 
 export default function CoupleSoundscape() {
@@ -65,11 +65,11 @@ export default function CoupleSoundscape() {
           </div>
           <div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              Suasana Belajar Berdua (Couple Soundscape)
+              Generator Suasana Belajar (Soundscape)
               <Sparkles size={16} className="text-indigo-500" />
             </h2>
             <p className="text-xs text-[var(--tf-text-muted)] mt-0.5">
-              Generator audio sintetis alami offline untuk menemani sesi belajar & relaksasi Fathur & Mazet
+              Audio alami offline untuk menemani konsentrasi belajar, membaca buku, dan relaksasi pikiran
             </p>
           </div>
         </div>

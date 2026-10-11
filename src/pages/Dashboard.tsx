@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock3,
+  Coffee,
   Columns3,
   FileHeart,
   Flame,
@@ -238,8 +239,8 @@ function QuickActions() {
         <span className="text-xs font-semibold transition-colors group-hover:text-emerald-600">Catatan</span>
       </Link>
       <Link to="/lifestyle" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
-        <div className="p-2.5 bg-rose-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><CalendarHeart size={22} className="text-rose-500"/></div>
-        <span className="text-xs font-semibold transition-colors group-hover:text-rose-600">Romansa</span>
+        <div className="p-2.5 bg-cyan-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><Coffee size={22} className="text-cyan-500"/></div>
+        <span className="text-xs font-semibold transition-colors group-hover:text-cyan-600">Lifestyle</span>
       </Link>
       <Link to="/schedule" className="group flex flex-col justify-center items-center gap-2 p-3.5 rounded-2xl bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-sm hover:shadow-md">
         <div className="p-2.5 bg-indigo-500/10 rounded-full transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110"><CalendarClock size={22} className="text-indigo-500"/></div>

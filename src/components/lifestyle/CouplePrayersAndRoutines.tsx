@@ -32,11 +32,11 @@ const PRAYERS: PrayerItem[] = [
   },
   {
     id: 'p_3',
-    title: 'Doa Keberkahan Pasangan & Keluarga Bahagia',
+    title: 'Doa Keberkahan Hidup & Kebaikan Keluarga',
     arabic: 'رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا',
     latin: 'Robbanaa hab lanaa min azwaajinaa wa dzurriyyaatinaa qurrota a\'yun, waj\'alnaa lil muttaqiina imaamaa.',
     translation: 'Ya Tuhan kami, anugerahkanlah kepada kami pasangan dan keturunan kami sebagai penyejuk hati (kami), dan jadikanlah kami pemimpin bagi orang-orang yang bertakwa.',
-    note: 'Doa indah untuk menjaga kehangatan cinta Fathur & Mazet menuju masa depan yang diridhoi.',
+    note: 'Doa memohon ketenteraman jiwa, pasangan, dan generasi yang saleh serta diridhoi Allah SWT.',
   },
   {
     id: 'p_4',
@@ -71,11 +71,11 @@ export default function CouplePrayersAndRoutines() {
           </div>
           <div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              Doa Harian & Jadwal Ibadah Pasangan
+              Doa Harian & Jadwal Ibadah Sholat
               <Sparkles size={16} className="text-emerald-500" />
             </h2>
             <p className="text-xs text-[var(--tf-text-muted)] mt-0.5">
-              Kompilasi doa penyejuk hati untuk belajar, cinta yang berkah, dan jadwal sholat Tuban (WIB)
+              Kompilasi doa penyejuk hati untuk belajar, ketenangan jiwa, dan jadwal sholat Tuban (WIB)
             </p>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function CouplePrayersAndRoutines() {
             <div>
               <div className="flex items-start justify-between gap-2 mb-3">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <Heart size={14} className="text-emerald-500 fill-emerald-500" />
+                  <Sparkles size={14} className="text-emerald-500" />
                   {prayer.title}
                 </h3>
                 <button
