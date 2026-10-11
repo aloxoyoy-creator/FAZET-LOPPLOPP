@@ -61,6 +61,8 @@ import MobileNav from "./MobileNav";
 import LiveStatusBar from "./LiveStatusBar";
 import Watermark from "./Watermark";
 import { useWorkspace } from "../../context/WorkspaceContext";
+import AutoUpdateButton from "../ui/AutoUpdateButton";
+import FloatingYoutubePlayer from "../widgets/FloatingYoutubePlayer";
 
 type AppShellProps = {
   children: ReactNode;
@@ -435,6 +437,8 @@ export default function AppShell({ children }: AppShellProps) {
               )}
             </button>
 
+            <AutoUpdateButton variant="header" />
+
             <div className="relative">
               <button
                 type="button"
@@ -737,6 +741,7 @@ export default function AppShell({ children }: AppShellProps) {
       )}
 
       <MobileNav />
+      <FloatingYoutubePlayer />
       <FloatingActionMenu onAddTask={() => setTaskOpen(true)} />
       <TaskForm open={taskOpen} initial={null} onClose={() => setTaskOpen(false)} onSaved={() => setTaskOpen(false)} />
     </div>

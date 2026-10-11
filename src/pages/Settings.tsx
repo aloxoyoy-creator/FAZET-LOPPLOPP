@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { ACCENTS, AMBIENCES, FONT_SCALES, RADII, applyThemePrefs, isAccent, isAmbience, isDashboardLayout, isDashboardTheme, isFontScale, isHandedness, isMobileNavMode, isRadius, isSidebarMode, loadThemePrefs, saveThemePrefs, type Ambience, type DashboardLayout, type DashboardTheme, type FontScale, type Handedness, type MobileNavMode, type Radius, type SidebarMode } from '../lib/themePrefs';
 import { useAppConfig } from '../context/AppConfigContext';
+import AutoUpdateButton from '../components/ui/AutoUpdateButton';
 
 type ThemeMode = 'system' | 'light' | 'dark';
 type Density = 'compact' | 'comfortable' | 'spacious';
@@ -220,6 +221,8 @@ export default function Settings() {
               </label>
             </div>
           </Card>
+
+          <AutoUpdateButton variant="settings" />
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">

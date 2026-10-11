@@ -4,6 +4,7 @@ import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 import AnimatedBackground from './components/ui/AnimatedBackground';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
+import { YoutubePlayerProvider } from './context/YoutubePlayerContext';
 import AppShell from './components/layout/AppShell';
 import Login from './pages/Login';
 import { initNativeApp, useHardwareBackButton } from './lib/native';
@@ -143,11 +144,12 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <WorkspaceProvider>
-          <AppConfigProvider>
-          <NativeBootstrap />
-          <AnimatedBackground />
-          <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm" style={{ color: 'var(--tf-ink-muted)' }}>Memuat…</div>}>
-          <Routes>
+          <YoutubePlayerProvider>
+            <AppConfigProvider>
+              <NativeBootstrap />
+              <AnimatedBackground />
+              <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm" style={{ color: 'var(--tf-ink-muted)' }}>Memuat…</div>}>
+                <Routes>
             <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
             <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
             <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
@@ -221,6 +223,7 @@ export default function App() {
           </Routes>
           </Suspense>
           </AppConfigProvider>
+          </YoutubePlayerProvider>
         </WorkspaceProvider>
       </AuthProvider>
     </BrowserRouter>
