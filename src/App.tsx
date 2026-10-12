@@ -63,6 +63,7 @@ const AdminControl = lazy(() => import('./pages/admin/AdminControl'));
 const AdminHub = lazy(() => import('./pages/admin/AdminHub'));
 const AdminDigitalCards = lazy(() => import('./pages/admin/AdminDigitalCards'));
 const TkaPage = lazy(() => import('./pages/TkaPage'));
+const Finance = lazy(() => import('./pages/Finance'));
 
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -184,6 +185,7 @@ export default function App() {
             <Route path="/focus" element={<ProtectedRoute><Page><Focus /></Page></ProtectedRoute>} />
             <Route path="/search" element={<ProtectedRoute><Page><SearchPage /></Page></ProtectedRoute>} />
             <Route path="/insights" element={<ProtectedRoute><Page><Insights /></Page></ProtectedRoute>} />
+            <Route path="/finance" element={<ProtectedRoute><Page><Finance /></Page></ProtectedRoute>} />
             <Route path="/activity" element={<ProtectedRoute><Page><ActivityCenter /></Page></ProtectedRoute>} />
             <Route path="/my-minee" element={<ProtectedRoute><Page><MyMinee /></Page></ProtectedRoute>} />
             <Route path="/timebox" element={<ProtectedRoute><TimeBox /></ProtectedRoute>} />

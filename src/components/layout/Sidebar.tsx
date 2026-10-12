@@ -4,7 +4,7 @@ import {
   Activity, Award, BarChart3, Bell, BookOpen, CalendarClock, CalendarDays, ChevronDown, ClipboardList, FolderOpen,
   GraduationCap, Heart, IdCard, KeyRound, ListChecks, LogOut, Megaphone, MessageCircle, MonitorPlay,
   PanelLeftClose, PanelLeftOpen, Pin, PinOff, Search, Settings, ShieldAlert, ShieldCheck, Sparkles, Info,
-  StickyNote, Table2, Timer, TrendingUp, Tv, UserRound, Users, Clock3,
+  StickyNote, Table2, Timer, TrendingUp, Tv, UserRound, Users, Clock3, Wallet,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -24,6 +24,7 @@ export const getGroups = (workspaceId: WorkspaceId): NavGroup[] => [
       { to: '/', label: 'Beranda', icon: Sparkles, end: true },
       { to: '/chat', label: 'Chat', icon: MessageCircle },
       { to: '/ai', label: 'FAZET AI', icon: Sparkles },
+      { to: '/finance', label: 'Catatan Keuangan', icon: Wallet },
       { to: '/my-minee', label: 'My Minee', icon: Heart },
       { to: '/lifestyle', label: 'Lifestyle', icon: Heart },
     ],

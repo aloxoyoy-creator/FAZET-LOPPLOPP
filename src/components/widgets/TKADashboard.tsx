@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { 
   Calendar, Flame, Clock, CheckCircle2, AlertCircle, Info, 
-  BookOpen, ChevronRight, Layers, Sparkles, Timer, ShieldCheck,
-  CalendarDays, Hourglass, HelpCircle
+  ChevronDown, ChevronUp, Layers, Sparkles, Timer, ShieldCheck,
+  CalendarDays, Hourglass, ArrowRight, BookOpen
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -19,11 +20,54 @@ interface Props {
   className?: string;
 }
 
+// Clean sub-details for each day for a clean breakdown
+const DAY_COMPONENTS: Record<number, { title: string; subtitle: string; chips: string[]; steps: { name: string; dur: string }[] }> = {
+  1: {
+    title: 'Bahasa Indonesia Wajib & Literasi',
+    subtitle: 'Literasi Membaca & Survei Karakter',
+    chips: ['105 Menit', '30 Soal', 'Survei Karakter'],
+    steps: [
+      { name: 'Latihan Ujian', dur: '5 Menit' },
+      { name: 'Tes Literasi Membaca (30 Soal)', dur: '75 Menit' },
+      { name: 'Survei Karakter', dur: '25 Menit' }
+    ]
+  },
+  2: {
+    title: 'Bahasa Inggris Wajib',
+    subtitle: 'Literasi Bahasa Inggris & Sulingjar',
+    chips: ['105 Menit', '30 Soal', 'Survei Lingkungan'],
+    steps: [
+      { name: 'Latihan Ujian', dur: '5 Menit' },
+      { name: 'Tes Bahasa Inggris (30 Soal)', dur: '75 Menit' },
+      { name: 'Survei Lingkungan Belajar', dur: '25 Menit' }
+    ]
+  },
+  3: {
+    title: 'Matematika Wajib & Numerasi',
+    subtitle: 'Tes Penalaran Numerasi Matematika',
+    chips: ['80 Menit', '25 Soal', 'Fokus Numerasi'],
+    steps: [
+      { name: 'Latihan Ujian', dur: '5 Menit' },
+      { name: 'Tes Numerasi Matematika (25 Soal)', dur: '75 Menit' }
+    ]
+  },
+  4: {
+    title: 'Mapel Pilihan 1 & 2',
+    subtitle: 'Matematika & B. Inggris Tingkat Lanjut',
+    chips: ['125 Menit', '2x 25 Soal', 'Mapel Peminatan'],
+    steps: [
+      { name: 'Latihan Ujian', dur: '5 Menit' },
+      { name: 'Pilihan 1: MTK Tingkat Lanjut (25 Soal)', dur: '60 Menit' },
+      { name: 'Pilihan 2: B. Inggris Lanjut (25 Soal)', dur: '60 Menit' }
+    ]
+  }
+};
+
 export default function TKADashboard({ className = '' }: Props) {
   const { workspaceId } = useWorkspace();
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [activeTab, setActiveTab] = useState<'jadwal' | 'tahapan' | 'rincian'>('jadwal');
-  const [selectedDay, setSelectedDay] = useState<number>(1);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
 
   const isMazet = workspaceId === 'mazet';
 
@@ -51,63 +95,54 @@ export default function TKADashboard({ className = '' }: Props) {
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <div className={`space-y-5 mb-8 ${className}`}>
-      {/* 1. HERO COUNTDOWN (Sisakan Countdown Saja) */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl group text-white">
-        {/* Glow Accents */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/25 via-blue-600/15 to-purple-600/10 mix-blend-screen pointer-events-none" />
-        <div className="absolute -top-[40%] -left-[10%] w-[55%] h-[140%] bg-blue-500/15 blur-[100px] pointer-events-none rounded-full" />
-        <div className="absolute -bottom-[30%] -right-[10%] w-[45%] h-[120%] bg-violet-600/15 blur-[90px] pointer-events-none rounded-full" />
+  const toggleExpand = (hariKe: number) => {
+    setExpandedDay((prev) => (prev === hariKe ? null : hariKe));
+  };
 
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-6 sm:p-8 gap-6">
+  return (
+    <div className={`space-y-4 mb-6 ${className}`}>
+      {/* 1. HERO COUNTDOWN — Sleek, Minimalist, High-Tech Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md text-white">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-indigo-600/10 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-5 sm:p-6 gap-5">
+          {/* Left Info */}
           <div className="flex-1 text-center md:text-left">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
-              <Badge variant="warning" className="inline-flex shadow-[0_0_15px_rgba(251,146,60,0.35)]">
-                <Flame size={14} className="mr-1.5" /> 
-                {isMazet ? 'Event Terbesar Tahun Ini' : 'Jadwal TKA SMA 2026'}
-              </Badge>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <Flame size={12} className="text-amber-400" />
+                {isMazet ? 'Event Terbesar 2026' : 'Target Ujian TKA SMA 2026'}
+              </span>
               {!isMazet && (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20">
                   Gelombang 1 • Sesi 1 (WIB)
                 </span>
               )}
             </div>
 
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300 mb-2 leading-tight">
-              {isMazet ? 'BAZAR EDSA 2026' : 'Jadwal Ujian TKA SMA 2026'}
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              {isMazet ? 'BAZAR EDSA 2026' : 'Ujian TKA SMA 2026'}
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-xl line-clamp-2 md:line-clamp-none">
-              {isMazet
-                ? 'Persiapan dan countdown menuju kemeriahan Bazar EDSA.'
-                : TKA_SCHEDULE_2026_META.subjudul}
-            </p>
-
-            <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-semibold text-slate-300">
+            <div className="mt-1.5 flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-slate-300">
               <span className="flex items-center gap-1.5">
-                <Calendar size={14} className="text-blue-400" />
+                <Calendar size={13} className="text-blue-400" />
                 {isMazet ? '26 Oktober 2026' : 'Mulai: Senin, 26 Okt 2026'}
               </span>
               {!isMazet && (
                 <>
                   <span className="text-slate-600">•</span>
                   <span className="flex items-center gap-1.5">
-                    <Clock size={14} className="text-emerald-400" />
-                    Pukul 07.00 WIB
-                  </span>
-                  <span className="text-slate-600">•</span>
-                  <span className="flex items-center gap-1.5">
-                    <ShieldCheck size={14} className="text-violet-400" />
-                    Zona Waktu: WIB
+                    <Clock size={13} className="text-emerald-400" />
+                    07.00 WIB
                   </span>
                 </>
               )}
             </div>
           </div>
 
-          {/* Countdown Boxes */}
-          <div className="flex gap-2.5 sm:gap-3.5 font-mono w-full md:w-auto justify-center shrink-0">
+          {/* Right Countdown Boxes */}
+          <div className="flex gap-2 font-mono shrink-0">
             {timeLeft ? (
               [
                 { label: 'Hari', val: timeLeft.days },
@@ -117,18 +152,18 @@ export default function TKADashboard({ className = '' }: Props) {
               ].map((item) => (
                 <div 
                   key={item.label} 
-                  className="flex flex-col items-center justify-center bg-white/10 hover:bg-white/15 transition-all backdrop-blur-md rounded-2xl p-2.5 sm:p-3 min-w-[65px] sm:min-w-[76px] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                  className="flex flex-col items-center justify-center bg-white/10 rounded-2xl p-2 sm:p-2.5 min-w-[56px] sm:min-w-[62px] border border-white/10"
                 >
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-0.5 tracking-tight">
+                  <div className="text-lg sm:text-xl font-black text-white tracking-tight">
                     {item.val}
                   </div>
-                  <div className="text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
                     {item.label}
                   </div>
                 </div>
               ))
             ) : (
-              <div className="px-6 py-4 bg-emerald-500 rounded-2xl text-white font-bold animate-pulse text-sm">
+              <div className="px-5 py-2.5 bg-emerald-500 rounded-2xl text-white font-bold text-xs animate-pulse">
                 Sedang Berlangsung!
               </div>
             )}
@@ -136,235 +171,245 @@ export default function TKADashboard({ className = '' }: Props) {
         </div>
       </div>
 
-      {/* 2. JADWAL TKA GANTIANNYA (Hanya untuk Workspace/Profil Fathur) */}
+      {/* 2. JADWAL TKA SMA 2026 (Minimalist & Simpel, Tetap Informatif) */}
       {!isMazet && (
-        <Card className="p-5 sm:p-6 border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-6">
-          {/* Header & Navigation Tabs */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
-                  <CalendarDays size={20} />
-                </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  Rangkaian Jadwal Ujian TKA SMA 2026
-                </h3>
+        <Card className="p-4 sm:p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] backdrop-blur-md shadow-xs space-y-4 rounded-3xl">
+          {/* Header & Minimalist Segment Tabs */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--tf-border)] pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <CalendarDays size={18} />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Data resmi dirangkum dari media pendidikan untuk Gelombang 1, Sesi 1 (WIB).
-              </p>
+              <div>
+                <h3 className="font-bold text-sm sm:text-base text-[var(--tf-text-primary)]">
+                  Jadwal Ujian TKA SMA 2026
+                </h3>
+                <p className="text-[11px] text-[var(--tf-text-muted)]">
+                  Gelombang 1 • Sesi 1 (WIB) • 26 – 29 Okt 2026
+                </p>
+              </div>
             </div>
 
-            {/* Tab Buttons */}
-            <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1 text-xs font-bold shrink-0 self-start sm:self-auto">
+            {/* Segment Tab Pills */}
+            <div className="inline-flex rounded-2xl bg-slate-100 dark:bg-slate-800/80 p-1 text-xs font-semibold shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab('jadwal')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all ${
                   activeTab === 'jadwal'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold shadow-xs'
+                    : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
-                <Calendar size={13} /> Jadwal Ujian (4 Hari)
+                Jadwal Ujian (4 Hari)
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('tahapan')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all ${
                   activeTab === 'tahapan'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold shadow-xs'
+                    : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
-                <Layers size={13} /> Tahapan Lain
+                Tahapan Lain
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('rincian')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all ${
                   activeTab === 'rincian'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold shadow-xs'
+                    : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
-                <Hourglass size={13} /> Rincian Waktu
+                Rincian Waktu
               </button>
             </div>
           </div>
 
-          {/* TAB 1: JADWAL UJIAN 4 HARI */}
+          {/* TAB 1: JADWAL UJIAN (Minimalist Cards) */}
           {activeTab === 'jadwal' && (
-            <div className="space-y-4">
-              <div className="grid gap-3.5 sm:grid-cols-2">
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {EXAM_DAYS_2026.map((item) => {
-                  const isSelected = selectedDay === item.hariKe;
+                  const comp = DAY_COMPONENTS[item.hariKe];
+                  const isExpanded = expandedDay === item.hariKe;
+
+                  // Clean color badges
+                  const badgeClasses = {
+                    1: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25',
+                    2: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/25',
+                    3: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25',
+                    4: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25',
+                  }[item.hariKe] || 'bg-slate-500/10 text-slate-600';
+
                   return (
                     <div
                       key={item.hariKe}
-                      onClick={() => setSelectedDay(item.hariKe)}
-                      className={`cursor-pointer group relative overflow-hidden rounded-2xl border p-4 sm:p-5 transition-all duration-300 ${
-                        isSelected
-                          ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-950/20 shadow-md shadow-blue-500/5 ring-1 ring-blue-500'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                      }`}
+                      className="group rounded-2xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 hover:bg-[var(--tf-bg-subtle)] hover:border-blue-500/30 p-4 transition-all duration-200"
                     >
-                      <div className="flex items-start justify-between gap-3 mb-2.5">
+                      {/* Top Row: Hari Badge + Date & Monospace Time */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black text-white bg-gradient-to-r ${item.colorTone} shadow-xs`}>
-                            {item.badgeLabel}
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${badgeClasses}`}>
+                            Hari {item.hariKe}
                           </span>
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          <span className="text-xs font-bold text-[var(--tf-text-secondary)]">
                             {item.tanggalFormatted}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 font-mono text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                          <Clock size={12} className="text-blue-500" />
+
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-[var(--tf-text-primary)] px-2 py-0.5 rounded-lg bg-[var(--tf-bg-surface)] border border-[var(--tf-border)]">
+                          <Clock size={11} className="text-blue-500" />
                           {item.mulaiWib} - {item.perkiraanSelesaiWib} WIB
-                        </div>
+                        </span>
                       </div>
 
-                      <h4 className="text-base font-extrabold text-slate-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
-                        {item.mapel}
+                      {/* Subject Title */}
+                      <h4 className="text-sm sm:text-base font-black text-[var(--tf-text-primary)] leading-snug">
+                        {comp?.title || item.mapel}
                       </h4>
+                      {comp?.subtitle && (
+                        <p className="text-[11px] text-[var(--tf-text-muted)] mt-0.5">
+                          {comp.subtitle}
+                        </p>
+                      )}
 
-                      <div className="mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                        <span className="font-medium flex items-center gap-1.5">
-                          <Timer size={13} className="text-amber-500" /> Total durasi: <strong className="text-slate-700 dark:text-slate-300 font-bold">{item.totalMenit} Menit</strong>
+                      {/* Compact Chips: Durasi & Soal */}
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] border border-[var(--tf-border)]">
+                          <Timer size={11} className="text-amber-500" />
+                          {item.totalMenit} Menit
                         </span>
-                        <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-0.5">
-                          Rincian <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                        </span>
+                        {comp?.chips.slice(1).map((chip, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--tf-bg-surface)] text-[var(--tf-text-muted)] border border-[var(--tf-border)]"
+                          >
+                            {chip}
+                          </span>
+                        ))}
+
+                        {/* Toggle Rincian Button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(item.hariKe)}
+                          className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-0.5"
+                        >
+                          {isExpanded ? 'Tutup' : 'Rincian'}
+                          {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        </button>
                       </div>
 
-                      {/* Rincian Expandable Preview */}
-                      <div className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 font-medium">
-                        {item.rincian}
-                      </div>
+                      {/* Expandable Step-by-Step Breakdown */}
+                      {isExpanded && comp && (
+                        <div className="mt-3 pt-3 border-t border-[var(--tf-border)] space-y-1.5 text-xs animate-in fade-in duration-200">
+                          {comp.steps.map((st, i) => (
+                            <div key={i} className="flex items-center justify-between text-[11px] py-1 px-2 rounded-lg bg-[var(--tf-bg-surface)]">
+                              <span className="text-[var(--tf-text-secondary)] font-medium">
+                                • {st.name}
+                              </span>
+                              <span className="font-mono font-bold text-[var(--tf-text-primary)]">
+                                {st.dur}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Catatan Durasi */}
-              <div className="rounded-2xl border border-blue-200/80 bg-blue-50/70 p-3.5 dark:border-blue-900/50 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2.5">
-                <Info size={16} className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
-                <p className="leading-relaxed">
-                  <strong>Catatan Durasi:</strong> {TKA_SCHEDULE_2026_META.catatanDurasi}
-                </p>
+              {/* Minimalist Note */}
+              <div className="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 text-xs text-[var(--tf-text-muted)] flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <Info size={14} className="text-blue-500 shrink-0" />
+                  <span>Jam pada kartu peserta yang berlaku. Total durasi mencakup latihan, tes utama, dan survei.</span>
+                </span>
+                <Link
+                  to="/tka"
+                  className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0 text-xs"
+                >
+                  Latihan Soal <ArrowRight size={13} />
+                </Link>
               </div>
             </div>
           )}
 
-          {/* TAB 2: TAHAPAN LAIN */}
+          {/* TAB 2: TAHAPAN LAIN (Minimalist Timeline) */}
           {activeTab === 'tahapan' && (
-            <div className="space-y-4">
-              <div className="relative border-l-2 border-slate-200 dark:border-slate-800 ml-3.5 space-y-6 py-2">
-                {TKA_STAGES_2026.map((stg) => {
-                  const isCrucial = stg.status === 'crucial';
-                  const isCompleted = stg.status === 'completed';
-                  const isOngoing = stg.status === 'ongoing';
+            <div className="space-y-2.5 py-1">
+              {TKA_STAGES_2026.map((stg) => {
+                const isCrucial = stg.status === 'crucial';
+                const isCompleted = stg.status === 'completed';
 
-                  return (
-                    <div key={stg.id} className="relative pl-6 group">
-                      {/* Node Bullet */}
+                return (
+                  <div
+                    key={stg.id}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-2xl border transition-colors ${
+                      isCrucial
+                        ? 'border-rose-500/30 bg-rose-500/5'
+                        : isCompleted
+                        ? 'border-emerald-500/20 bg-emerald-500/5'
+                        : 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
                       <span
-                        className={`absolute -left-[9px] top-1 h-4 w-4 rounded-full border-2 transition-all ${
+                        className={`w-2 h-2 rounded-full shrink-0 ${
                           isCrucial
-                            ? 'border-rose-500 bg-rose-500 ring-4 ring-rose-500/20 animate-pulse'
-                            : isOngoing
-                            ? 'border-blue-500 bg-blue-500 ring-4 ring-blue-500/20'
+                            ? 'bg-rose-500 animate-pulse'
                             : isCompleted
-                            ? 'border-emerald-500 bg-emerald-500'
-                            : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'
+                            ? 'bg-emerald-500'
+                            : 'bg-slate-400'
                         }`}
                       />
-
-                      <div className={`p-4 rounded-2xl border transition-all ${
-                        isCrucial
-                          ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900/60 dark:bg-rose-950/20 shadow-xs'
-                          : isOngoing
-                          ? 'border-blue-300 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-950/10'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30'
-                      }`}>
-                        <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                          <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                            {stg.nama}
-                            {isCrucial && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white uppercase tracking-wider">
-                                Fokus Utama
-                              </span>
-                            )}
-                            {isOngoing && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-500 text-white uppercase tracking-wider">
-                                Sesi Berjalan
-                              </span>
-                            )}
-                            {isCompleted && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                                Selesai
-                              </span>
-                            )}
-                          </h4>
-                          <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                            {stg.rentangFormatted}
-                          </span>
-                        </div>
-
-                        {stg.catatan && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
-                            *{stg.catatan}
-                          </p>
-                        )}
-                      </div>
+                      <span className="text-xs font-bold text-[var(--tf-text-primary)]">
+                        {stg.nama}
+                      </span>
+                      {isCrucial && (
+                        <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 border border-rose-500/30">
+                          Ujian Utama
+                        </span>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    <span className="font-mono text-xs font-semibold text-[var(--tf-text-muted)] mt-1 sm:mt-0 ml-4 sm:ml-0">
+                      {stg.rentangFormatted}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {/* TAB 3: RINCIAN WAKTU & SUBTES */}
           {activeTab === 'rincian' && (
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 {EXAM_DAYS_2026.map((item) => (
-                  <div key={item.hariKe} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/40">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-black text-blue-600 dark:text-blue-400">
+                  <div key={item.hariKe} className="p-3 rounded-2xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 text-xs">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-black text-blue-600 dark:text-blue-400">
                         {item.hari}, {item.tanggalFormatted.split(',')[1]}
                       </span>
-                      <span className="text-xs font-bold text-slate-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
-                        {item.totalMenit} Menit
+                      <span className="font-mono font-bold text-[var(--tf-text-primary)]">
+                        {item.mulaiWib} - {item.perkiraanSelesaiWib} WIB ({item.totalMenit} mnt)
                       </span>
                     </div>
-                    <div className="text-sm font-black text-slate-900 dark:text-white mb-2">
+                    <div className="font-bold text-[var(--tf-text-primary)] mb-1">
                       {item.mapel}
                     </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700/80">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Waktu Pelaksanaan:</span>
-                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{item.mulaiWib} - {item.perkiraanSelesaiWib} WIB</span>
-                      </div>
-                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-700/60 leading-relaxed font-medium">
-                        {item.rincian}
-                      </div>
-                    </div>
+                    <p className="text-[11px] text-[var(--tf-text-muted)] leading-relaxed">
+                      {item.rincian}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
           )}
-
-          {/* Footer & Catatan Sumber */}
-          <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-            <div className="flex items-start gap-2">
-              <AlertCircle size={15} className="mt-0.5 shrink-0 text-slate-400" />
-              <p className="leading-relaxed">
-                {TKA_SCHEDULE_2026_META.catatanSumber}
-              </p>
-            </div>
-          </div>
         </Card>
       )}
     </div>

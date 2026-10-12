@@ -35,6 +35,8 @@ import {
   Layers3,
   Target,
   UserRound,
+  Wallet,
+  ArrowDownRight,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import JadwalSholat from '../components/widgets/JadwalSholat';
@@ -54,6 +56,7 @@ import DigitalIdCardBanner from '../components/dashboard/DigitalIdCardBanner';
 import AiPulseCard from '../components/dashboard/AiPulseCard';
 import AiBriefing from '../components/dashboard/AiBriefing';
 import DailyQuote from '../components/widgets/DailyQuote';
+import FinanceQuickCard from '../components/widgets/FinanceQuickCard';
 import TaskForm from '../components/tasks/TaskForm';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -221,6 +224,7 @@ function QuickActions() {
   const actions = [
     { to: '/tasks', label: 'Tugas', icon: ListTodo, color: 'text-blue-500', bg: 'bg-blue-500/10 group-hover:bg-blue-500/20', hoverText: 'group-hover:text-blue-600' },
     { to: '/notes', label: 'Catatan', icon: StickyNote, color: 'text-emerald-500', bg: 'bg-emerald-500/10 group-hover:bg-emerald-500/20', hoverText: 'group-hover:text-emerald-600' },
+    { to: '/finance', label: 'Keuangan', icon: Wallet, color: 'text-amber-500', bg: 'bg-amber-500/10 group-hover:bg-amber-500/20', hoverText: 'group-hover:text-amber-600' },
     { to: '/lifestyle', label: 'Lifestyle', icon: Coffee, color: 'text-cyan-500', bg: 'bg-cyan-500/10 group-hover:bg-cyan-500/20', hoverText: 'group-hover:text-cyan-600' },
     { to: '/schedule', label: workspaceId === 'mazet' ? 'Kuliah' : 'Sekolah', icon: CalendarClock, color: 'text-indigo-500', bg: 'bg-indigo-500/10 group-hover:bg-indigo-500/20', hoverText: 'group-hover:text-indigo-600' },
     { to: '/ai', label: 'Tanya AI', icon: Sparkles, color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10 group-hover:bg-fuchsia-500/20', hoverText: 'group-hover:text-fuchsia-600' },
@@ -228,7 +232,7 @@ function QuickActions() {
   ];
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2.5 sm:gap-3">
       {actions.map((act) => {
         const Icon = act.icon;
         return (
@@ -379,8 +383,11 @@ export default function Dashboard() {
       {/* 2. Daily Quote */}
       <RandomMotion delayIndex={0}><DailyQuote /></RandomMotion>
 
-      {/* 3. Quick Actions Menu (6 Buttons) */}
+      {/* 3. Quick Actions Menu (7 Buttons) */}
       <RandomMotion delayIndex={0}><QuickActions /></RandomMotion>
+
+      {/* 3.1 Finance Quick Card */}
+      <RandomMotion delayIndex={0}><FinanceQuickCard /></RandomMotion>
 
       {/* 4. WAKTU SHOLAT & IBADAH (PALING ATAS SESUAI PERMINTAAN USER) */}
       <div className="space-y-3">

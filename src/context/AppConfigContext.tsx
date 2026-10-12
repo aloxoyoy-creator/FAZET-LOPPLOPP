@@ -33,6 +33,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "search", label: "Pencarian", paths: ["/search"] },
   { id: "notifications", label: "Notifikasi", paths: ["/notifications"] },
   { id: "activity", label: "Aktivitas & Perangkat", paths: ["/activity"] },
+  { id: "finance", label: "Catatan Keuangan", paths: ["/finance"] },
 ];
 
 export type Birthday = {

@@ -1,5 +1,5 @@
 import { useAppConfig } from '../../context/AppConfigContext';
-import { Award, CalendarClock, CalendarDays, ClipboardList, GraduationCap, Heart, MessageCircle, MoreHorizontal, Settings, Sparkles, UserRound, StickyNote, Timer, BarChart3, Search, Bell, ShieldAlert, Clock3, Tv, IdCard } from 'lucide-react';
+import { Award, CalendarClock, CalendarDays, ClipboardList, GraduationCap, Heart, MessageCircle, MoreHorizontal, Settings, Sparkles, UserRound, StickyNote, Timer, BarChart3, Search, Bell, ShieldAlert, Clock3, Tv, IdCard, Wallet } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,7 @@ const primary = [
 
 const more = [
   { to: '/ai', label: 'FAZET AI', icon: Sparkles },
+  { to: '/finance', label: 'Keuangan', icon: Wallet },
   { to: '/my-minee', label: 'My Minee', icon: Heart },
   { to: '/lifestyle', label: 'Lifestyle', icon: Heart },
   { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
