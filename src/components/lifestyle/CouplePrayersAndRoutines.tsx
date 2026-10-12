@@ -87,9 +87,9 @@ export default function CouplePrayersAndRoutines() {
 
       {/* Jadwal Sholat Tuban Bar */}
       <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 border border-emerald-100 dark:border-emerald-900/40">
-        <div className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-3 flex items-center justify-between">
-          <span>Waktu Sholat Hari Ini (Tuban & Sekitarnya)</span>
-          <span className="text-[11px] font-medium text-slate-500">Imsak: {prayerTimes.imsak} WIB</span>
+        <div className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-3 flex flex-wrap items-center justify-between gap-1">
+          <span>Waktu Sholat ({now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })})</span>
+          <span className="text-[11px] font-medium font-mono text-slate-500">Imsak: {prayerTimes.imsak} WIB</span>
         </div>
         <div className="grid grid-cols-5 gap-2 text-center text-xs">
           {[

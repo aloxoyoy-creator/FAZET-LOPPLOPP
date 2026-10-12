@@ -193,6 +193,27 @@ export default function JadwalSholat() {
     setTimeout(() => setNotifSent(false), 3000);
   };
 
+  const realTimeDateString = new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(now);
+
+  const tomorrowDate = new Date(now.getTime() + 86400000);
+  const realTimeTomorrowDateString = new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(tomorrowDate);
+
+  const realTimeClock = now.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
   const currentWisdom = PRAYER_WISDOM[currentPrayer] || PRAYER_WISDOM[nextPrayer?.name || 'Subuh'];
 
   return (
@@ -204,15 +225,21 @@ export default function JadwalSholat() {
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1.5">
               <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-xl text-amber-600 dark:text-amber-400">
                 <Sparkles size={18} />
               </div>
               <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">Jadwal Sholat & Ibadah</h2>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Data astronomis Kemenag RI • Dilengkapi pengingat adzan & hadits keutamaan
-            </p>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 font-bold font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {realTimeDateString} • {realTimeClock} WIB
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
+                • Data astronomis Kemenag RI
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -263,13 +290,28 @@ export default function JadwalSholat() {
           ) : activeJadwal ? (
             <div className="fade-in space-y-5">
               <div className="text-center space-y-2.5">
-                <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold transition-colors ${
+                <div className={`inline-flex flex-wrap items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-xs font-bold transition-colors shadow-xs ${
                   isBesokUI 
-                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-300'
-                    : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300'
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
+                    : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
                 }`}>
-                  {isBesokUI ? <CalendarDays size={14} /> : <Clock size={14} />}
-                  {isBesokUI ? `Besok: ${activeJadwal.tanggal}` : activeJadwal.tanggal} — {now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  <CalendarDays size={15} className={isBesokUI ? "text-indigo-500 shrink-0" : "text-amber-500 shrink-0"} />
+                  <span>
+                    {isBesokUI ? (
+                      <>
+                        <span className="opacity-75">Jadwal Aktif Besok:</span> <strong>{realTimeTomorrowDateString}</strong>
+                      </>
+                    ) : (
+                      <>
+                        <span className="opacity-75">Jadwal Hari Ini:</span> <strong>{realTimeDateString}</strong>
+                      </>
+                    )}
+                  </span>
+                  <span className="opacity-40 hidden sm:inline">•</span>
+                  <span className="font-mono flex items-center gap-1 bg-white/80 dark:bg-slate-900/60 px-2 py-0.5 rounded-lg border border-black/5 dark:border-white/10">
+                    <Clock size={12} className="text-amber-600 dark:text-amber-400" />
+                    {realTimeClock} WIB
+                  </span>
                 </div>
                 
                 {nextPrayer ? (
