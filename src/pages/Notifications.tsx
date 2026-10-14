@@ -151,7 +151,7 @@ export default function Notifications() {
   const handleTestTaskNotification = async () => {
     setTestingCategory('task');
     const title = `📝 Tugas Baru: [Matematika Peminatan] Turunan Fungsi Trigonometri`;
-    const body = `📌 Guru: Pak Bambang, M.Pd\n⏰ Deadline: Besok (23:59 WIB)\n⚡ Prioritas: Tinggi 🔥\n💡 Ada 5 soal latihan essay bab 3. Selesaikan lebih awal agar tidak terburu-buru!`;
+    const body = `📚 Mapel: Matematika Peminatan (Pak Bambang, M.Pd)\n⚡ Prioritas: Tinggi ⚡\n⏰ Batas Waktu: Jumat, 16 Oktober 2026 • 23:59 WIB\n📝 Detail: "Kerjakan 5 latihan soal essay Bab 3 di buku bergaris dan sertakan langkahnya."\n💡 Catatan: "Kumpulkan sebelum jam istirahat pertama di meja guru."\n👉 Buka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
 
     await showSystemNotification(title, body, '/tasks', {
       channelId: 'fazet_task_channel',
@@ -173,10 +173,15 @@ export default function Notifications() {
   const handleTestTomorrowAgenda = async () => {
     setTestingCategory('agenda');
     const tomorrowDay = 'Senin';
-    const title = `🎒 Agenda & Persiapan Besok (${tomorrowDay})`;
-    const body = `Pukul 18:00 WIB. Besok ada 4 mata pelajaran: Fisika, Biologi, B. Indonesia, PJOK.\n⚠️ 1 Tugas jatuh tempo besok: Laporan Praktikum.\n🎒 Siapkan buku & seragam malam ini ya!`;
+    const isMazet = workspaceId === 'mazet';
+    const title = isMazet 
+      ? `🎓 Jadwal Kuliah Besok (${tomorrowDay})` 
+      : `📚 Jadwal Pelajaran Besok (${tomorrowDay})`;
+    const body = isMazet
+      ? `• Language Assessment\n• Quantitative Research in ELT\n\nSiapkan materi & laptop malam ini ya manisku! ✨`
+      : `• Matematika Wajib\n• Fisika\n• Biologi\n• Bahasa Indonesia\n\nSiapkan buku & perlengkapan malam ini ya sayang! ✨`;
 
-    await showSystemNotification(title, body, '/', {
+    await showSystemNotification(title, body, '/schedule', {
       channelId: 'fazet_default_channel',
       soundType: 'reminder'
     });
@@ -187,7 +192,7 @@ export default function Notifications() {
         title,
         message: body,
         type: 'announcement',
-        actionUrl: '/'
+        actionUrl: '/schedule'
       });
     }
     setTestingCategory(null);
@@ -358,8 +363,8 @@ export default function Notifications() {
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100/80 transition-all text-center group cursor-pointer"
             >
               <BookOpen size={22} className="text-indigo-600 dark:text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-black text-indigo-900 dark:text-indigo-300">🎒 Agenda Besok (18:00)</span>
-              <span className="text-[10px] text-indigo-700/80 dark:text-indigo-400/70 mt-0.5">Checklist Jadwal & Tas</span>
+              <span className="text-xs font-black text-indigo-900 dark:text-indigo-300">📚 Jadwal Minimalis</span>
+              <span className="text-[10px] text-indigo-700/80 dark:text-indigo-400/70 mt-0.5">18:30 & 05:30 (Tanpa Jam)</span>
             </button>
 
             <button

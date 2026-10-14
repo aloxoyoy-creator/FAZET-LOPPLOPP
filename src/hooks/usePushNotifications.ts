@@ -10,8 +10,7 @@ import {
 } from '../services/systemNotificationService';
 import { calculateOfflinePrayerTimes, PRAYER_WISDOM } from '../utils/jadwalSholat';
 import { getWIBDateForDay } from '../utils/timeUtils';
-import { getRandomSweetMessage } from '../utils/sweetLoveMessages';
-import { loadSchedule } from '../services/scheduleService';
+import { getDailySweetGreeting } from '../utils/sweetLoveMessages';
 import { loadWorkspaceSchedule } from '../services/workspaceService';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -36,11 +35,14 @@ const PRIORITY_LABELS: Record<string, string> = {
 interface TaskRow {
   id: string;
   title: string;
+  description?: string | null;
   subject_name?: string | null;
+  teacher_name?: string | null;
   due_date?: string | null;
   due_time?: string | null;
   status?: string;
   priority?: string;
+  notes?: string | null;
   tags?: string[] | null;
   workspace_id?: string | null;
 }
@@ -52,10 +54,50 @@ function parseTaskDeadline(dueDateStr?: string | null, dueTimeStr?: string | nul
   return isNaN(date.getTime()) ? null : date;
 }
 
-function formatDeadlineDisplay(dueDateStr?: string | null, dueTimeStr?: string | null): string {
+function formatIndonesianDeadline(dueDateStr?: string | null, dueTimeStr?: string | null): string {
   if (!dueDateStr) return 'Segera';
   const time = dueTimeStr ? dueTimeStr.slice(0, 5) : '23:59';
+  const parts = dueDateStr.split('-').map(Number);
+  if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+    const [y, m, d] = parts;
+    const dateObj = new Date(y, m - 1, d);
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const monthNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const dayName = dayNames[dateObj.getDay()] || '';
+    const monthName = monthNames[m - 1] || '';
+    return `${dayName}, ${d} ${monthName} ${y} • ${time} WIB`;
+  }
   return `${dueDateStr} pk ${time} WIB`;
+}
+
+function truncateText(str?: string | null, maxLen = 85): string {
+  if (!str) return '';
+  const clean = str.trim().replace(/\s+/g, ' ');
+  return clean.length > maxLen ? `${clean.slice(0, maxLen - 3)}...` : clean;
+}
+
+function buildDetailedTaskBody(task: TaskRow, phaseContext: string): string {
+  const priority = PRIORITY_LABELS[task.priority || ''] || 'Sedang 📌';
+  const deadlineStr = formatIndonesianDeadline(task.due_date, task.due_time);
+  const teacher = task.teacher_name ? ` (${task.teacher_name})` : '';
+  const desc = truncateText(task.description, 90);
+  const notes = truncateText(task.notes, 75);
+
+  let body = `📚 Mapel: ${task.subject_name || 'Umum'}${teacher}\n⚡ Prioritas: ${priority}\n⏰ Batas Waktu: ${deadlineStr}`;
+
+  if (desc) {
+    body += `\n📝 Detail: "${desc}"`;
+  }
+  if (notes) {
+    body += `\n💡 Catatan: "${notes}"`;
+  }
+
+  body += `\n⏳ Status: ${phaseContext}`;
+  body += `\n👉 Sudah selesai? Buka aplikasi dan tandai selesai agar pengingat berhenti! ✅`;
+  return body;
 }
 
 function scheduleTaskReminders(task: TaskRow) {
@@ -66,17 +108,16 @@ function scheduleTaskReminders(task: TaskRow) {
   if (!deadline) return;
 
   const now = new Date();
-  const subject = task.subject_name ? `[${task.subject_name}] ` : '';
-  const dueFormatted = formatDeadlineDisplay(task.due_date, task.due_time);
+  const subjectTag = task.subject_name ? `[${task.subject_name}] ` : '';
   const actionUrl = `/tasks/${task.id}`;
-  const confirmHint = `\n👉 Apabila sudah selesai, segera konfirmasi di aplikasi agar tidak diingatkan lagi! ✅`;
+  const timeOnly = task.due_time ? task.due_time.slice(0, 5) : '23:59';
 
   // 1. H-2 (48 hours before deadline)
   const d2 = new Date(deadline.getTime() - 48 * 60 * 60 * 1000);
   if (d2 > now) {
     void scheduleSystemNotification(
-      `⚠️ H-2 Deadline Tugas: ${task.title}`,
-      `Tugas ${subject}jatuh tempo 2 hari lagi (${dueFormatted}). Segera cicil yaa!${confirmHint}`,
+      `⚠️ H-2 Deadline: ${subjectTag}${task.title}`,
+      buildDetailedTaskBody(task, 'Tersisa 2 Hari Lagi. Segera cicil pengerjaannya ya!'),
       d2,
       actionUrl,
       generateStringId(`task-d2-${task.id}`),
@@ -91,8 +132,8 @@ function scheduleTaskReminders(task: TaskRow) {
   const d1 = getWIBDateForDay(0, 18, 0, dMinus1);
   if (d1 > now) {
     void scheduleSystemNotification(
-      `⏳ H-1 Deadline Tugas: ${task.title}`,
-      `Tugas ${subject}jatuh tempo BESOK (${dueFormatted})! Pastikan sudah selesai dan siap dikumpulkan.${confirmHint}`,
+      `⏳ H-1 Deadline: ${subjectTag}${task.title}`,
+      buildDetailedTaskBody(task, 'Jatuh Tempo BESOK! Pastikan sudah rapi & siap dikumpulkan.'),
       d1,
       actionUrl,
       generateStringId(`task-d1-${task.id}`),
@@ -105,8 +146,8 @@ function scheduleTaskReminders(task: TaskRow) {
   const dayMorning = getWIBDateForDay(0, 6, 30, deadline);
   if (dayMorning > now) {
     void scheduleSystemNotification(
-      `🚨 Batas Pengumpulan Hari Ini: ${task.title}`,
-      `Tugas ${subject}tenggat waktunya HARI INI (${dueFormatted}). Jangan sampai terlewat!${confirmHint}`,
+      `🚨 DEADLINE HARI INI: ${subjectTag}${task.title}`,
+      buildDetailedTaskBody(task, 'Batas Waktu HARI INI! Cek kembali kelengkapan tugasmu sebelum berangkat!'),
       dayMorning,
       actionUrl,
       generateStringId(`task-morning-${task.id}`),
@@ -120,7 +161,7 @@ function scheduleTaskReminders(task: TaskRow) {
   if (h3 > now) {
     void scheduleSystemNotification(
       `🔥 3 Jam Menuju Deadline: ${task.title}`,
-      `Tugas ${subject}tersisa 3 jam lagi (${dueFormatted})! Yuk tuntaskan sekarang.${confirmHint}`,
+      buildDetailedTaskBody(task, `Tersisa 3 Jam (Batas pk ${timeOnly} WIB)! Selesaikan sentuhan akhir & submit sekarang!`),
       h3,
       actionUrl,
       generateStringId(`task-h3-${task.id}`),
@@ -133,8 +174,8 @@ function scheduleTaskReminders(task: TaskRow) {
   const h1 = new Date(deadline.getTime() - 60 * 60 * 1000);
   if (h1 > now) {
     void scheduleSystemNotification(
-      `⚡ 1 Jam Menuju Deadline: ${task.title}`,
-      `Tugas ${subject}tinggal 1 jam lagi (${dueFormatted})! Siapkan untuk submit sekarang!${confirmHint}`,
+      `⚡ 1 Jam Terakhir: ${task.title}`,
+      buildDetailedTaskBody(task, `Kurang 1 Jam (Batas pk ${timeOnly} WIB)! Segera serahkan tugasmu sekarang!`),
       h1,
       actionUrl,
       generateStringId(`task-h1-${task.id}`),
@@ -147,8 +188,8 @@ function scheduleTaskReminders(task: TaskRow) {
   const m30 = new Date(deadline.getTime() - 30 * 60 * 1000);
   if (m30 > now) {
     void scheduleSystemNotification(
-      `🚨 DEADLINE MENDEKAT (30 Menit): ${task.title}`,
-      `Tenggat waktu ${dueFormatted} kurang 30 menit! Segera kumpulkan sekarang!${confirmHint}`,
+      `🚨 PERINGATAN TERAKHIR (30 Menit): ${task.title}`,
+      buildDetailedTaskBody(task, `Tenggat Waktu Kurang 30 Menit (pk ${timeOnly} WIB)! Segera kumpulkan sekarang!`),
       m30,
       actionUrl,
       generateStringId(`task-m30-${task.id}`),
@@ -186,14 +227,22 @@ export function usePushNotifications() {
           const isMazetTask = (newTask.tags || []).some((tag) => tag === 'workspace:mazet');
           if ((workspaceId === 'mazet') !== isMazetTask) return;
 
-          const priorityText = PRIORITY_LABELS[newTask.priority || ''] || 'Normal';
+          const priorityText = PRIORITY_LABELS[newTask.priority || ''] || 'Sedang 📌';
           const subject = newTask.subject_name ? `[${newTask.subject_name}] ` : '';
-          const dueFormatted = formatDeadlineDisplay(newTask.due_date, newTask.due_time);
+          const dueFormatted = formatIndonesianDeadline(newTask.due_date, newTask.due_time);
+          const teacher = newTask.teacher_name ? ` • Pengajar: ${newTask.teacher_name}` : '';
+          const desc = truncateText(newTask.description, 95);
+          const notes = truncateText(newTask.notes, 75);
+
+          let body = `📚 Mapel: ${newTask.subject_name || 'Umum'}${teacher}\n⚡ Prioritas: ${priorityText}\n⏰ Batas Waktu: ${dueFormatted}`;
+          if (desc) body += `\n📝 Detail: "${desc}"`;
+          if (notes) body += `\n💡 Catatan: "${notes}"`;
+          body += `\n👉 Buka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
 
           // Immediate Detailed Notification
           void showSystemNotification(
             `📝 Tugas Baru: ${subject}${newTask.title}`,
-            `📌 Mapel: ${newTask.subject_name || 'Umum'} • Prioritas: ${priorityText}\n⏰ Deadline: ${dueFormatted}\n💡 Segera buka detail tugas dan cicil pengerjaannya!\n👉 Apabila sudah selesai, segera konfirmasi di aplikasi ya!`,
+            body,
             `/tasks/${newTask.id}`,
             {
               channelId: 'fazet_task_channel',
@@ -222,7 +271,7 @@ export function usePushNotifications() {
             // Immediate celebratory confirmation notification!
             void showSystemNotification(
               `🎉 Tugas Terkonfirmasi Selesai!`,
-              `Alhamdulillah! Tugas "${updatedTask.title}" telah terkonfirmasi selesai. Semua pengingat deadline telah dimatikan. Kerja hebat sayang! ⭐`,
+              `Alhamdulillah! Tugas "${updatedTask.title}" (${updatedTask.subject_name || 'Umum'}) telah terkonfirmasi selesai. Semua alarm deadline telah dimatikan. Kerja hebat sayang! ⭐`,
               `/tasks/${updatedTask.id}`,
               {
                 channelId: 'fazet_task_channel',
@@ -250,7 +299,7 @@ export function usePushNotifications() {
       )
       .subscribe();
 
-    // 3. Setup Scheduled Events (Daily 06:00 Schedule Briefing, Sweet Caring Reminders, Prayers, Fasting)
+    // 3. Setup Scheduled Events (Schedule 2x [18:30 & 05:30], Sweet Caring Greetings, Prayers, Fasting)
     const setupScheduledEvents = async () => {
       try {
         if (Capacitor.isNativePlatform()) {
@@ -275,14 +324,18 @@ export function usePushNotifications() {
           const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
           const yyyy = targetDate.getFullYear();
 
-          // A. SWEET LOVE NOTIFICATIONS (Good morning, meals, afternoon care, goodnight)
-          // 1. Good Morning (05:30 WIB)
-          const morningLoveTime = getWIBDateForDay(i, 5, 30, targetDate);
-          if (morningLoveTime > now) {
+          // -------------------------------------------------------------
+          // A. SWEET CARING GREETINGS (Rotates every day, diverse tones)
+          // -------------------------------------------------------------
+
+          // 1. Selamat Pagi (06:15 WIB)
+          const morningGreeting = getDailySweetGreeting('goodMorning', targetDate);
+          const morningTime = getWIBDateForDay(i, 6, 15, targetDate);
+          if (morningTime > now) {
             void scheduleSystemNotification(
-              `🌅 Selamat Pagi Kesayanganku! ❤️`,
-              getRandomSweetMessage('goodMorning'),
-              morningLoveTime,
+              morningGreeting.title,
+              morningGreeting.message,
+              morningTime,
               '/',
               generateStringId(`sweet-morning-${todayStr}`),
               'fazet_default_channel',
@@ -290,12 +343,13 @@ export function usePushNotifications() {
             );
           }
 
-          // 2. Sarapan / Makan Pagi (07:00 WIB)
-          const breakfastTime = getWIBDateForDay(i, 7, 0, targetDate);
+          // 2. Sarapan / Makan Pagi (07:15 WIB)
+          const breakfastGreeting = getDailySweetGreeting('eatMorning', targetDate);
+          const breakfastTime = getWIBDateForDay(i, 7, 15, targetDate);
           if (breakfastTime > now) {
             void scheduleSystemNotification(
-              `🍳 Jangan Lupa Sarapan Cinta! ☕`,
-              getRandomSweetMessage('eatMorning'),
+              breakfastGreeting.title,
+              breakfastGreeting.message,
               breakfastTime,
               '/',
               generateStringId(`sweet-breakfast-${todayStr}`),
@@ -304,12 +358,28 @@ export function usePushNotifications() {
             );
           }
 
-          // 3. Makan Siang & Istirahat (12:30 WIB)
-          const lunchTime = getWIBDateForDay(i, 12, 30, targetDate);
+          // 3. Selamat Siang (11:45 WIB)
+          const middayGreeting = getDailySweetGreeting('goodAfternoon', targetDate);
+          const middayTime = getWIBDateForDay(i, 11, 45, targetDate);
+          if (middayTime > now) {
+            void scheduleSystemNotification(
+              middayGreeting.title,
+              middayGreeting.message,
+              middayTime,
+              '/',
+              generateStringId(`sweet-midday-${todayStr}`),
+              'fazet_default_channel',
+              'reminder'
+            );
+          }
+
+          // 4. Makan Siang & Istirahat (12:45 WIB)
+          const lunchGreeting = getDailySweetGreeting('eatAfternoon', targetDate);
+          const lunchTime = getWIBDateForDay(i, 12, 45, targetDate);
           if (lunchTime > now) {
             void scheduleSystemNotification(
-              `🍱 Rehat & Makan Siang Yuk Sayang! 🥗`,
-              getRandomSweetMessage('eatAfternoon'),
+              lunchGreeting.title,
+              lunchGreeting.message,
               lunchTime,
               '/',
               generateStringId(`sweet-lunch-${todayStr}`),
@@ -318,26 +388,28 @@ export function usePushNotifications() {
             );
           }
 
-          // 4. Perhatian Sore (16:00 WIB)
-          const careAfternoonTime = getWIBDateForDay(i, 16, 0, targetDate);
-          if (careAfternoonTime > now) {
+          // 5. Perhatian Sore / Selamat Sore (16:00 WIB)
+          const afternoonGreeting = getDailySweetGreeting('afternoonCare', targetDate);
+          const afternoonTime = getWIBDateForDay(i, 16, 0, targetDate);
+          if (afternoonTime > now) {
             void scheduleSystemNotification(
-              `🧃 Rehat Sore & Stay Hydrated Sayang! ⛅`,
-              getRandomSweetMessage('afternoonCare'),
-              careAfternoonTime,
+              afternoonGreeting.title,
+              afternoonGreeting.message,
+              afternoonTime,
               '/',
-              generateStringId(`sweet-care-${todayStr}`),
+              generateStringId(`sweet-afternoon-${todayStr}`),
               'fazet_default_channel',
               'reminder'
             );
           }
 
-          // 5. Makan Malam (19:30 WIB)
+          // 6. Makan Malam (19:30 WIB)
+          const dinnerGreeting = getDailySweetGreeting('eatEvening', targetDate);
           const dinnerTime = getWIBDateForDay(i, 19, 30, targetDate);
           if (dinnerTime > now) {
             void scheduleSystemNotification(
-              `🍛 Waktunya Makan Malam Manisku! 🍲`,
-              getRandomSweetMessage('eatEvening'),
+              dinnerGreeting.title,
+              dinnerGreeting.message,
               dinnerTime,
               '/',
               generateStringId(`sweet-dinner-${todayStr}`),
@@ -346,12 +418,13 @@ export function usePushNotifications() {
             );
           }
 
-          // 6. Good Night & Selamat Tidur (22:00 WIB)
-          const nightTime = getWIBDateForDay(i, 22, 0, targetDate);
+          // 7. Good Night & Selamat Malam (21:45 WIB)
+          const nightGreeting = getDailySweetGreeting('goodNight', targetDate);
+          const nightTime = getWIBDateForDay(i, 21, 45, targetDate);
           if (nightTime > now) {
             void scheduleSystemNotification(
-              `🌙 Selamat Tidur Sayangku, Mimpi Indah! 💤❤️`,
-              getRandomSweetMessage('goodNight'),
+              nightGreeting.title,
+              nightGreeting.message,
               nightTime,
               '/',
               generateStringId(`sweet-night-${todayStr}`),
@@ -360,80 +433,103 @@ export function usePushNotifications() {
             );
           }
 
-          // B. DAILY SCHEDULE NOTIFICATION AT 06:00 WIB (FOR ALL PROFILES)
-          const morningScheduleTime = getWIBDateForDay(i, 6, 0, targetDate);
-          if (morningScheduleTime > now) {
-            if (workspaceId === 'mazet') {
-              try {
-                const scheduleItems = await loadWorkspaceSchedule('mazet');
-                const todayClasses = scheduleItems.filter(s => s.active && s.day === dayNameIndo);
-                let bodyText = '';
+          // -------------------------------------------------------------
+          // B. JADWAL PELAJARAN (2X: 18:30 MALAM SEBELUM & 05:30 PAGI HARI H)
+          // Minimalis, langsung tanpa detail jam berapanya!
+          // -------------------------------------------------------------
+          try {
+            const scheduleItems = await loadWorkspaceSchedule(workspaceId);
+
+            // 1) Jam 05:30 WIB - Pagi hari H pelajarannya (Hari Ini)
+            const morningScheduleTime = getWIBDateForDay(i, 5, 30, targetDate);
+            if (morningScheduleTime > now) {
+              const todayClasses = scheduleItems.filter(s => s.active && s.day === dayNameIndo);
+              let morningTitle = '';
+              let morningBody = '';
+
+              if (workspaceId === 'mazet') {
+                morningTitle = `🎓 Jadwal Kuliah Hari Ini (${dayNameIndo})`;
                 if (todayClasses.length > 0) {
                   const listText = todayClasses
-                    .map(c => `• ${c.startTime}-${c.endTime}: ${c.subject}${c.location ? ` (${c.location})` : ''}`)
+                    .map(c => `• ${c.subject}${c.location ? ` (${c.location})` : ''}`)
                     .join('\n');
-                  bodyText = `🎓 Jadwal Kuliah Hari Ini (${dayNameIndo}):\n${listText}\n\nSemangat kuliahnya hari ini cintaku tersayang! Semoga diberi kemudahan! ❤️`;
+                  morningBody = `${listText}\n\nSemangat kuliahnya hari ini cintaku tersayang! 🌟`;
                 } else {
-                  bodyText = `✨ Hari ${dayNameIndo} ini tidak ada jadwal perkuliahan. Selamat beristirahat atau belajar santai ya manisku! ❤️`;
+                  morningBody = `Hari ini tidak ada perkuliahan. Selamat beristirahat atau belajar santai ya manis! 🍃`;
                 }
-
-                void scheduleSystemNotification(
-                  `📋 Jadwal Kuliah Mazet (${dayNameIndo} • 06:00 WIB)`,
-                  bodyText,
-                  morningScheduleTime,
-                  '/schedule',
-                  generateStringId(`schedule-0600-mazet-${todayStr}`),
-                  'fazet_default_channel',
-                  'reminder'
-                );
-              } catch (err) {
-                console.warn('Failed to load Mazet schedule for notification:', err);
-              }
-            } else {
-              // Fathur profile
-              try {
-                const scheduleItems = await loadSchedule();
-                const todayClasses = scheduleItems.filter(s => s.active && s.day === dayNameIndo);
-                let bodyText = '';
+              } else {
+                morningTitle = `📚 Jadwal Pelajaran Hari Ini (${dayNameIndo})`;
                 if (todayClasses.length > 0) {
                   const listText = todayClasses
-                    .map(c => `• ${c.startTime}-${c.endTime}: ${c.subject}`)
+                    .map(c => `• ${c.subject}`)
                     .join('\n');
-                  bodyText = `📚 Jadwal Sekolah Hari Ini (${dayNameIndo}):\n${listText}\n\nFokus dan semangat belajarnya hari ini sayang! Jaga kesehatanmu yaa! ❤️`;
+                  morningBody = `${listText}\n\nFokus dan semangat belajarnya hari ini sayang! 🌟`;
                 } else {
-                  bodyText = `🌟 Hari ${dayNameIndo} ini tidak ada kelas sekolah. Selamat beristirahat atau belajar mandiri ya sayang! ❤️`;
+                  morningBody = `Hari ini tidak ada jadwal kelas. Selamat beristirahat ya sayang! 🍃`;
                 }
-
-                void scheduleSystemNotification(
-                  `📋 Jadwal Sekolah Fathur (${dayNameIndo} • 06:00 WIB)`,
-                  bodyText,
-                  morningScheduleTime,
-                  '/schedule',
-                  generateStringId(`schedule-0600-fathur-${todayStr}`),
-                  'fazet_default_channel',
-                  'reminder'
-                );
-              } catch (err) {
-                console.warn('Failed to load Fathur schedule for notification:', err);
               }
+
+              void scheduleSystemNotification(
+                morningTitle,
+                morningBody,
+                morningScheduleTime,
+                '/schedule',
+                generateStringId(`schedule-0530-${workspaceId}-${todayStr}`),
+                'fazet_default_channel',
+                'reminder'
+              );
             }
+
+            // 2) Jam 18:30 WIB - Malam sebelum pelajarannya (Jadwal Besok)
+            const eveningScheduleTime = getWIBDateForDay(i, 18, 30, targetDate);
+            if (eveningScheduleTime > now) {
+              const tomorrowDate = new Date(targetDate);
+              tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+              const tomorrowDayName = dayNamesIndo[tomorrowDate.getDay()];
+              const tomorrowClasses = scheduleItems.filter(s => s.active && s.day === tomorrowDayName);
+
+              let eveningTitle = '';
+              let eveningBody = '';
+
+              if (workspaceId === 'mazet') {
+                eveningTitle = `🎓 Jadwal Kuliah Besok (${tomorrowDayName})`;
+                if (tomorrowClasses.length > 0) {
+                  const listText = tomorrowClasses
+                    .map(c => `• ${c.subject}${c.location ? ` (${c.location})` : ''}`)
+                    .join('\n');
+                  eveningBody = `${listText}\n\nSiapkan materi & laptop malam ini ya manisku! ✨`;
+                } else {
+                  eveningBody = `Besok tidak ada jadwal perkuliahan (libur). Selamat beristirahat ya cintaku! 🍃`;
+                }
+              } else {
+                eveningTitle = `📚 Jadwal Pelajaran Besok (${tomorrowDayName})`;
+                if (tomorrowClasses.length > 0) {
+                  const listText = tomorrowClasses
+                    .map(c => `• ${c.subject}`)
+                    .join('\n');
+                  eveningBody = `${listText}\n\nSiapkan buku & perlengkapan malam ini ya sayang! ✨`;
+                } else {
+                  eveningBody = `Besok tidak ada jadwal pelajaran (libur). Selamat beristirahat ya sayang! 🍃`;
+                }
+              }
+
+              void scheduleSystemNotification(
+                eveningTitle,
+                eveningBody,
+                eveningScheduleTime,
+                '/schedule',
+                generateStringId(`schedule-1830-${workspaceId}-${todayStr}`),
+                'fazet_default_channel',
+                'reminder'
+              );
+            }
+          } catch (err) {
+            console.warn('Failed to load schedule for notifications:', err);
           }
 
-          // C. Evening Briefing (18:00 WIB)
-          const eveningReminder = getWIBDateForDay(i, 18, 0, targetDate);
-          if (eveningReminder > now) {
-            void scheduleSystemNotification(
-              `🎒 Agenda & Persiapan Besok (${city})`,
-              `Pukul 18:00 WIB. Saatnya periksa tugas deadline besok dan susun jadwal pelajaranmu. Siapkan tas & perlengkapan malam ini!`,
-              eveningReminder,
-              '/',
-              generateStringId(`evening-${todayStr}`),
-              'fazet_default_channel',
-              'reminder'
-            );
-          }
-
-          // D. Prayer Times & Fasting (Sahur & Iftar)
+          // -------------------------------------------------------------
+          // C. Prayer Times & Fasting (Sahur & Iftar)
+          // -------------------------------------------------------------
           let timings: Record<string, string> | null = null;
           const cacheKey = `prayer_times_${city}_${todayStr}`;
           const cached = localStorage.getItem(cacheKey);
@@ -476,9 +572,10 @@ export function usePushNotifications() {
                 sahurDate.setMinutes(sahurDate.getMinutes() - 45); // 45 mins before Imsak
 
                 if (sahurDate > now) {
+                  const sahurGreeting = getDailySweetGreeting('sahur', targetDate);
                   void scheduleSystemNotification(
-                    `🍽️ Waktunya Sahur Sayang!`,
-                    getRandomSweetMessage('sahur'),
+                    sahurGreeting.title,
+                    sahurGreeting.message,
                     sahurDate,
                     '/',
                     generateStringId(`sahur-${todayStr}`),
@@ -493,9 +590,10 @@ export function usePushNotifications() {
                 const iftarDate = getWIBDateForDay(i, mh, mm_min, targetDate);
                 
                 if (iftarDate > now) {
+                  const iftarGreeting = getDailySweetGreeting('iftar', targetDate);
                   void scheduleSystemNotification(
-                    `🌅 Waktunya Berbuka Puasa!`,
-                    getRandomSweetMessage('iftar'),
+                    iftarGreeting.title,
+                    iftarGreeting.message,
                     iftarDate,
                     '/',
                     generateStringId(`iftar-${todayStr}`),
@@ -560,11 +658,13 @@ export function usePushNotifications() {
           }
         }
 
-        // E. Pre-schedule all active uncompleted tasks in DB for current workspace
+        // -------------------------------------------------------------
+        // D. Pre-schedule all active uncompleted tasks in DB for current workspace
+        // -------------------------------------------------------------
         try {
           const { data: activeTasks, error: taskErr } = await supabase
             .from('tasks')
-            .select('id, title, subject_name, due_date, due_time, status, priority, tags')
+            .select('id, title, description, subject_name, teacher_name, due_date, due_time, status, priority, notes, tags')
             .not('status', 'in', '("completed","submitted")');
 
           if (!taskErr && activeTasks) {
