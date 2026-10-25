@@ -11,6 +11,7 @@ import { initNativeApp, useHardwareBackButton } from './lib/native';
 import { useToast } from './components/ui/Toast';
 import { AdminRoute, GuestRoute, ProtectedRoute } from './routes/guards';
 import RuntimeErrorBoundary from './components/ui/RuntimeErrorBoundary';
+import { isTkaFeatureActive } from './data/tkaSchedule2026';
 
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
@@ -166,8 +167,8 @@ export default function App() {
             <Route path="/notes/:id" element={<ProtectedRoute><Page><Notes /></Page></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Page><Schedule /></Page></ProtectedRoute>} />
             <Route path="/tutoring" element={<ProtectedRoute><Page><Tutoring /></Page></ProtectedRoute>} />
-            <Route path="/simulasi-tka" element={<ProtectedRoute><Page><iframe src="/cbt_pusmendik_simulasi.html" style={{width: '100%', height: 'calc(100vh - 64px)', border: 'none', borderRadius: '8px'}}/></Page></ProtectedRoute>} />
-            <Route path="/tka" element={<ProtectedRoute><Page><TkaPage /></Page></ProtectedRoute>} />
+            <Route path="/simulasi-tka" element={<ProtectedRoute>{isTkaFeatureActive() ? <Page><iframe src="/cbt_pusmendik_simulasi.html" style={{width: '100%', height: 'calc(100vh - 64px)', border: 'none', borderRadius: '8px'}}/></Page> : <Navigate to="/" replace />}</ProtectedRoute>} />
+            <Route path="/tka" element={<ProtectedRoute>{isTkaFeatureActive() ? <Page><TkaPage /></Page> : <Navigate to="/" replace />}</ProtectedRoute>} />
             <Route path="/raport" element={<ProtectedRoute><Page><Raport /></Page></ProtectedRoute>} />
             <Route path="/rapor" element={<Navigate to="/raport" replace />} />
             <Route path="/calendar" element={<ProtectedRoute><Page><Calendar /></Page></ProtectedRoute>} />

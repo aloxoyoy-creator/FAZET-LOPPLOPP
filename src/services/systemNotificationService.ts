@@ -23,7 +23,13 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
-export type NotificationSoundType = 'prayer' | 'task' | 'reminder' | 'success' | 'alert';
+export type NotificationSoundType = 'prayer' | 'task' | 'reminder' | 'success' | 'alert' | 'tka';
+
+export type FazetNotificationChannelId =
+  | 'fazet_prayer_channel'
+  | 'fazet_tka_channel'
+  | 'fazet_task_channel'
+  | 'fazet_default_channel';
 
 export function playNotificationSound(type: NotificationSoundType = 'reminder') {
   // Check user sound preference
@@ -54,6 +60,25 @@ export function playNotificationSound(type: NotificationSoundType = 'reminder') 
 
       osc.start(now + idx * 0.18);
       osc.stop(now + idx * 0.18 + 1.3);
+    });
+  } else if (type === 'tka') {
+    // Command Center Academic Fanfare Chime (F5, A5, C6, F6)
+    const notes = [698.46, 880, 1046.50, 1396.91];
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+
+      gain.gain.setValueAtTime(0, now + idx * 0.1);
+      gain.gain.linearRampToValueAtTime(0.28, now + idx * 0.1 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.9);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + idx * 0.1);
+      osc.stop(now + idx * 0.1 + 0.95);
     });
   } else if (type === 'task') {
     // Sharp dual chime for task alert
@@ -144,7 +169,19 @@ async function ensureChannelsExist() {
       lightColor: '#f59e0b',
     });
 
-    // 2. Channel Tugas & Deadline
+    // 2. Channel Ujian TKA & SNBT (Highest Priority)
+    await LocalNotifications.createChannel({
+      id: 'fazet_tka_channel',
+      name: 'Ujian TKA & Simulasi SNBT 2026',
+      description: 'Alarm pengingat jadwal ujian TKA SMA 2026, briefing persiapan H-1, dan hasil simulasi CBT',
+      importance: 5,
+      visibility: 1,
+      vibration: true,
+      lights: true,
+      lightColor: '#f43f5e',
+    });
+
+    // 3. Channel Tugas & Deadline
     await LocalNotifications.createChannel({
       id: 'fazet_task_channel',
       name: 'Deadline & Tugas Sekolah',
@@ -156,7 +193,7 @@ async function ensureChannelsExist() {
       lightColor: '#3b82f6',
     });
 
-    // 3. Channel Default & Jadwal
+    // 4. Channel Default & Jadwal
     await LocalNotifications.createChannel({
       id: 'fazet_default_channel',
       name: 'Pemberitahuan Sistem & Jadwal',
@@ -216,7 +253,7 @@ export interface SystemNotificationOptions {
   title: string;
   body: string;
   actionUrl?: string;
-  channelId?: 'fazet_prayer_channel' | 'fazet_task_channel' | 'fazet_default_channel';
+  channelId?: FazetNotificationChannelId;
   soundType?: NotificationSoundType;
   tag?: string;
   id?: number;
@@ -234,7 +271,15 @@ export async function showSystemNotification(
     if (!granted) return;
   }
 
-  const soundType = options?.soundType || (options?.channelId === 'fazet_prayer_channel' ? 'prayer' : options?.channelId === 'fazet_task_channel' ? 'task' : 'reminder');
+  const soundType =
+    options?.soundType ||
+    (options?.channelId === 'fazet_prayer_channel'
+      ? 'prayer'
+      : options?.channelId === 'fazet_tka_channel'
+      ? 'tka'
+      : options?.channelId === 'fazet_task_channel'
+      ? 'task'
+      : 'reminder');
   playNotificationSound(soundType);
 
   if (Capacitor.isNativePlatform()) {
@@ -302,7 +347,7 @@ export async function scheduleSystemNotification(
   date: Date,
   actionUrl?: string,
   notificationId?: number,
-  channelId: 'fazet_prayer_channel' | 'fazet_task_channel' | 'fazet_default_channel' = 'fazet_default_channel',
+  channelId: FazetNotificationChannelId = 'fazet_default_channel',
   soundType: NotificationSoundType = 'reminder'
 ) {
   let perm = await checkNotificationPermission();
@@ -335,9 +380,9 @@ export async function scheduleSystemNotification(
       console.error('Error scheduling local notification', err);
     }
   } else {
-    // Web fallback using setTimeout if schedule is within 2 days
+    // Web fallback using setTimeout if schedule is within 5 days
     const delay = date.getTime() - Date.now();
-    if (delay > 0 && delay < 86400000 * 3) {
+    if (delay > 0 && delay < 86400000 * 5) {
       // Clear any prior timer for the same ID
       const prior = webTimeouts.get(safeId);
       if (prior) clearTimeout(prior);

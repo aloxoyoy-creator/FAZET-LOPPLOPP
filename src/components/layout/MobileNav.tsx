@@ -1,18 +1,21 @@
 import { useAppConfig } from '../../context/AppConfigContext';
-import { Award, CalendarClock, CalendarDays, ClipboardList, GraduationCap, Heart, MessageCircle, MoreHorizontal, Settings, Sparkles, UserRound, StickyNote, Timer, BarChart3, Search, Bell, ShieldAlert, Clock3, Tv, IdCard, Wallet } from 'lucide-react';
+import { Award, CalendarClock, CalendarDays, ClipboardList, GraduationCap, Heart, MessageCircle, MoreHorizontal, Settings, Sparkles, Target, UserRound, StickyNote, Timer, BarChart3, Search, Bell, ShieldAlert, Clock3, Tv, IdCard, Wallet } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { isTkaFeatureActive } from '../../data/tkaSchedule2026';
 
 const primary = [
   { to: '/', label: 'Beranda', icon: Sparkles },
   { to: '/chat', label: 'Chat', icon: MessageCircle },
   { to: '/tasks', label: 'Tugas', icon: ClipboardList },
   { to: '/schedule', label: 'Jadwal', icon: CalendarClock },
-  { to: '/raport', label: 'Rapot', icon: Award },
+  { to: '/tka', label: 'TKA', icon: Target },
 ] as const;
 
 const more = [
+  { to: '/tka', label: 'TKA & Simulasi SNBT', icon: Target },
+  { to: '/raport', label: 'Nilai Rapot', icon: Award },
   { to: '/ai', label: 'FAZET AI', icon: Sparkles },
   { to: '/finance', label: 'Keuangan', icon: Wallet },
   { to: '/my-minee', label: 'My Minee', icon: Heart },
@@ -37,13 +40,14 @@ export default function MobileNav() {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { isPathEnabled } = useAppConfig();
-  const extra = (isAdmin ? [...more, { to: '/admin', label: 'Admin Center', icon: Settings }, { to: '/admin/control', label: 'Kontrol Aplikasi', icon: Settings }, { to: '/admin/token', label: 'Token Akses (Baru)', icon: Settings }, { to: '/admin/digital-cards', label: 'Kartu Digital', icon: IdCard }] : more).filter((i) => isPathEnabled(i.to));
+  const tkaActive = isTkaFeatureActive();
+  const extra = (isAdmin ? [...more, { to: '/admin', label: 'Admin Center', icon: Settings }, { to: '/admin/control', label: 'Kontrol Aplikasi', icon: Settings }, { to: '/admin/token', label: 'Token Akses (Baru)', icon: Settings }, { to: '/admin/digital-cards', label: 'Kartu Digital', icon: IdCard }] : more).filter((i) => isPathEnabled(i.to) && (tkaActive || i.to !== '/tka'));
   
   const isMoreActive = extra.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
 
   return <>
     <nav className="mobile-nav safe-bottom" aria-label="Navigasi utama seluler">
-      {primary.filter((i) => isPathEnabled(i.to)).map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => `mobile-nav__item ${isActive ? 'is-active' : ''}`}><Icon size={18} /><span>{label}</span></NavLink>)}
+      {primary.filter((i) => isPathEnabled(i.to) && (tkaActive || i.to !== '/tka')).map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => `mobile-nav__item ${isActive ? 'is-active' : ''}`}><Icon size={18} /><span>{label}</span></NavLink>)}
       <button type="button" className={`mobile-nav__item ${isMoreActive || open ? 'is-active' : ''}`} onClick={() => setOpen((v) => !v)} aria-expanded={open}><MoreHorizontal size={19} /><span>Lainnya</span></button>
     </nav>
     {open && <div className="fixed inset-0 z-[70] bg-slate-950/40 backdrop-blur-sm lg:hidden" onMouseDown={(event) => { if (event.currentTarget === event.target) setOpen(false); }}>

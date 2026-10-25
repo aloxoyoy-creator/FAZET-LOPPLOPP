@@ -4,7 +4,7 @@ import {
   Activity, Award, BarChart3, Bell, BookOpen, CalendarClock, CalendarDays, ChevronDown, ClipboardList, FolderOpen,
   GraduationCap, Heart, IdCard, KeyRound, ListChecks, LogOut, Megaphone, MessageCircle, MonitorPlay,
   PanelLeftClose, PanelLeftOpen, Pin, PinOff, Search, Settings, ShieldAlert, ShieldCheck, Sparkles, Info,
-  StickyNote, Table2, Timer, TrendingUp, Tv, UserRound, Users, Clock3, Wallet,
+  StickyNote, Table2, Target, Timer, TrendingUp, Tv, UserRound, Users, Clock3, Wallet,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -12,6 +12,7 @@ import { useWorkspace, WORKSPACES, type WorkspaceId } from '../../context/Worksp
 import { useNotifications } from '../../hooks/useNotifications';
 import { useTasks, useTaskStats } from '../../hooks/useTasks';
 import { cn } from '../../lib/utils';
+import { isTkaFeatureActive } from '../../data/tkaSchedule2026';
 import '../../styles/sidebar.css';
 
 type NavIcon = ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
@@ -31,6 +32,7 @@ export const getGroups = (workspaceId: WorkspaceId): NavGroup[] => [
   },
   {
     id: 'study', label: 'Belajar', items: [
+      ...(isTkaFeatureActive() ? [{ to: '/tka', label: 'TKA & Simulasi SNBT', icon: Target }] : []),
       { to: '/schedule', label: workspaceId === 'mazet' ? 'Jadwal Kuliah' : 'Jadwal Sekolah', icon: CalendarClock },
       { to: '/tutoring', label: 'Jadwal Les', icon: GraduationCap },
       { to: '/calendar', label: 'Academic Timeline', icon: CalendarDays },

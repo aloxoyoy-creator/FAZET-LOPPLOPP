@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Sparkles, RefreshCcw, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAppConfig } from '../../context/AppConfigContext';
+import { useWorkspace } from '../../context/WorkspaceContext';
+import { getActiveOrNextExamDay, isTkaFeatureActive } from '../../data/tkaSchedule2026';
 
 type TaskInfo = { title: string; subject?: string };
 
@@ -15,33 +17,48 @@ export default function AiBriefing({
   tomorrowSubjects: string[];
 }) {
   const { ai } = useAppConfig();
+  const { workspaceId } = useWorkspace();
   const [briefing, setBriefing] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   const fetchBriefing = async () => {
     setLoading(true);
+    const now = new Date();
+    const tkaActive = workspaceId !== 'mazet' && isTkaFeatureActive(now);
     try {
+      const activeTka = getActiveOrNextExamDay(now);
       const taskStr = tasks.length > 0 
-        ? tasks.map(t => `- ${t.title} ${t.subject ? `(${t.subject})` : ''}`).join('\n')
-        : 'Tidak ada tugas Mendesak.';
+        ? tasks.slice(0, 5).map(t => `- ${t.title} ${t.subject ? `(${t.subject})` : ''}`).join('\n')
+        : 'Tidak ada tugas mendesak.';
       const subjStr = tomorrowSubjects.length > 0
         ? tomorrowSubjects.join(', ')
         : 'Tidak ada jadwal spesifik.';
+      const tkaContext = tkaActive
+        ? `- Target Ujian TKA SMA 2026 Terdekat: Hari Ke-${activeTka.exam.hariKe} (${activeTka.exam.tanggalFormatted}, ${activeTka.exam.mulaiWib} WIB) — ${activeTka.exam.shortTitle}`
+        : '';
 
       const prompt = `${ai.systemPrompt || 'Kamu adalah FAZET AI, asisten produktivitas yang hangat, pintar, dan memotivasi.'} 
 Buatkan sapaan singkat maksimal 3 kalimat untuk ${firstName}. 
 Konteks:
 - Tugas aktif: ${taskStr}
 - Jadwal besok: ${subjStr}
+${tkaContext}
 
-Gaya bahasa: ${ai.greetingStyle || 'Kasual dan bersahabat'}, berbahasa Indonesia. Jangan menggunakan sapaan selamat pagi/siang/malam karena waktunya dinamis, cukup sapa namanya.`;
+Gaya bahasa: ${ai.greetingStyle || 'Kasual dan bersahabat'}, berbahasa Indonesia. Jangan menggunakan sapaan selamat pagi/siang/malam karena waktunya dinamis, cukup sapa namanya dan beri semangat menjalani agenda terdekat.`;
 
       const { data, error } = await supabase.functions.invoke('ai-proxy', { body: { prompt, workspace: 'personal' } });
       if (error) throw error;
       const response = data.text;
       setBriefing(response || 'Semangat menjalani harimu! Fokus pada tujuanmu hari ini.');
-    } catch (e) {
-      setBriefing(`Hai ${firstName}! Jangan lupa cek tugas dan jadwalmu hari ini ya. Tetap semangat!`);
+    } catch {
+      const activeTka = getActiveOrNextExamDay(now);
+      if (tkaActive) {
+        setBriefing(
+          `Hai ${firstName}! Persiapkan dirimu sebaik mungkin untuk TKA Hari Ke-${activeTka.exam.hariKe} (${activeTka.exam.shortTitle}) pada ${activeTka.exam.tanggalFormatted} pukul ${activeTka.exam.mulaiWib} WIB. Semua alarm pengingat sudah siap menjagamu!`
+        );
+      } else {
+        setBriefing(`Hai ${firstName}! Jangan lupa cek tugas, jadwal harian, dan target produktivitasmu hari ini ya. Tetap semangat!`);
+      }
     } finally {
       setLoading(false);
     }
@@ -50,7 +67,7 @@ Gaya bahasa: ${ai.greetingStyle || 'Kasual dan bersahabat'}, berbahasa Indonesia
   useEffect(() => {
     void fetchBriefing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firstName]); // only run once per mount
+  }, [firstName, workspaceId]);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/20">
@@ -75,7 +92,7 @@ Gaya bahasa: ${ai.greetingStyle || 'Kasual dan bersahabat'}, berbahasa Indonesia
         {loading ? (
           <div className="flex items-center gap-2 text-indigo-500/70">
             <Loader2 size={14} className="animate-spin" />
-            <span className="animate-pulse">Menyusun sapaan...</span>
+            <span className="animate-pulse">Menyusun sapaan & briefing harian...</span>
           </div>
         ) : (
           briefing

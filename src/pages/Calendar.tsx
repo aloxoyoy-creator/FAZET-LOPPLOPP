@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpenCheck, CalendarDays, UserRound, ChevronLeft, ChevronRight, CircleAlert, Download, GraduationCap, PartyPopper, Sun, Clock, BookOpen, AlertCircle, FileText, CheckCircle2, Target } from 'lucide-react';
+import { CalendarDays, UserRound, ChevronLeft, ChevronRight, Download, GraduationCap, PartyPopper, Sun, BookOpen, AlertCircle, CheckCircle2, Target, BellRing, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -11,7 +12,10 @@ import { cn } from '../lib/utils';
 import { exportCalendarIcs } from '../lib/ics';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { useFathurTutoringSchedule } from '../hooks/useFathurTutoringSchedule';
+import { getExamDayByDate, isTkaFeatureActive } from '../data/tkaSchedule2026';
+import { syncTkaToNotifications } from '../services/tkaNotificationService';
 
 const WEEKDAYS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 const DAY_NAME: Record<number, string> = { 0: 'Minggu', 1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis', 5: 'Jumat', 6: 'Sabtu' };
@@ -28,17 +32,20 @@ function calendarCells(year: number, month: number) {
 
 export default function Calendar() {
   const { user } = useAuth();
+  const { workspaceId } = useWorkspace();
   const { tasks } = useTasks();
   const { items: schedule } = useSchedule();
   const [cursor, setCursor] = useState(() => new Date());
   const [selected, setSelected] = useState(() => dateKey(new Date()));
-  const { events: holidays, byDate: holidayByDate, loading: holidayLoading, error: holidayError } = useGoogleHolidays(cursor);
+  const { events: holidays, byDate: holidayByDate, loading: holidayLoading } = useGoogleHolidays(cursor);
   
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   
   const { items: tutoring } = useFathurTutoringSchedule(new Date());
   const [focusRows, setFocusRows] = useState<Array<{id:string;task_id:string|null;minutes:number;started_at:string;ended_at:string}>>([]);
+  const [syncingTkaDay, setSyncingTkaDay] = useState<number | null>(null);
+  const tkaActive = workspaceId !== 'mazet' && isTkaFeatureActive();
 
   useEffect(() => {
     async function loadFocus() {
@@ -59,13 +66,6 @@ export default function Calendar() {
   };
 
   const todayKey = dateKey(new Date());
-  const taskCountByDate = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const t of tasks) {
-      if (t.dueDate) map.set(t.dueDate, (map.get(t.dueDate) || 0) + 1);
-    }
-    return map;
-  }, [tasks]);
 
   const tasksByDateMap = useMemo(() => {
     const map = new Map<string, typeof tasks>();
@@ -88,6 +88,7 @@ export default function Calendar() {
   const selectedHoliday = holidayByDate.get(selected) || [];
   const selectedTutoring = tutoring.filter((t) => t.scheduleDate === selected).sort((a,b) => a.startTimeLabel.localeCompare(b.startTimeLabel));
   const selectedFocus = focusRows.filter((r) => r.started_at.startsWith(selected));
+  const selectedTkaExam = tkaActive ? getExamDayByDate(selected) : undefined;
   
   const schoolDay = !isWeekend(selected) && selectedHoliday.length === 0;
   const dayName = DAY_NAME[selectedDate.getDay()];
@@ -101,6 +102,20 @@ export default function Calendar() {
     const now = new Date();
     const [h, m] = timeStr.split(':').map(Number);
     return now.getHours() > h || (now.getHours() === h && now.getMinutes() > m);
+  };
+
+  const handleSyncTkaDay = async (hariKe: number) => {
+    setSyncingTkaDay(hariKe);
+    try {
+      await syncTkaToNotifications({
+        userId: user?.id,
+        workspaceId,
+        triggerImmediateConfirmation: true,
+        specificDay: hariKe,
+      });
+    } finally {
+      setTimeout(() => setSyncingTkaDay(null), 1000);
+    }
   };
 
   return (
@@ -180,6 +195,7 @@ export default function Calendar() {
               const hasSchedule = !holiday && !weekend && daySchedule.length > 0;
               const dayTasks = tasksByDateMap.get(key) || [];
               const dayTutoring = tutoring.filter(t => t.scheduleDate === key);
+              const dayTka = tkaActive ? getExamDayByDate(key) : undefined;
 
               return (
                 <button 
@@ -190,11 +206,13 @@ export default function Calendar() {
                     'relative flex flex-col min-h-[60px] md:min-h-[130px] rounded-2xl p-2 md:p-3 text-left transition-all border',
                     selected === key 
                       ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10 shadow-[0_0_0_2px_rgba(59,130,246,0.2)]' 
-                      : weekend 
-                        ? 'border-slate-100 dark:border-slate-800/50 bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800' 
-                        : holiday 
-                          ? 'border-rose-100 dark:border-rose-900/30 bg-rose-50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/20' 
-                          : 'border-transparent bg-white dark:bg-[#0f1219] hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm'
+                      : dayTka
+                        ? 'border-amber-300/80 dark:border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50/70'
+                        : weekend 
+                          ? 'border-slate-100 dark:border-slate-800/50 bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800' 
+                          : holiday 
+                            ? 'border-rose-100 dark:border-rose-900/30 bg-rose-50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/20' 
+                            : 'border-transparent bg-white dark:bg-[#0f1219] hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm'
                   )}
                 >
                   <div className="flex justify-between items-start w-full">
@@ -202,17 +220,20 @@ export default function Calendar() {
                       'flex items-center justify-center h-8 w-8 rounded-full text-sm font-black', 
                       isToday 
                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
-                        : weekend 
-                          ? 'text-slate-400 dark:text-slate-500' 
-                          : holiday 
-                            ? 'text-rose-600 dark:text-rose-400' 
-                            : 'text-slate-700 dark:text-slate-200'
+                        : dayTka
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-400/40'
+                          : weekend 
+                            ? 'text-slate-400 dark:text-slate-500' 
+                            : holiday 
+                              ? 'text-rose-600 dark:text-rose-400' 
+                              : 'text-slate-700 dark:text-slate-200'
                     )}>
                       {cell.getDate()}
                     </span>
                     
                     {/* Tiny dots indicator for mobile (hidden on md) */}
                     <div className="flex flex-wrap justify-end max-w-[50%] gap-1 md:hidden mt-1">
+                      {dayTka && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>}
                       {dayTasks.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>}
                       {hasSchedule && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                       {holiday && <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>}
@@ -222,6 +243,13 @@ export default function Calendar() {
 
                   {/* Desktop event chips */}
                   <div className="hidden md:flex flex-col gap-1.5 mt-3 overflow-y-auto max-h-[120px] hide-scrollbar w-full">
+                    {dayTka && (
+                      <div className="bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-lg whitespace-normal break-words leading-tight w-full shadow-xs flex items-center gap-1">
+                        <Target size={11} className="shrink-0" />
+                        <span>TKA H{dayTka.hariKe}: {dayTka.shortTitle}</span>
+                      </div>
+                    )}
+
                     {holiday && (
                       <div className="bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-1 rounded-lg whitespace-normal break-words leading-tight w-full border border-rose-200/50 dark:border-rose-800/50">
                         {String(holidayByDate.get(key)?.[0]?.summary || 'Libur')}
@@ -275,6 +303,65 @@ export default function Calendar() {
 
             <div className="p-5 space-y-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
               
+              {/* TKA SMA 2026 Exam Day Banner */}
+              {selectedTkaExam && (
+                <section className="rounded-2xl border border-amber-300/70 dark:border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-transparent p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-white shadow-sm">
+                        <Target size={16} />
+                      </span>
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                          Ujian TKA SMA 2026 • Hari Ke-{selectedTkaExam.hariKe}
+                        </div>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                          {selectedTkaExam.shortTitle}
+                        </h3>
+                      </div>
+                    </div>
+                    <Badge tone="amber" className="shrink-0">
+                      {selectedTkaExam.mulaiWib} - {selectedTkaExam.perkiraanSelesaiWib} WIB
+                    </Badge>
+                  </div>
+
+                  <p className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    {selectedTkaExam.subtitle} • <strong>{selectedTkaExam.totalMenit} Menit</strong> ({selectedTkaExam.totalSoal} Soal)
+                  </p>
+
+                  <div className="mt-3 space-y-1.5 rounded-xl bg-white/70 dark:bg-slate-900/60 p-2.5 border border-amber-200/60 dark:border-amber-800/40">
+                    {selectedTkaExam.steps.map((step, sIdx) => (
+                      <div key={sIdx} className="flex items-center justify-between text-[11px]">
+                        <span className="font-semibold text-slate-700 dark:text-slate-200 truncate pr-2">
+                          {sIdx + 1}. {step.name}
+                        </span>
+                        <span className="font-mono font-bold text-amber-600 dark:text-amber-400 shrink-0">
+                          {step.dur}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleSyncTkaDay(selectedTkaExam.hariKe)}
+                      disabled={syncingTkaDay === selectedTkaExam.hariKe}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 text-xs font-bold transition-colors shadow-xs disabled:opacity-60"
+                    >
+                      <BellRing size={13} />
+                      {syncingTkaDay === selectedTkaExam.hariKe ? 'Tersinkron!' : 'Aktifkan Alarm Hari Ini'}
+                    </button>
+                    <Link
+                      to="/tka"
+                      className="inline-flex items-center justify-center gap-1 rounded-xl border border-amber-300 dark:border-amber-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-50"
+                    >
+                      Buka CBT <ArrowUpRight size={13} />
+                    </Link>
+                  </div>
+                </section>
+              )}
+
               {/* Holidays */}
               {selectedHoliday.length > 0 && (
                 <div className="space-y-3">
@@ -348,7 +435,7 @@ export default function Calendar() {
                           <div className="w-2 h-2 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]"></div>
                           <div>
                             <div className="text-sm font-black text-violet-900 dark:text-violet-100">{item.subjectName}</div>
-                            <div className="text-[11px] font-semibold text-violet-600/70 dark:text-violet-400/70 mt-0.5">{item.activityType} ? {item.className}</div>
+                            <div className="text-[11px] font-semibold text-violet-600/70 dark:text-violet-400/70 mt-0.5">{item.activityType} • {item.className}</div>
                           </div>
                         </div>
                         <div className="text-xs font-black text-violet-700 dark:text-violet-300 bg-violet-100 dark:bg-violet-900/50 px-2 py-1 rounded-lg">
@@ -370,9 +457,8 @@ export default function Calendar() {
                   </div>
                   
                   <div className="relative border-l-2 border-slate-200 dark:border-slate-800 ml-4 space-y-6 pb-2">
-                    {selectedSchedule.map((item, idx) => {
+                    {selectedSchedule.map((item) => {
                       const past = isPast(item.endTime);
-                      const isLast = idx === selectedSchedule.length - 1;
                       
                       return (
                         <div key={item.id} className={cn("relative pl-6 transition-opacity", past ? "opacity-50" : "opacity-100")}>
@@ -438,7 +524,7 @@ export default function Calendar() {
               )}
 
               {/* Empty State */}
-              {selectedTasks.length === 0 && selectedHoliday.length === 0 && selectedTutoring.length === 0 && selectedFocus.length === 0 && (!schoolDay || selectedSchedule.length === 0) && !isWeekend(selected) && (
+              {!selectedTkaExam && selectedTasks.length === 0 && selectedHoliday.length === 0 && selectedTutoring.length === 0 && selectedFocus.length === 0 && (!schoolDay || selectedSchedule.length === 0) && !isWeekend(selected) && (
                 <div className="flex flex-col items-center justify-center py-10 text-center px-4 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
                   <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-full mb-3 text-slate-400">
                     <CalendarDays size={24} />

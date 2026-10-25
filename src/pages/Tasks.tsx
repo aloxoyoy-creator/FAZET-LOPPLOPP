@@ -1,15 +1,17 @@
 import { 
   Search, SlidersHorizontal, Plus, X, LayoutGrid, Rows3, 
-  Kanban, CheckCircle2, Clock, AlertTriangle, ListTodo, Sparkles 
+  Kanban, CheckCircle2, Clock, AlertTriangle, ListTodo, Sparkles,
+  Download, Flame, CalendarClock, Loader2
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
+import { useWorkspace } from '../context/WorkspaceContext';
+import { askAiAssistant } from '../services/aiAssistantService';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskForm from '../components/tasks/TaskForm';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
 import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
 import { cn, relativeDeadline } from '../lib/utils';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +19,7 @@ import type { Task } from '../types';
 
 export default function Tasks() {
   const { tasks, loading } = useTasks();
+  const { workspaceId } = useWorkspace();
   const location = useLocation();
 
   const [open, setOpen] = useState(false);
@@ -26,10 +29,15 @@ export default function Tasks() {
     new URLSearchParams(location.search).get('status') || 'all'
   );
   const [priority, setPriority] = useState<string>('all');
+  const [quickChip, setQuickChip] = useState<'all' | 'urgent' | 'today' | 'overdue' | 'completed'>('all');
   const [sort, setSort] = useState<string>('nearest');
   const [showFilter, setShowFilter] = useState(false);
   const [view, setView] = useState<'grid' | 'compact' | 'kanban'>('grid');
   const [subject, setSubject] = useState<string>('all');
+
+  // AI Prioritizer state
+  const [aiAdvice, setAiAdvice] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (new URLSearchParams(location.search).get('new') === '1') {
@@ -70,16 +78,25 @@ export default function Tasks() {
     const completed = tasks.filter((t) => t.status === 'completed').length;
     const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
     const overdue = tasks.filter((t) => relativeDeadline(t) === 'Terlambat' && t.status !== 'completed').length;
-    return { total, completed, inProgress, overdue };
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, inProgress, overdue, completionRate };
   }, [tasks]);
 
   const filtered = useMemo(() => {
+    const todayIso = new Date().toISOString().slice(0, 10);
     const arr = tasks.filter((t) => {
       const text = `${t.title} ${t.description} ${t.subjectName} ${t.teacherName}`.toLowerCase();
       const statusOk = status === 'all' || t.status === status;
       const priorityOk = priority === 'all' || t.priority === priority;
       const subjectOk = subject === 'all' || t.subjectName === subject;
-      return text.includes(q.toLowerCase()) && statusOk && priorityOk && subjectOk;
+
+      let chipOk = true;
+      if (quickChip === 'urgent') chipOk = (t.priority === 'urgent' || t.priority === 'high') && t.status !== 'completed';
+      else if (quickChip === 'today') chipOk = t.dueDate === todayIso && t.status !== 'completed';
+      else if (quickChip === 'overdue') chipOk = relativeDeadline(t) === 'Terlambat' && t.status !== 'completed';
+      else if (quickChip === 'completed') chipOk = t.status === 'completed';
+
+      return text.includes(q.toLowerCase()) && statusOk && priorityOk && subjectOk && chipOk;
     });
 
     return arr.sort((a, b) => {
@@ -91,7 +108,7 @@ export default function Tasks() {
       const cb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return sort === 'newest' ? cb - ca : ca - cb;
     });
-  }, [tasks, q, status, priority, subject, sort]);
+  }, [tasks, q, status, priority, subject, sort, quickChip]);
 
   // Grouped for Kanban
   const kanbanColumns = useMemo(() => {
@@ -106,6 +123,57 @@ export default function Tasks() {
     }));
   }, [filtered]);
 
+  async function handleAskAiPrioritizer() {
+    const activeTasks = tasks.filter((t) => t.status !== 'completed');
+    if (activeTasks.length === 0) {
+      setAiAdvice('🎉 Semua tugas sudah selesai! Tidak ada tanggungan tugas aktif saat ini.');
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const taskSummary = activeTasks
+        .slice(0, 12)
+        .map(
+          (t, idx) =>
+            `${idx + 1}. [${t.priority.toUpperCase()}] ${t.title} (${t.subjectName || 'Umum'}) - Deadline: ${t.dueDate} ${t.dueTime} (${relativeDeadline(t)})`
+        )
+        .join('\n');
+      const reply = await askAiAssistant({
+        workspace: workspaceId,
+        prompt: `Berikut daftar tugas aktif saya:\n${taskSummary}\n\nSusun strategi urutan pengerjaan terbaik hari ini (maksimal 4 poin singkat & padat) agar tidak ada yang terlambat dan beban terasa ringan.`,
+      });
+      setAiAdvice(reply);
+    } catch {
+      setAiAdvice('Gagal memuat rekomendasi AI saat ini. Fokus kerjakan tugas dengan deadline terdekat atau berlabel Mendesak terlebih dahulu.');
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function handleExportTasksCsv() {
+    if (tasks.length === 0) return;
+    const headers = ['Judul', 'Mata Pelajaran', 'Guru/Dosen', 'Prioritas', 'Status', 'Tanggal Deadline', 'Jam Deadline'];
+    const rows = tasks.map((t) => [
+      `"${(t.title || '').replace(/"/g, '""')}"`,
+      `"${(t.subjectName || '').replace(/"/g, '""')}"`,
+      `"${(t.teacherName || '').replace(/"/g, '""')}"`,
+      t.priority,
+      t.status,
+      t.dueDate,
+      t.dueTime,
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `daftar-tugas-fazet-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6 fade-up pb-24">
       {/* Header Bar */}
@@ -115,50 +183,150 @@ export default function Tasks() {
             <span className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
               <ListTodo size={20} />
             </span>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Manajemen Tugas</h1>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Manajemen Tugas Pro</h1>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Kelola deadline pelajaran, pantau progres, dan selesaikan tugas tepat waktu
+            Kelola deadline pelajaran, susun prioritas dengan AI, dan pantau progres penyelesaian tugas
           </p>
         </div>
-        <Button onClick={() => { setEditing(null); setOpen(true); }} icon={<Plus size={17} />}>
-          Tambah Tugas
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleAskAiPrioritizer}
+            disabled={aiLoading}
+            icon={aiLoading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+          >
+            Strategi Prioritas AI
+          </Button>
+          {tasks.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={handleExportTasksCsv}
+              icon={<Download size={15} />}
+              title="Ekspor daftar tugas ke CSV"
+            >
+              Unduh CSV
+            </Button>
+          )}
+          <Button onClick={() => { setEditing(null); setOpen(true); }} icon={<Plus size={17} />}>
+            Tambah Tugas
+          </Button>
+        </div>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="p-4 border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0f1219]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tugas</span>
-            <ListTodo size={16} className="text-slate-400" />
-          </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats.total}</div>
-        </Card>
+      {/* AI Strategy Advice Banner */}
+      <AnimatePresence>
+        {aiAdvice && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="rounded-2xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/80 dark:bg-indigo-950/30 p-4"
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                <Sparkles size={15} /> Rekomendasi Urutan Tugas Hari Ini (FAZET AI)
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiAdvice(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="text-xs leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-line">
+              {aiAdvice}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <Card className="p-4 border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-950/20">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Selesai</span>
-            <CheckCircle2 size={16} className="text-emerald-600" />
-          </div>
-          <div className="text-2xl font-black text-emerald-800 dark:text-emerald-300 mt-1">{stats.completed}</div>
-        </Card>
+      {/* KPI Stats Cards + Overall Completion Progress */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="p-4 border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0f1219]">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tugas</span>
+              <ListTodo size={16} className="text-slate-400" />
+            </div>
+            <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats.total}</div>
+          </Card>
 
-        <Card className="p-4 border-blue-100 dark:border-blue-900/30 bg-blue-50/40 dark:bg-blue-950/20">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Dikerjakan</span>
-            <Clock size={16} className="text-blue-600" />
-          </div>
-          <div className="text-2xl font-black text-blue-800 dark:text-blue-300 mt-1">{stats.inProgress}</div>
-        </Card>
+          <Card className="p-4 border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-950/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Selesai</span>
+              <CheckCircle2 size={16} className="text-emerald-600" />
+            </div>
+            <div className="text-2xl font-black text-emerald-800 dark:text-emerald-300 mt-1">
+              {stats.completed} <span className="text-xs font-bold opacity-75">({stats.completionRate}%)</span>
+            </div>
+          </Card>
 
-        <Card className="p-4 border-rose-100 dark:border-rose-900/30 bg-rose-50/40 dark:bg-rose-950/20">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">Terlambat</span>
-            <AlertTriangle size={16} className="text-rose-600" />
+          <Card className="p-4 border-blue-100 dark:border-blue-900/30 bg-blue-50/40 dark:bg-blue-950/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Dikerjakan</span>
+              <Clock size={16} className="text-blue-600" />
+            </div>
+            <div className="text-2xl font-black text-blue-800 dark:text-blue-300 mt-1">{stats.inProgress}</div>
+          </Card>
+
+          <Card className="p-4 border-rose-100 dark:border-rose-900/30 bg-rose-50/40 dark:bg-rose-950/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">Terlambat</span>
+              <AlertTriangle size={16} className="text-rose-600" />
+            </div>
+            <div className="text-2xl font-black text-rose-800 dark:text-rose-300 mt-1">{stats.overdue}</div>
+          </Card>
+        </div>
+
+        {/* Completion Progress Bar */}
+        {stats.total > 0 && (
+          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0f1219] px-4 py-3 flex items-center gap-4">
+            <div className="flex-1">
+              <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                <span className="text-slate-600 dark:text-slate-300">Progres Penyelesaian Tugas</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-black">{stats.completionRate}% Tuntas</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-500"
+                  style={{ width: `${stats.completionRate}%` }}
+                />
+              </div>
+            </div>
           </div>
-          <div className="text-2xl font-black text-rose-800 dark:text-rose-300 mt-1">{stats.overdue}</div>
-        </Card>
+        )}
+      </div>
+
+      {/* Quick One-Click Filter Chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { id: 'all', label: 'Semua Tugas', icon: ListTodo },
+          { id: 'urgent', label: 'Prioritas Tinggi & Mendesak 🔥', icon: Flame },
+          { id: 'today', label: 'Deadline Hari Ini ⏰', icon: CalendarClock },
+          { id: 'overdue', label: `Terlambat (${stats.overdue})`, icon: AlertTriangle },
+          { id: 'completed', label: `Selesai (${stats.completed})`, icon: CheckCircle2 },
+        ].map((chip) => {
+          const Icon = chip.icon;
+          const active = quickChip === chip.id;
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => setQuickChip(chip.id as typeof quickChip)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all border',
+                active
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                  : 'bg-white dark:bg-[#0f1219] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-blue-400'
+              )}
+            >
+              <Icon size={13} />
+              {chip.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Search and View Controls */}
@@ -282,7 +450,7 @@ export default function Tasks() {
       {/* Result Indicator */}
       <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
         <span>Menampilkan {filtered.length} dari {tasks.length} tugas</span>
-        {(q || status !== 'all' || priority !== 'all' || subject !== 'all') && (
+        {(q || status !== 'all' || priority !== 'all' || subject !== 'all' || quickChip !== 'all') && (
           <button
             className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold hover:underline"
             onClick={() => {
@@ -290,6 +458,7 @@ export default function Tasks() {
               setStatus('all');
               setPriority('all');
               setSubject('all');
+              setQuickChip('all');
             }}
           >
             Reset Filter <X size={13} />

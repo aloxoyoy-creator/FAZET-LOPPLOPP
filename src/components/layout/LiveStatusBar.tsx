@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Clock3, Sparkles, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { CalendarDays, Clock3, Sparkles, Wifi, WifiOff, Loader2, Target } from 'lucide-react';
 import { useConnectionState } from '../../hooks/useConnectionState';
 import { useSchedule, useScheduleHelpers } from '../../hooks/useSchedule';
 import { useGoogleHolidays } from '../../hooks/useGoogleHolidays';
 import { dateKey, jakartaParts, isWeekend } from '../../lib/schoolCalendar';
+import { useWorkspace } from '../../context/WorkspaceContext';
+import { getExamDayByDate, isTkaFeatureActive } from '../../data/tkaSchedule2026';
 
 function minutesFromString(value: string) {
   const [h, m] = value.split(':').map(Number);
@@ -24,6 +26,7 @@ function formatDay(date: Date) {
 }
 
 export default function LiveStatusBar() {
+  const { workspaceId } = useWorkspace();
   const { items } = useSchedule();
   const connection = useConnectionState();
   const { current } = useScheduleHelpers(items);
@@ -36,9 +39,14 @@ export default function LiveStatusBar() {
   }, []);
 
   const key = dateKey(now);
+  const tomorrowKey = dateKey(new Date(now.getTime() + 86400000));
   const parts = jakartaParts(now);
   const holiday = holidays.get(key)?.[0];
   const weekend = isWeekend(key);
+  const tkaActive = workspaceId !== 'mazet' && isTkaFeatureActive(now);
+
+  const todayTka = tkaActive ? getExamDayByDate(key) : undefined;
+  const tomorrowTka = tkaActive ? getExamDayByDate(tomorrowKey) : undefined;
 
   const progress = useMemo(() => {
     if (!current || weekend || holiday) {
@@ -51,13 +59,17 @@ export default function LiveStatusBar() {
     return Math.min(100, Math.max(0, ((currentMinutes - start) / Math.max(end - start, 1)) * 100));
   }, [current, parts.hour, parts.minute, parts.second, weekend, holiday]);
 
-  const label = weekend
-    ? 'Hari libur - akhir pekan'
-    : holiday
-      ? `Hari libur - ${holiday.summary}`
-      : current
-        ? `${current.subject} - ${current.startTime} - ${current.endTime}`
-        : 'Tidak ada sesi aktif';
+  const label = todayTka
+    ? `🎯 TKA Hari Ke-${todayTka.hariKe}: ${todayTka.shortTitle} (${todayTka.mulaiWib}-${todayTka.perkiraanSelesaiWib} WIB)`
+    : tomorrowTka
+      ? `⚡ H-1 TKA Hari Ke-${tomorrowTka.hariKe}: ${tomorrowTka.shortTitle} (Besok 07:00 WIB)`
+      : weekend
+        ? 'Hari libur - akhir pekan'
+        : holiday
+          ? `Hari libur - ${holiday.summary}`
+          : current
+            ? `${current.subject} - ${current.startTime} - ${current.endTime}`
+            : 'Tidak ada sesi aktif';
 
   const connectionLabel = connection === 'ONLINE' ? 'ONLINE' : connection === 'SYNCING' ? 'SYNCING' : connection === 'DEGRADED' ? 'DEGRADED' : 'OFFLINE';
   const ConnectionIcon = connection === 'OFFLINE' ? WifiOff : connection === 'SYNCING' ? Loader2 : Wifi;
@@ -72,8 +84,11 @@ export default function LiveStatusBar() {
         <span className="live-statusbar__divider" />
         <Clock3 size={13} />
         <span className="font-mono">{formatClock(now)}</span>
-        <span className="text-slate-400 text-[10px] sm:text-xs truncate max-w-[120px] sm:max-w-none ml-1 sm:ml-2"> - {label}</span>
-        {current && !weekend && !holiday && (
+        <span className="text-slate-400 text-[10px] sm:text-xs truncate max-w-[160px] sm:max-w-none ml-1 sm:ml-2"> - {label}</span>
+        {(todayTka || tomorrowTka) && (
+          <span className="live-statusbar__active"><Target size={12} /> TKA 2026</span>
+        )}
+        {current && !weekend && !holiday && !todayTka && (
           <span className="live-statusbar__active"><Sparkles size={12} /> LIVE</span>
         )}
         <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold ${connection === 'ONLINE' ? 'border-emerald-400/20 text-emerald-300' : connection === 'SYNCING' ? 'border-sky-400/20 text-sky-300' : connection === 'DEGRADED' ? 'border-amber-400/20 text-amber-300' : 'border-rose-400/20 text-rose-300'}`}><ConnectionIcon size={11} className={connection === 'SYNCING' ? 'animate-spin' : ''}/> {connectionLabel}</span>

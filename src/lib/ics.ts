@@ -1,11 +1,13 @@
 import type { ScheduleItem, Task } from '../types';
+import { EXAM_DAYS_2026, isTkaFeatureActive } from '../data/tkaSchedule2026';
 
 function stamp(date: string, time: string) {
-  return `${date.replace(/-/g, '')}T${time.replace(':', '')}00`;
+  const cleanTime = time.replace('.', ':').replace(':', '');
+  return `${date.replace(/-/g, '')}T${cleanTime}00`;
 }
 
 function escape(value: string) {
-  return value.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  return value.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\n').replace(/\n/g, '\\n');
 }
 
 export function exportCalendarIcs(taskList: Task[], schedule: ScheduleItem[], monthDate = new Date()) {
@@ -17,6 +19,22 @@ export function exportCalendarIcs(taskList: Task[], schedule: ScheduleItem[], mo
   taskList.filter(t => t.dueDate.startsWith(`${y}-${m}`)).forEach(t => {
     lines.push('BEGIN:VEVENT', `UID:task-${t.id}@taskflow.school`, `DTSTART:${stamp(t.dueDate, t.dueTime)}`, `SUMMARY:${escape(t.title)}`, `DESCRIPTION:${escape(`${t.subjectName} • ${t.teacherName}`)}`, `STATUS:${t.status === 'completed' ? 'COMPLETED' : 'CONFIRMED'}`, 'END:VEVENT');
   });
+
+  // Include TKA SMA 2026 Official Exam Days only while TKA feature is active
+  if (isTkaFeatureActive()) {
+    EXAM_DAYS_2026.filter(exam => exam.tanggal.startsWith(`${y}-${m}`)).forEach(exam => {
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:tka-2026-day-${exam.hariKe}@taskflow.school`,
+        `DTSTART:${stamp(exam.tanggal, exam.mulaiWib)}`,
+        `DTEND:${stamp(exam.tanggal, exam.perkiraanSelesaiWib)}`,
+        `SUMMARY:${escape(`🎯 Ujian TKA SMA 2026 Hari Ke-${exam.hariKe}: ${exam.shortTitle}`)}`,
+        `DESCRIPTION:${escape(`${exam.mapel} (${exam.subtitle}) • Durasi ${exam.totalMenit} Menit • ${exam.totalSoal} Soal`)}`,
+        'STATUS:CONFIRMED',
+        'END:VEVENT',
+      );
+    });
+  }
 
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
   for (let d = 1; d <= last; d += 1) {

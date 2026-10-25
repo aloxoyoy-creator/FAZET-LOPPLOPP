@@ -1,25 +1,27 @@
 import { useState, useMemo } from 'react';
 import {
   Wallet,
-  Plus,
   ArrowDownRight,
   ArrowUpRight,
   Search,
-  Filter,
   Download,
   Calendar,
   Sparkles,
   PieChart,
   ListOrdered,
   Tag,
-  Target,
   RefreshCw,
   Fuel,
   Coffee,
-  CheckCircle2
+  Utensils,
+  GraduationCap,
+  Zap,
+  Loader2,
+  X
 } from 'lucide-react';
 import { useFinance } from '../hooks/useFinance';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { askAiAssistant } from '../services/aiAssistantService';
 import FinanceOverviewCards from '../components/finance/FinanceOverviewCards';
 import BudgetProgressBar from '../components/finance/BudgetProgressBar';
 import TransactionList from '../components/finance/TransactionList';
@@ -29,15 +31,21 @@ import ReceiptViewerModal from '../components/finance/ReceiptViewerModal';
 import BudgetSettingsModal from '../components/finance/BudgetSettingsModal';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, ALL_CATEGORIES } from '../../src/data/financeCategories';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../src/data/financeCategories';
 import type { FinanceTransaction, TransactionType } from '../types/finance';
+
+const QUICK_EXPENSE_PRESETS = [
+  { id: 'bensin', label: '⛽ Isi Bensin', amount: 20000, category: 'bensin', categoryLabel: 'Bensin & BBM', desc: 'Isi Bensin Pertalite/Pertamax', icon: Fuel },
+  { id: 'makan', label: '🍜 Makan Siang/Malam', amount: 15000, category: 'makan', categoryLabel: 'Makan Utama', desc: 'Makan Harian', icon: Utensils },
+  { id: 'jajan', label: '☕ Kopi / Jajan', amount: 10000, category: 'jajan', categoryLabel: 'Jajan & Ngemil', desc: 'Beli Minuman / Ngemil', icon: Coffee },
+  { id: 'print', label: '📚 Print / Alat Tulis', amount: 10000, category: 'kuliah', categoryLabel: 'Kuliah & Pendidikan', desc: 'Print Tugas / Fotokopi', icon: GraduationCap },
+];
 
 export default function Finance() {
   const { workspaceId } = useWorkspace();
   const {
     transactions,
     allTransactions,
-    loading,
     summary,
     budget,
     filter,
@@ -62,6 +70,11 @@ export default function Finance() {
   const [viewingReceiptTx, setViewingReceiptTx] = useState<FinanceTransaction | null>(null);
 
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+
+  // Quick add & AI state
+  const [quickBusyId, setQuickBusyId] = useState<string | null>(null);
+  const [aiAdvice, setAiAdvice] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Month selector options (Last 6 months)
   const monthOptions = useMemo(() => {
@@ -101,6 +114,51 @@ export default function Finance() {
     setReceiptViewerOpen(true);
   };
 
+  const handleQuickPreset = async (preset: typeof QUICK_EXPENSE_PRESETS[number]) => {
+    if (quickBusyId) return;
+    setQuickBusyId(preset.id);
+    try {
+      const now = new Date();
+      await addTransaction({
+        workspaceId,
+        type: 'expense',
+        amount: preset.amount,
+        category: preset.category,
+        categoryLabel: preset.categoryLabel,
+        description: preset.desc,
+        paymentMethod: 'qris',
+        transactionDate: now.toISOString().slice(0, 10),
+        transactionTime: now.toTimeString().slice(0, 5),
+      });
+    } finally {
+      setQuickBusyId(null);
+    }
+  };
+
+  const handleAskFinancialAi = async () => {
+    setAiLoading(true);
+    try {
+      const topCats = summary.categoryStats
+        .slice(0, 4)
+        .map((c) => `${c.label}: Rp ${Math.round(c.amount).toLocaleString('id-ID')} (${c.percentage}%)`)
+        .join(', ');
+      const prompt = `Analisis kondisi keuangan saya untuk periode ${currentMonthLabel}:
+- Pemasukan Bulan Ini: Rp ${Math.round(summary.monthlyIncome).toLocaleString('id-ID')}
+- Pengeluaran Bulan Ini: Rp ${Math.round(summary.monthlyExpense).toLocaleString('id-ID')}
+- Pengeluaran Hari Ini: Rp ${Math.round(summary.todayExpense).toLocaleString('id-ID')}
+- Limit Anggaran Bulanan: ${summary.monthlyLimit > 0 ? `Rp ${Math.round(summary.monthlyLimit).toLocaleString('id-ID')} (Terpakai ${summary.budgetUsedPercent}%)` : 'Belum diatur'}
+- Kategori Pengeluaran Terbesar: ${topCats || 'Belum ada transaksi'}
+
+Berikan 3 saran penghematan dan pengelolaan uang saku/bulanan yang sangat praktis, realistis, dan ramah dalam Bahasa Indonesia.`;
+      const reply = await askAiAssistant({ prompt, workspace: workspaceId });
+      setAiAdvice(reply);
+    } catch {
+      setAiAdvice('Gagal memuat analisis AI saat ini. Pastikan pengeluaran harian tetap berada di bawah batas anggaran bulananmu.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-24 px-2 sm:px-4">
       {/* 1. Header Banner */}
@@ -116,12 +174,23 @@ export default function Finance() {
             Catatan Keuangan FAZET
           </h1>
           <p className="text-xs sm:text-sm text-[var(--tf-text-muted)] mt-1 max-w-2xl leading-relaxed">
-            Kelola pengeluaran harian (bensin, jajan, belanja), pemasukan, arsip foto bukti transfer, serta pantau limit anggaran dengan notifikasi alarm otomatis.
+            Kelola pengeluaran harian (bensin, jajan, belanja), pemasukan, arsip foto bukti transfer, serta pantau limit anggaran dengan analisis AI cerdas.
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleAskFinancialAi}
+            disabled={aiLoading}
+            icon={aiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            className="rounded-2xl text-xs font-bold"
+          >
+            Analisis AI
+          </Button>
+
           <Button
             size="sm"
             onClick={() => handleOpenAdd('expense')}
@@ -152,6 +221,51 @@ export default function Finance() {
           </Button>
         </div>
       </header>
+
+      {/* AI Financial Advisor Panel */}
+      {aiAdvice && (
+        <div className="rounded-3xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/80 dark:bg-indigo-950/30 p-4">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-2 text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+              <Sparkles size={15} /> Analisis & Saran Penghematan FAZET AI ({currentMonthLabel})
+            </div>
+            <button
+              type="button"
+              onClick={() => setAiAdvice(null)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X size={15} />
+            </button>
+          </div>
+          <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-line">
+            {aiAdvice}
+          </p>
+        </div>
+      )}
+
+      {/* 1-Click Quick Expense Bar */}
+      <div className="flex flex-wrap items-center gap-2 rounded-3xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] px-4 py-3 shadow-xs">
+        <span className="inline-flex items-center gap-1.5 text-xs font-black text-amber-600 dark:text-amber-400 mr-1">
+          <Zap size={14} /> Catat Cepat 1-Klik:
+        </span>
+        {QUICK_EXPENSE_PRESETS.map((preset) => (
+          <button
+            key={preset.id}
+            type="button"
+            disabled={!!quickBusyId}
+            onClick={() => handleQuickPreset(preset)}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 hover:border-rose-400 hover:bg-rose-50/60 dark:hover:bg-rose-950/30 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition disabled:opacity-50"
+          >
+            {quickBusyId === preset.id ? (
+              <Loader2 size={12} className="animate-spin text-rose-500" />
+            ) : null}
+            <span>{preset.label}</span>
+            <span className="text-[11px] font-extrabold text-rose-600 dark:text-rose-400">
+              Rp {(preset.amount / 1000).toFixed(0)}rb
+            </span>
+          </button>
+        ))}
+      </div>
 
       {/* 2. Overview KPI Cards */}
       <FinanceOverviewCards summary={summary} monthLabel={currentMonthLabel} />

@@ -63,6 +63,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { formatDate } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import { isTkaFeatureActive } from '../data/tkaSchedule2026';
 
 const SCHOOL_WEEK_DAYS: SchoolDay[] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 
@@ -221,7 +222,11 @@ function MineePreviewCard() {
 
 function QuickActions() {
   const { workspaceId } = useWorkspace();
+  const showTka = workspaceId !== 'mazet' && isTkaFeatureActive();
   const actions = [
+    ...(showTka
+      ? [{ to: '/tka', label: 'TKA 2026', icon: Target, color: 'text-orange-500', bg: 'bg-orange-500/10 group-hover:bg-orange-500/20', hoverText: 'group-hover:text-orange-600' }]
+      : []),
     { to: '/tasks', label: 'Tugas', icon: ListTodo, color: 'text-blue-500', bg: 'bg-blue-500/10 group-hover:bg-blue-500/20', hoverText: 'group-hover:text-blue-600' },
     { to: '/notes', label: 'Catatan', icon: StickyNote, color: 'text-emerald-500', bg: 'bg-emerald-500/10 group-hover:bg-emerald-500/20', hoverText: 'group-hover:text-emerald-600' },
     { to: '/finance', label: 'Keuangan', icon: Wallet, color: 'text-amber-500', bg: 'bg-amber-500/10 group-hover:bg-amber-500/20', hoverText: 'group-hover:text-amber-600' },
@@ -232,7 +237,7 @@ function QuickActions() {
   ];
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2.5 sm:gap-3">
+    <div className={`grid grid-cols-4 ${showTka ? 'md:grid-cols-8' : 'md:grid-cols-7'} gap-2.5 sm:gap-3`}>
       {actions.map((act) => {
         const Icon = act.icon;
         return (

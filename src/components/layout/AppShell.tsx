@@ -63,6 +63,7 @@ import Watermark from "./Watermark";
 import { useWorkspace } from "../../context/WorkspaceContext";
 import AutoUpdateButton from "../ui/AutoUpdateButton";
 import FloatingYoutubePlayer from "../widgets/FloatingYoutubePlayer";
+import { isTkaFeatureActive } from "../../data/tkaSchedule2026";
 
 type AppShellProps = {
   children: ReactNode;
@@ -87,7 +88,7 @@ function pageTitleFromPath(pathname: string, workspaceId: string): string {
   if (parts[0] === "admin") {
     if (!parts[1]) return "Admin Dashboard";
     const item = adminMenu.find((menu) => menu.to === pathname);
-    return item?.label ?? `Admin � ${parts[1].replace(/-/g, " ")}`;
+    return item?.label ?? `Admin • ${parts[1].replace(/-/g, " ")}`;
   }
 
   const item = mainMenu.find((menu) => !menu.external && menu.to === pathname);
@@ -126,7 +127,7 @@ export default function AppShell({ children }: AppShellProps) {
     user?.app_metadata?.role === "admin" ||
     user?.user_metadata?.role === "admin";
 
-    const visibleMainMenu = useMemo(() => getMainMenu(workspaceId), [workspaceId]);
+  const visibleMainMenu = useMemo(() => getMainMenu(workspaceId), [workspaceId]);
 
   const allSearchItems = useMemo(
     () => (showAdmin ? [...visibleMainMenu, ...getAdminMenu(workspaceId)] : visibleMainMenu),
@@ -135,6 +136,14 @@ export default function AppShell({ children }: AppShellProps) {
 
   const commandItems = useMemo(
     () => [
+      ...(isTkaFeatureActive()
+        ? [
+            { label: "Buka Preparation Center TKA & SNBT", action: () => go("/tka") },
+            { label: "Pusat Notifikasi & Sinkronisasi TKA", action: () => go("/notifications") },
+          ]
+        : [{ label: "Buka Pusat Notifikasi", action: () => go("/notifications") }]),
+      { label: "Buka Catatan Keuangan", action: () => go("/finance") },
+      { label: "Buka Catatan & Ide", action: () => go("/notes") },
       { label: "Buka Chat", action: () => go("/chat") },
       { label: "Lihat Jadwal Les", action: () => go("/tutoring") },
       { label: "Lihat Academic Timeline", action: () => go("/calendar") },
@@ -394,7 +403,7 @@ export default function AppShell({ children }: AppShellProps) {
                 className="text-[10px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: "var(--tf-ink-muted)" }}
               >
-                {branding.appName || "FAZET"} � {workspace.name}
+                {branding.appName || "FAZET"} • {workspace.name}
               </div>
               <h1 className="tf-display truncate text-base">{pageTitle}</h1>
             </div>
@@ -560,7 +569,7 @@ export default function AppShell({ children }: AppShellProps) {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="tf-display text-lg">
-                  {branding.appName || "FAZET"} � {workspace.name}
+                  {branding.appName || "FAZET"} • {workspace.name}
                 </div>
                 <div
                   className="text-[10px] font-semibold tracking-[0.18em]"
@@ -678,7 +687,7 @@ export default function AppShell({ children }: AppShellProps) {
                         idx === paletteIndex && "is-active",
                       )}
                     >
-                      <span className="flex-1">? {item.label}</span>
+                      <span className="flex-1">⚡ {item.label}</span>
                     </button>
                   ))}
                 </div>
@@ -747,7 +756,3 @@ export default function AppShell({ children }: AppShellProps) {
     </div>
   );
 }
-
-
-
-

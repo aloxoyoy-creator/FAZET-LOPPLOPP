@@ -8,8 +8,11 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { loadFocusStats, saveFocusSession, type FocusStats } from '../services/focusService';
 import { showSystemNotification, playNotificationSound } from '../services/systemNotificationService';
+import { createNotification } from '../services/notificationService';
+import { EXAM_DAYS_2026, isTkaFeatureActive } from '../data/tkaSchedule2026';
 import { trackEvent } from '../lib/analytics';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
@@ -17,10 +20,17 @@ import { motion } from 'framer-motion';
 type TimerMode = 'focus' | 'short_break' | 'long_break';
 type AmbientSound = 'none' | 'rain' | 'whitenoise' | 'binaural';
 
-const PRESETS = [25, 50, 90] as const;
+const PRESETS = [
+  { minutes: 25, label: '25m Pomodoro', isTka: false },
+  { minutes: 50, label: '50m Deep Work', isTka: false },
+  { minutes: 75, label: '🎯 75m Subtes TKA', isTka: true },
+  { minutes: 90, label: '90m Marathon', isTka: false },
+  { minutes: 105, label: '🔥 105m Full Sesi TKA', isTka: true },
+] as const;
 
 export default function Focus() {
   const { user } = useAuth();
+  const { workspaceId } = useWorkspace();
   const { tasks } = useTasks();
 
   const [mode, setMode] = useState<TimerMode>('focus');
@@ -176,12 +186,22 @@ export default function Focus() {
       confetti({ particleCount: 180, spread: 80, origin: { y: 0.6 } });
 
       // Send Rich Completion Notification
-      const taskObj = tasks.find(t => t.id === selectedTask);
-      const taskLabel = taskObj ? `fokus mengerjakan "${taskObj.title}"` : 'sesi belajar bebas';
+      const tkaDayMatch = selectedTask.startsWith('tka-day-')
+        ? EXAM_DAYS_2026.find((d) => `tka-day-${d.hariKe}` === selectedTask)
+        : null;
+      const taskObj = tasks.find((t) => t.id === selectedTask);
+      const taskLabel = tkaDayMatch
+        ? `simulasi fokus TKA Hari ke-${tkaDayMatch.hariKe} (${tkaDayMatch.mapel})`
+        : taskObj
+          ? `fokus mengerjakan "${taskObj.title}"`
+          : 'sesi belajar bebas';
+
+      const notifTitle = `🎉 Sesi Fokus Selesai! (${minutes} Menit)`;
+      const notifBody = `Hebat! Kamu telah menuntaskan ${taskLabel}. Luangkan 5 menit untuk istirahat mata dan stretching sejenak.`;
 
       void showSystemNotification(
-        `🎉 Sesi Fokus Selesai! (${minutes} Menit)`,
-        `Hebat! Kamu telah menuntaskan ${taskLabel}. Luangkan 5 menit untuk istirahat mata dan stretching sejenak.`,
+        notifTitle,
+        notifBody,
         '/focus',
         { channelId: 'fazet_default_channel', soundType: 'success' }
       );
@@ -190,9 +210,10 @@ export default function Focus() {
         const userId = user.id;
         const endedAt = new Date().toISOString();
         const effectiveStartedAt = startedAt ?? new Date(Date.now() - minutes * 60_000).toISOString();
+        const validTaskId = selectedTask && !selectedTask.startsWith('tka-day-') ? selectedTask : null;
 
         void saveFocusSession(userId, {
-          taskId: selectedTask || null,
+          taskId: validTaskId,
           minutes,
           startedAt: effectiveStartedAt,
           endedAt,
@@ -200,6 +221,17 @@ export default function Focus() {
           setSessions((val) => val + 1);
           setFocusMinutes((val) => val + minutes);
         });
+
+        // Persist to Supabase Inbox Notification Center
+        void createNotification({
+          userId,
+          taskId: validTaskId,
+          title: notifTitle,
+          message: notifBody,
+          type: 'success',
+          category: tkaDayMatch ? 'tka_exam' : 'focus_timer',
+          actionLink: tkaDayMatch ? '/tka' : '/focus',
+        }).catch(() => {});
 
         void trackEvent('focus_session_completed', {
           minutes,
@@ -363,19 +395,23 @@ export default function Focus() {
 
           {/* Duration Presets */}
           {mode === 'focus' && (
-            <div className="mx-auto mt-6 flex max-w-md justify-center gap-2">
-              {PRESETS.map((value) => (
+            <div className="mx-auto mt-6 flex flex-wrap max-w-lg justify-center gap-2">
+              {PRESETS.filter((p) => (workspaceId !== 'mazet' && isTkaFeatureActive()) || !p.isTka).map((preset) => (
                 <button
-                  key={value}
+                  key={preset.minutes}
                   type="button"
-                  onClick={() => changePreset(value)}
-                  className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                    minutes === value 
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25 scale-105' 
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                  onClick={() => changePreset(preset.minutes)}
+                  className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                    minutes === preset.minutes
+                      ? preset.isTka
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/25 scale-105'
+                        : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25 scale-105'
+                      : preset.isTka
+                        ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 hover:bg-indigo-100'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
-                  {value} menit
+                  {preset.label}
                 </button>
               ))}
             </div>
@@ -385,7 +421,7 @@ export default function Focus() {
           {mode === 'focus' && (
             <div className="mx-auto mt-5 max-w-md text-left">
               <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Tautkan Tugas yang Dikerjakan
+                Target Sesi Fokus / Tugas yang Dikerjakan
               </label>
               <select
                 className="input bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs font-bold"
@@ -393,11 +429,24 @@ export default function Focus() {
                 onChange={(event) => setSelectedTask(event.target.value)}
               >
                 <option value="">Belajar Bebas / Tugas Umum</option>
-                {activeTasks.slice(0, 50).map((task) => (
-                  <option key={task.id} value={task.id}>
-                    {task.subjectName ? `[${task.subjectName}] ` : ''}{task.title}
-                  </option>
-                ))}
+                {workspaceId !== 'mazet' && isTkaFeatureActive() && (
+                  <optgroup label="🎯 Simulasi & Persiapan TKA 2026">
+                    {EXAM_DAYS_2026.map((day) => (
+                      <option key={`tka-day-${day.hariKe}`} value={`tka-day-${day.hariKe}`}>
+                        🎯 Fokus TKA Hari ke-{day.hariKe}: {day.mapel} ({day.totalSoal} Soal • {day.totalMenit}m)
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {activeTasks.length > 0 && (
+                  <optgroup label="📋 Tugas Sekolah Aktif">
+                    {activeTasks.slice(0, 50).map((task) => (
+                      <option key={task.id} value={task.id}>
+                        {task.subjectName ? `[${task.subjectName}] ` : ''}{task.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
           )}

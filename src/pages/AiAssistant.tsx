@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Sparkles, Send, RotateCcw, BookOpen, CalendarDays, HeartHandshake, ListChecks } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Sparkles, Send, RotateCcw, BookOpen, CalendarDays, HeartHandshake, ListChecks, Target } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { askAiAssistant, type AiChatTurn } from '../services/aiAssistantService';
+import { getActiveOrNextExamDay, isTkaFeatureActive } from '../data/tkaSchedule2026';
 
 interface DisplayMessage extends AiChatTurn {
   id: string;
@@ -19,16 +20,19 @@ export default function AiAssistant() {
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
+  const activeTka = useMemo(() => getActiveOrNextExamDay(new Date()), []);
+  const tkaActive = workspaceId !== 'mazet' && isTkaFeatureActive();
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
 
   const greetingName = profile?.name?.split(' ')[0] || (workspaceId === 'mazet' ? 'Mazet' : 'Fathur');
 
-  const send = async () => {
-    const prompt = input.trim();
+  const send = async (overridePrompt?: string) => {
+    const prompt = (overridePrompt ?? input).trim();
     if (!prompt || busy) return;
-    setInput('');
+    if (!overridePrompt) setInput('');
     const userMsg: DisplayMessage = { id: crypto.randomUUID(), role: 'user', text: prompt };
     const history: AiChatTurn[] = [...messages, userMsg].map(({ role, text }) => ({ role, text }));
     setMessages((prev) => [...prev, userMsg]);
@@ -48,6 +52,22 @@ export default function AiAssistant() {
     }
   };
 
+  const quickPrompts = [
+    ...(tkaActive
+      ? [
+          {
+            label: `Drill TKA H${activeTka.exam.hariKe}`,
+            icon: Target,
+            prompt: `Buatkan 3 soal latihan HOTS beserta kunci jawaban dan pembahasan singkat untuk persiapan Ujian TKA SMA 2026 Hari Ke-${activeTka.exam.hariKe}: ${activeTka.exam.mapel} (${activeTka.exam.subtitle}).`,
+          },
+        ]
+      : []),
+    { label: 'Bantu belajar', icon: BookOpen, prompt: 'Jelaskan materi yang sedang kupelajari dengan sederhana, berikan contoh, lalu beri 3 soal latihan.' },
+    { label: 'Atur besok', icon: CalendarDays, prompt: 'Buat rencana belajar besok yang realistis, jangan terlalu padat, dan sisakan waktu istirahat.' },
+    { label: 'Pesan hangat', icon: HeartHandshake, prompt: 'Bantu saya menulis pesan singkat yang hangat, natural, dan menyemangati untuk orang yang penting bagi saya.' },
+    { label: 'Prioritas', icon: ListChecks, prompt: 'Buatkan cara menentukan 3 prioritas utama hari ini supaya saya tidak kewalahan.' },
+  ];
+
   return (
     <div className="mx-auto flex h-[calc(100dvh-7rem)] w-full max-w-3xl flex-col pb-4 fade-up lg:h-[calc(100dvh-9rem)]">
       <div className="mb-3 flex items-center justify-between">
@@ -57,7 +77,7 @@ export default function AiAssistant() {
           </div>
           <div>
             <h1 className="text-lg font-black leading-tight">FAZET AI</h1>
-            <p className="text-xs text-slate-500">Asisten belajar • {workspace.name} workspace</p>
+            <p className="text-xs text-slate-500">Asisten belajar & produktivitas cerdas • {workspace.name} workspace</p>
           </div>
         </div>
         {messages.length > 0 && (
@@ -67,16 +87,17 @@ export default function AiAssistant() {
         )}
       </div>
 
-      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {[
-          { label: 'Bantu belajar', icon: BookOpen, prompt: 'Jelaskan materi yang sedang kupelajari dengan sederhana, berikan contoh, lalu beri 3 soal latihan.' },
-          { label: 'Atur besok', icon: CalendarDays, prompt: 'Buat rencana belajar besok yang realistis, jangan terlalu padat, dan sisakan waktu istirahat.' },
-          { label: 'Chat', icon: HeartHandshake, prompt: 'Bantu saya menulis pesan singkat yang hangat, natural, dan tidak berlebihan untuk orang yang penting bagi saya.' },
-          { label: 'Prioritas', icon: ListChecks, prompt: 'Buatkan cara menentukan 3 prioritas utama hari ini supaya saya tidak kewalahan.' },
-        ].map(({ label, icon: Icon, prompt }) => (
-          <button key={label} type="button" onClick={() => { setInput(prompt); }} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[11px] font-bold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-indigo-950/30">
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {quickPrompts.map(({ label, icon: Icon, prompt }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => void send(prompt)}
+            disabled={busy}
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[11px] font-bold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-indigo-950/30 disabled:opacity-50"
+          >
             <Icon size={14} className="shrink-0 text-indigo-500" />
-            <span>{label}</span>
+            <span className="truncate">{label}</span>
           </button>
         ))}
       </div>
@@ -88,7 +109,7 @@ export default function AiAssistant() {
               <div>
                 <Sparkles className="mx-auto mb-3 text-indigo-400" size={28} />
                 <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                  Hai {greetingName}! Tanya apa saja — soal tugas, jadwal, atau materi pelajaran.
+                  Hai {greetingName}! Tanya apa saja — ringkasan materi, tugas sekolah/kuliah, ide catatan, atau jadwal belajar.
                 </p>
               </div>
             </div>
@@ -126,7 +147,7 @@ export default function AiAssistant() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
-              placeholder="Tulis pertanyaanmu…"
+              placeholder="Tulis pertanyaan atau minta soal latihan TKA…"
               disabled={busy}
             />
             <Button onClick={() => void send()} icon={<Send size={15} />} disabled={busy || !input.trim()}>
@@ -138,4 +159,3 @@ export default function AiAssistant() {
     </div>
   );
 }
-

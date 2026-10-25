@@ -8,6 +8,6 @@ export interface Task { id:string; title:string; description:string; subjectId:s
 export interface ScheduleItem { id:string; day:'Senin'|'Selasa'|'Rabu'|'Kamis'|'Jumat'|'Sabtu'|'Minggu'; startTime:string; endTime:string; subject:string; teacher?:string; location?:string; type:ScheduleType; active:boolean; createdAt?:string; updatedAt?:string; }
 export interface Subject { id:string; name:string; teacher?:string; active:boolean; createdAt?:string; updatedAt?:string; }
 export interface Teacher { id:string; name:string; email?:string; subject?:string; active:boolean; createdAt?:string; updatedAt?:string; }
-export interface Notification { id:string; userId:string; title:string; message:string; type:'deadline'|'task'|'comment'|'mention'|'focus'|'announcement'|'security'|'system'|'calendar'|'achievement'; read:boolean; createdAt?:string; actionUrl?:string; }
+export interface Notification { id:string; userId:string; title:string; message:string; type:'deadline'|'task'|'comment'|'mention'|'focus'|'announcement'|'security'|'system'|'calendar'|'achievement'|'tka'; read:boolean; createdAt?:string; actionUrl?:string; }
 export interface Announcement { id:string; title:string; body:string; priority:'low'|'medium'|'high'; createdBy:string; createdAt?:string; expiresAt?:string; active:boolean; }
 export interface AuditLog { id:string; userId:string; userEmail:string; action:string; targetType?:string; targetId?:string; timestamp?:string; metadata?:Record<string,unknown>; }

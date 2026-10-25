@@ -1,109 +1,141 @@
 import { useState, useEffect } from 'react';
 import { 
   Calendar, Flame, Clock, CheckCircle2, AlertCircle, Info, 
-  ChevronDown, ChevronUp, Layers, Sparkles, Timer, ShieldCheck,
-  CalendarDays, Hourglass, ArrowRight, BookOpen
+  ChevronDown, ChevronUp, Sparkles, Timer,
+  CalendarDays, ArrowRight, BellRing, RefreshCw, Target
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { useAuth } from '../../context/AuthContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useToast } from '../ui/Toast';
 import { 
   EXAM_DAYS_2026, 
   TKA_STAGES_2026, 
-  TKA_SCHEDULE_2026_META,
-  type ExamDaySchedule,
-  type StageSchedule 
+  getActiveOrNextExamDay,
+  isTkaFeatureActive
 } from '../../data/tkaSchedule2026';
+import {
+  syncTkaToNotifications,
+  getSavedTkaSyncStatus,
+  type TkaSyncStatus
+} from '../../services/tkaNotificationService';
 
 interface Props {
   className?: string;
 }
 
-// Clean sub-details for each day for a clean breakdown
-const DAY_COMPONENTS: Record<number, { title: string; subtitle: string; chips: string[]; steps: { name: string; dur: string }[] }> = {
-  1: {
-    title: 'Bahasa Indonesia Wajib & Literasi',
-    subtitle: 'Literasi Membaca & Survei Karakter',
-    chips: ['105 Menit', '30 Soal', 'Survei Karakter'],
-    steps: [
-      { name: 'Latihan Ujian', dur: '5 Menit' },
-      { name: 'Tes Literasi Membaca (30 Soal)', dur: '75 Menit' },
-      { name: 'Survei Karakter', dur: '25 Menit' }
-    ]
-  },
-  2: {
-    title: 'Bahasa Inggris Wajib',
-    subtitle: 'Literasi Bahasa Inggris & Sulingjar',
-    chips: ['105 Menit', '30 Soal', 'Survei Lingkungan'],
-    steps: [
-      { name: 'Latihan Ujian', dur: '5 Menit' },
-      { name: 'Tes Bahasa Inggris (30 Soal)', dur: '75 Menit' },
-      { name: 'Survei Lingkungan Belajar', dur: '25 Menit' }
-    ]
-  },
-  3: {
-    title: 'Matematika Wajib & Numerasi',
-    subtitle: 'Tes Penalaran Numerasi Matematika',
-    chips: ['80 Menit', '25 Soal', 'Fokus Numerasi'],
-    steps: [
-      { name: 'Latihan Ujian', dur: '5 Menit' },
-      { name: 'Tes Numerasi Matematika (25 Soal)', dur: '75 Menit' }
-    ]
-  },
-  4: {
-    title: 'Mapel Pilihan 1 & 2',
-    subtitle: 'Matematika & B. Inggris Tingkat Lanjut',
-    chips: ['125 Menit', '2x 25 Soal', 'Mapel Peminatan'],
-    steps: [
-      { name: 'Latihan Ujian', dur: '5 Menit' },
-      { name: 'Pilihan 1: MTK Tingkat Lanjut (25 Soal)', dur: '60 Menit' },
-      { name: 'Pilihan 2: B. Inggris Lanjut (25 Soal)', dur: '60 Menit' }
-    ]
-  }
-};
-
 export default function TKADashboard({ className = '' }: Props) {
+  const { user } = useAuth();
   const { workspaceId } = useWorkspace();
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const { push } = useToast();
+
+  const [now, setNow] = useState(() => new Date());
   const [activeTab, setActiveTab] = useState<'jadwal' | 'tahapan' | 'rincian'>('jadwal');
-  const [expandedDay, setExpandedDay] = useState<number | null>(null);
+  const [expandedDay, setExpandedDay] = useState<number | null>(1);
+  const [syncStatus, setSyncStatus] = useState<TkaSyncStatus | null>(() => getSavedTkaSyncStatus());
+  const [syncing, setSyncing] = useState(false);
+  const [syncingDay, setSyncingDay] = useState<number | null>(null);
 
   const isMazet = workspaceId === 'mazet';
+  const tkaActive = isTkaFeatureActive(now);
 
   useEffect(() => {
-    const targetDate = new Date(TKA_SCHEDULE_2026_META.targetDateStr).getTime();
-    
-    const updateCountdown = () => {
-      const now = Date.now();
-      const distance = targetDate - now;
-
-      if (distance <= 0) {
-        setTimeLeft(null);
-      } else {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000)
-        });
-      }
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const onSynced = (e: Event) => {
+      const custom = e as CustomEvent<TkaSyncStatus>;
+      if (custom.detail) setSyncStatus(custom.detail);
+    };
+    window.addEventListener('fazet:tka-synced', onSynced);
+    return () => window.removeEventListener('fazet:tka-synced', onSynced);
+  }, []);
+
+  if (!isMazet && !tkaActive) {
+    return null;
+  }
+
+  const activeExamState = getActiveOrNextExamDay(now);
+  const mazetTargetTs = new Date('2026-10-26T07:00:00+07:00').getTime();
+  const targetTs = isMazet ? mazetTargetTs : activeExamState.targetTimestamp;
+  const distance = Math.max(0, targetTs - now.getTime());
+
+  const timeLeft = distance > 0 ? {
+    days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+    minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((distance % (1000 * 60)) / 1000)
+  } : null;
+
+  const todayWibStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
 
   const toggleExpand = (hariKe: number) => {
     setExpandedDay((prev) => (prev === hariKe ? null : hariKe));
   };
 
+  const handleSyncAllToNotif = async () => {
+    setSyncing(true);
+    try {
+      const res = await syncTkaToNotifications({
+        userId: user?.id,
+        workspaceId,
+        triggerImmediateConfirmation: true,
+      });
+      setSyncStatus(res);
+      push({
+        tone: 'success',
+        title: 'Jadwal TKA Tersinkronisasi ke Notifikasi!',
+        description: `Seluruh 4 hari ujian TKA & ${res.scheduledCount} alarm otomatis (H-1, 05:30, 06:30, 06:50, 07:00 WIB) telah aktif.`
+      });
+    } catch {
+      push({
+        tone: 'danger',
+        title: 'Gagal menyinkronkan notifikasi',
+        description: 'Pastikan izin notifikasi browser/HP sudah diaktifkan.'
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleSyncSingleDay = async (hariKe: number, shortTitle: string) => {
+    setSyncingDay(hariKe);
+    try {
+      const res = await syncTkaToNotifications({
+        userId: user?.id,
+        workspaceId,
+        triggerImmediateConfirmation: true,
+        specificDay: hariKe,
+      });
+      setSyncStatus(res);
+      push({
+        tone: 'success',
+        title: `Alarm Hari Ke-${hariKe} Diaktifkan!`,
+        description: `Pengingat otomatis untuk ${shortTitle} telah dijadwalkan ke sistem & Pusat Notifikasi.`
+      });
+    } catch {
+      push({
+        tone: 'danger',
+        title: 'Gagal mengaktifkan alarm'
+      });
+    } finally {
+      setSyncingDay(null);
+    }
+  };
+
   return (
     <div className={`space-y-4 mb-6 ${className}`}>
-      {/* 1. HERO COUNTDOWN — Sleek, Minimalist, High-Tech Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md text-white">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-indigo-600/10 to-transparent pointer-events-none" />
+      {/* 1. HERO COUNTDOWN — Sleek, Minimalist, High-Tech Command Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-lg text-white">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/25 via-indigo-600/15 to-rose-600/10 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-5 sm:p-6 gap-5">
           {/* Left Info */}
@@ -111,67 +143,109 @@ export default function TKADashboard({ className = '' }: Props) {
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 <Flame size={12} className="text-amber-400" />
-                {isMazet ? 'Event Terbesar 2026' : 'Target Ujian TKA SMA 2026'}
+                {isMazet
+                  ? 'Event Terbesar 2026'
+                  : activeExamState.state === 'in_session'
+                  ? `LIVE • Sedang Berlangsung (Hari Ke-${activeExamState.exam.hariKe})`
+                  : `Target Ujian TKA SMA 2026 • Hari Ke-${activeExamState.exam.hariKe}`}
               </span>
               {!isMazet && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/25">
                   Gelombang 1 • Sesi 1 (WIB)
+                </span>
+              )}
+              {!isMazet && syncStatus && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <CheckCircle2 size={11} /> Notifikasi Aktif
                 </span>
               )}
             </div>
 
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              {isMazet ? 'BAZAR EDSA 2026' : 'Ujian TKA SMA 2026'}
+              {isMazet
+                ? 'BAZAR EDSA 2026'
+                : activeExamState.state === 'completed_all'
+                ? 'Rangkaian Ujian TKA SMA 2026 Selesai!'
+                : `TKA Hari Ke-${activeExamState.exam.hariKe}: ${activeExamState.exam.shortTitle}`}
             </h2>
 
             <div className="mt-1.5 flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-slate-300">
               <span className="flex items-center gap-1.5">
                 <Calendar size={13} className="text-blue-400" />
-                {isMazet ? '26 Oktober 2026' : 'Mulai: Senin, 26 Okt 2026'}
+                {isMazet
+                  ? '26 Oktober 2026'
+                  : `${activeExamState.exam.tanggalFormatted}`}
               </span>
               {!isMazet && (
                 <>
                   <span className="text-slate-600">•</span>
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 font-mono font-semibold text-emerald-300">
                     <Clock size={13} className="text-emerald-400" />
-                    07.00 WIB
+                    {activeExamState.exam.mulaiWib} – {activeExamState.exam.perkiraanSelesaiWib} WIB ({activeExamState.exam.totalMenit} Menit)
                   </span>
                 </>
               )}
             </div>
           </div>
 
-          {/* Right Countdown Boxes */}
-          <div className="flex gap-2 font-mono shrink-0">
-            {timeLeft ? (
-              [
-                { label: 'Hari', val: timeLeft.days },
-                { label: 'Jam', val: timeLeft.hours.toString().padStart(2, '0') },
-                { label: 'Menit', val: timeLeft.minutes.toString().padStart(2, '0') },
-                { label: 'Detik', val: timeLeft.seconds.toString().padStart(2, '0') },
-              ].map((item) => (
-                <div 
-                  key={item.label} 
-                  className="flex flex-col items-center justify-center bg-white/10 rounded-2xl p-2 sm:p-2.5 min-w-[56px] sm:min-w-[62px] border border-white/10"
-                >
-                  <div className="text-lg sm:text-xl font-black text-white tracking-tight">
-                    {item.val}
+          {/* Right Countdown Boxes & Sync Button */}
+          <div className="flex flex-col items-center md:items-end gap-2.5 shrink-0">
+            <div className="flex gap-2 font-mono">
+              {timeLeft ? (
+                [
+                  { label: 'Hari', val: timeLeft.days },
+                  { label: 'Jam', val: timeLeft.hours.toString().padStart(2, '0') },
+                  { label: 'Menit', val: timeLeft.minutes.toString().padStart(2, '0') },
+                  { label: 'Detik', val: timeLeft.seconds.toString().padStart(2, '0') },
+                ].map((item) => (
+                  <div 
+                    key={item.label} 
+                    className="flex flex-col items-center justify-center bg-white/10 rounded-2xl p-2 sm:p-2.5 min-w-[54px] sm:min-w-[60px] border border-white/10 backdrop-blur-sm"
+                  >
+                    <div className="text-lg sm:text-xl font-black text-white tracking-tight">
+                      {item.val}
+                    </div>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                      {item.label}
+                    </div>
                   </div>
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                    {item.label}
-                  </div>
+                ))
+              ) : (
+                <div className="px-5 py-2.5 bg-emerald-500 rounded-2xl text-white font-bold text-xs animate-pulse">
+                  Sedang Berlangsung!
                 </div>
-              ))
-            ) : (
-              <div className="px-5 py-2.5 bg-emerald-500 rounded-2xl text-white font-bold text-xs animate-pulse">
-                Sedang Berlangsung!
+              )}
+            </div>
+
+            {!isMazet && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleSyncAllToNotif()}
+                  disabled={syncing}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm transition-all cursor-pointer disabled:opacity-60"
+                >
+                  {syncing ? (
+                    <RefreshCw size={12} className="animate-spin" />
+                  ) : (
+                    <BellRing size={12} />
+                  )}
+                  <span>{syncStatus ? 'Sinkronkan Ulang ke Notif' : 'Sinkronkan TKA ke Notif'}</span>
+                </button>
+                <Link
+                  to="/tka"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all"
+                >
+                  <Target size={12} className="text-rose-400" />
+                  <span>Hub TKA</span>
+                </Link>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* 2. JADWAL TKA SMA 2026 (Minimalist & Simpel, Tetap Informatif) */}
+      {/* 2. JADWAL TKA SMA 2026 (Terintegrasi Penuh dengan Sistem Notifikasi) */}
       {!isMazet && (
         <Card className="p-4 sm:p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] backdrop-blur-md shadow-xs space-y-4 rounded-3xl">
           {/* Header & Minimalist Segment Tabs */}
@@ -181,11 +255,16 @@ export default function TKADashboard({ className = '' }: Props) {
                 <CalendarDays size={18} />
               </div>
               <div>
-                <h3 className="font-bold text-sm sm:text-base text-[var(--tf-text-primary)]">
-                  Jadwal Ujian TKA SMA 2026
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-sm sm:text-base text-[var(--tf-text-primary)]">
+                    Jadwal Ujian TKA SMA 2026
+                  </h3>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle2 size={11} /> Auto-Notif Terhubung
+                  </span>
+                </div>
                 <p className="text-[11px] text-[var(--tf-text-muted)]">
-                  Gelombang 1 • Sesi 1 (WIB) • 26 – 29 Okt 2026
+                  Gelombang 1 • Sesi 1 (WIB) • 26 – 29 Okt 2026 • Klik ikon lonceng untuk tes/setel alarm per hari
                 </p>
               </div>
             </div>
@@ -212,7 +291,7 @@ export default function TKADashboard({ className = '' }: Props) {
                     : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
-                Tahapan Lain
+                Tahapan Resmi
               </button>
               <button
                 type="button"
@@ -223,18 +302,19 @@ export default function TKADashboard({ className = '' }: Props) {
                     : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
-                Rincian Waktu
+                Rincian & Tips
               </button>
             </div>
           </div>
 
-          {/* TAB 1: JADWAL UJIAN (Minimalist Cards) */}
+          {/* TAB 1: JADWAL UJIAN (Interactive Cards + Per-Day Alarm Sync) */}
           {activeTab === 'jadwal' && (
             <div className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 {EXAM_DAYS_2026.map((item) => {
-                  const comp = DAY_COMPONENTS[item.hariKe];
                   const isExpanded = expandedDay === item.hariKe;
+                  const isTodayExam = todayWibStr === item.tanggal;
+                  const isNextTarget = activeExamState.exam.hariKe === item.hariKe && activeExamState.state !== 'completed_all';
 
                   // Clean color badges
                   const badgeClasses = {
@@ -247,7 +327,13 @@ export default function TKADashboard({ className = '' }: Props) {
                   return (
                     <div
                       key={item.hariKe}
-                      className="group rounded-2xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 hover:bg-[var(--tf-bg-subtle)] hover:border-blue-500/30 p-4 transition-all duration-200"
+                      className={`group rounded-2xl border p-4 transition-all duration-200 ${
+                        isTodayExam
+                          ? 'border-rose-500/50 bg-rose-500/5 shadow-sm'
+                          : isNextTarget
+                          ? 'border-blue-500/40 bg-blue-500/5 shadow-xs'
+                          : 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 hover:bg-[var(--tf-bg-subtle)] hover:border-blue-500/30'
+                      }`}
                     >
                       {/* Top Row: Hari Badge + Date & Monospace Time */}
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -258,23 +344,37 @@ export default function TKADashboard({ className = '' }: Props) {
                           <span className="text-xs font-bold text-[var(--tf-text-secondary)]">
                             {item.tanggalFormatted}
                           </span>
+                          {isTodayExam && (
+                            <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase bg-rose-500 text-white animate-pulse">
+                              HARI INI
+                            </span>
+                          )}
                         </div>
 
-                        <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-[var(--tf-text-primary)] px-2 py-0.5 rounded-lg bg-[var(--tf-bg-surface)] border border-[var(--tf-border)]">
-                          <Clock size={11} className="text-blue-500" />
-                          {item.mulaiWib} - {item.perkiraanSelesaiWib} WIB
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-[var(--tf-text-primary)] px-2 py-0.5 rounded-lg bg-[var(--tf-bg-surface)] border border-[var(--tf-border)]">
+                            <Clock size={11} className="text-blue-500" />
+                            {item.mulaiWib} - {item.perkiraanSelesaiWib} WIB
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => void handleSyncSingleDay(item.hariKe, item.shortTitle)}
+                            disabled={syncingDay === item.hariKe}
+                            title={`Aktifkan & Tes Notifikasi Hari Ke-${item.hariKe}`}
+                            className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
+                          >
+                            <BellRing size={12} className={syncingDay === item.hariKe ? 'animate-spin' : ''} />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Subject Title */}
                       <h4 className="text-sm sm:text-base font-black text-[var(--tf-text-primary)] leading-snug">
-                        {comp?.title || item.mapel}
+                        {item.shortTitle}
                       </h4>
-                      {comp?.subtitle && (
-                        <p className="text-[11px] text-[var(--tf-text-muted)] mt-0.5">
-                          {comp.subtitle}
-                        </p>
-                      )}
+                      <p className="text-[11px] text-[var(--tf-text-muted)] mt-0.5">
+                        {item.subtitle}
+                      </p>
 
                       {/* Compact Chips: Durasi & Soal */}
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -282,7 +382,7 @@ export default function TKADashboard({ className = '' }: Props) {
                           <Timer size={11} className="text-amber-500" />
                           {item.totalMenit} Menit
                         </span>
-                        {comp?.chips.slice(1).map((chip, idx) => (
+                        {item.chips.slice(1).map((chip, idx) => (
                           <span
                             key={idx}
                             className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--tf-bg-surface)] text-[var(--tf-text-muted)] border border-[var(--tf-border)]"
@@ -295,7 +395,7 @@ export default function TKADashboard({ className = '' }: Props) {
                         <button
                           type="button"
                           onClick={() => toggleExpand(item.hariKe)}
-                          className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-0.5"
+                          className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-0.5 cursor-pointer"
                         >
                           {isExpanded ? 'Tutup' : 'Rincian'}
                           {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -303,18 +403,21 @@ export default function TKADashboard({ className = '' }: Props) {
                       </div>
 
                       {/* Expandable Step-by-Step Breakdown */}
-                      {isExpanded && comp && (
+                      {isExpanded && (
                         <div className="mt-3 pt-3 border-t border-[var(--tf-border)] space-y-1.5 text-xs animate-in fade-in duration-200">
-                          {comp.steps.map((st, i) => (
-                            <div key={i} className="flex items-center justify-between text-[11px] py-1 px-2 rounded-lg bg-[var(--tf-bg-surface)]">
+                          {item.steps.map((st, i) => (
+                            <div key={i} className="flex items-center justify-between text-[11px] py-1 px-2.5 rounded-lg bg-[var(--tf-bg-surface)] border border-[var(--tf-border)]/50">
                               <span className="text-[var(--tf-text-secondary)] font-medium">
-                                • {st.name}
+                                {i + 1}. {st.name}
                               </span>
-                              <span className="font-mono font-bold text-[var(--tf-text-primary)]">
+                              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
                                 {st.dur}
                               </span>
                             </div>
                           ))}
+                          <div className="mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed">
+                            <strong>💡 Tips Hari Ke-{item.hariKe}:</strong> {item.persiapanTips}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -322,23 +425,34 @@ export default function TKADashboard({ className = '' }: Props) {
                 })}
               </div>
 
-              {/* Minimalist Note */}
-              <div className="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 text-xs text-[var(--tf-text-muted)] flex items-center justify-between gap-2">
+              {/* Minimalist Note + Quick Links */}
+              <div className="p-3.5 rounded-2xl bg-blue-500/5 border border-blue-500/20 text-xs text-[var(--tf-text-muted)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <span className="flex items-center gap-2">
                   <Info size={14} className="text-blue-500 shrink-0" />
-                  <span>Jam pada kartu peserta yang berlaku. Total durasi mencakup latihan, tes utama, dan survei.</span>
+                  <span>
+                    Alarm otomatis berbunyi pada <strong>H-1 (19:00)</strong>, <strong>Pagi (05:30)</strong>, <strong>H-30m (06:30)</strong>, <strong>H-10m (06:50)</strong>, dan <strong>Mulai (07:00 WIB)</strong>.
+                  </span>
                 </span>
-                <Link
-                  to="/tka"
-                  className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0 text-xs"
-                >
-                  Latihan Soal <ArrowRight size={13} />
-                </Link>
+                <div className="flex items-center gap-3 shrink-0">
+                  <Link
+                    to="/notifications"
+                    className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 text-xs"
+                  >
+                    Cek Kotak Masuk Notif
+                  </Link>
+                  <span className="text-slate-300 dark:text-slate-700">•</span>
+                  <Link
+                    to="/tka"
+                    className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 text-xs"
+                  >
+                    Simulasi CBT <ArrowRight size={13} />
+                  </Link>
+                </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2: TAHAPAN LAIN (Minimalist Timeline) */}
+          {/* TAB 2: TAHAPAN RESMI (Minimalist Timeline) */}
           {activeTab === 'tahapan' && (
             <div className="space-y-2.5 py-1">
               {TKA_STAGES_2026.map((stg) => {
@@ -366,14 +480,26 @@ export default function TKADashboard({ className = '' }: Props) {
                             : 'bg-slate-400'
                         }`}
                       />
-                      <span className="text-xs font-bold text-[var(--tf-text-primary)]">
-                        {stg.nama}
-                      </span>
-                      {isCrucial && (
-                        <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 border border-rose-500/30">
-                          Ujian Utama
-                        </span>
-                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[var(--tf-text-primary)]">
+                            {stg.nama}
+                          </span>
+                          {isCrucial && (
+                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 border border-rose-500/30">
+                              Ujian Utama
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600">
+                              Selesai
+                            </span>
+                          )}
+                        </div>
+                        {stg.catatan && (
+                          <p className="text-[10px] text-[var(--tf-text-muted)] mt-0.5">{stg.catatan}</p>
+                        )}
+                      </div>
                     </div>
 
                     <span className="font-mono text-xs font-semibold text-[var(--tf-text-muted)] mt-1 sm:mt-0 ml-4 sm:ml-0">
@@ -385,26 +511,29 @@ export default function TKADashboard({ className = '' }: Props) {
             </div>
           )}
 
-          {/* TAB 3: RINCIAN WAKTU & SUBTES */}
+          {/* TAB 3: RINCIAN WAKTU & TIPS PERSIAPAN */}
           {activeTab === 'rincian' && (
-            <div className="space-y-2">
-              <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-2.5">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {EXAM_DAYS_2026.map((item) => (
-                  <div key={item.hariKe} className="p-3 rounded-2xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 text-xs">
-                    <div className="flex items-center justify-between mb-1.5">
+                  <div key={item.hariKe} className="p-3.5 rounded-2xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
                       <span className="font-black text-blue-600 dark:text-blue-400">
-                        {item.hari}, {item.tanggalFormatted.split(',')[1]}
+                        Hari Ke-{item.hariKe} • {item.tanggalFormatted}
                       </span>
-                      <span className="font-mono font-bold text-[var(--tf-text-primary)]">
+                      <span className="font-mono font-bold text-[var(--tf-text-primary)] bg-[var(--tf-bg-surface)] px-2 py-0.5 rounded-md border border-[var(--tf-border)]">
                         {item.mulaiWib} - {item.perkiraanSelesaiWib} WIB ({item.totalMenit} mnt)
                       </span>
                     </div>
-                    <div className="font-bold text-[var(--tf-text-primary)] mb-1">
+                    <div className="font-bold text-[var(--tf-text-primary)]">
                       {item.mapel}
                     </div>
                     <p className="text-[11px] text-[var(--tf-text-muted)] leading-relaxed">
                       {item.rincian}
                     </p>
+                    <div className="pt-1.5 border-t border-[var(--tf-border)]/60 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                      ✓ Strategi: {item.persiapanTips}
+                    </div>
                   </div>
                 ))}
               </div>

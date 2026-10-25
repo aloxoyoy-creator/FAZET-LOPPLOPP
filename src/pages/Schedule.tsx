@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarClock,
-  ChevronLeft,
-  ChevronRight,
   Search,
   Sparkles,
+  Target,
+  BellRing,
+  ArrowUpRight,
+  Clock,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import ScheduleTimeline from '../components/schedule/ScheduleTimeline';
 import Skeleton from '../components/ui/Skeleton';
@@ -14,9 +17,11 @@ import { useGoogleHolidays } from '../hooks/useGoogleHolidays';
 import { getNextSchoolAgenda } from '../lib/schoolCalendar';
 import { cn } from '../lib/utils';
 import { trackEvent } from '../lib/analytics';
-import type { ScheduleItem } from '../types';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useAuth } from '../context/AuthContext';
 import { useFathurTutoringSchedule } from '../hooks/useFathurTutoringSchedule';
+import { EXAM_DAYS_2026, isTkaFeatureActive } from '../data/tkaSchedule2026';
+import { syncTkaToNotifications } from '../services/tkaNotificationService';
 
 const baseDayList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as const;
 const extendedDayList = [...baseDayList, 'Sabtu'] as const;
@@ -38,12 +43,15 @@ function hoursMinutes(total: number) {
 
 export default function Schedule() {
   const { items, loading, error } = useSchedule();
-  const { workspace } = useWorkspace();
+  const { user } = useAuth();
+  const { workspace, workspaceId } = useWorkspace();
   const dayList = workspace.id === 'mazet' ? extendedDayList : baseDayList;
   const [selectedDay, setSelectedDay] = useState<SchoolDay | null>(null);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('all');
   const [now, setNow] = useState(() => new Date());
+  const [syncingDay, setSyncingDay] = useState<number | null>(null);
+  const tkaActive = workspace.id !== 'mazet' && isTkaFeatureActive(now);
 
   const { byDate: holidayMap } = useGoogleHolidays(now);
   const tutoring = useFathurTutoringSchedule(now);
@@ -91,6 +99,11 @@ export default function Schedule() {
 
   const activeDay = selectedDay ?? agendaDay ?? dayList[0];
 
+  const activeDayTka = useMemo(() => {
+    if (!tkaActive) return undefined;
+    return EXAM_DAYS_2026.find((d) => d.hari === activeDay);
+  }, [activeDay, tkaActive]);
+
   const selected = useMemo(
     () =>
       items
@@ -124,6 +137,19 @@ export default function Schedule() {
 
   const isTomorrowMode = agenda?.daysFromToday !== 0 && agendaDay === activeDay;
 
+  const handleSyncTka = async (hariKe: number) => {
+    setSyncingDay(hariKe);
+    try {
+      await syncTkaToNotifications({
+        userId: user?.id,
+        workspaceId,
+        triggerImmediateConfirmation: true,
+        specificDay: hariKe,
+      });
+    } finally {
+      setTimeout(() => setSyncingDay(null), 1000);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 pb-8 fade-up">
@@ -173,6 +199,7 @@ export default function Schedule() {
                 (item) => item.active && item.day === day,
               ).length;
               const isActive = activeDay === day;
+              const hasTka = tkaActive && EXAM_DAYS_2026.some((d) => d.hari === day);
 
               return (
                 <button
@@ -180,14 +207,26 @@ export default function Schedule() {
                   type="button"
                   onClick={() => setSelectedDay(day)}
                   className={cn(
-                    'min-w-[112px] rounded-2xl px-4 py-3 text-left transition sm:min-w-[130px]',
+                    'min-w-[112px] rounded-2xl px-4 py-3 text-left transition sm:min-w-[130px] relative',
                     isActive
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/15'
                       : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900',
                   )}
                 >
-                  <div className="text-sm font-extrabold">
-                    {day}
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-sm font-extrabold">{day}</span>
+                    {hasTka && (
+                      <span
+                        className={cn(
+                          'px-1.5 py-0.5 rounded text-[9px] font-black uppercase',
+                          isActive
+                            ? 'bg-amber-400 text-slate-950'
+                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                        )}
+                      >
+                        TKA
+                      </span>
+                    )}
                   </div>
                   <div
                     className={cn(
@@ -207,6 +246,53 @@ export default function Schedule() {
             })}
           </div>
         </div>
+
+        {/* TKA Special Session Banner on Monday-Thursday */}
+        {activeDayTka && (
+          <div className="border-b border-amber-200/70 dark:border-amber-900/40 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent p-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-2xl bg-amber-500 text-white shadow-sm shrink-0 mt-0.5">
+                  <Target size={18} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-300">
+                      Jadwal Ujian TKA SMA 2026 • Hari Ke-{activeDayTka.hariKe} ({activeDayTka.tanggalFormatted})
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-mono text-xs font-bold px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-900 dark:text-amber-200">
+                      <Clock size={11} /> {activeDayTka.mulaiWib} – {activeDayTka.perkiraanSelesaiWib} WIB
+                    </span>
+                  </div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white mt-0.5">
+                    {activeDayTka.mapel}
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                    {activeDayTka.rincian}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => void handleSyncTka(activeDayTka.hariKe)}
+                  disabled={syncingDay === activeDayTka.hariKe}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 text-xs font-bold shadow-xs transition-colors"
+                >
+                  <BellRing size={13} className={syncingDay === activeDayTka.hariKe ? 'animate-spin' : ''} />
+                  <span>{syncingDay === activeDayTka.hariKe ? 'Tersinkron!' : 'Setel Alarm TKA'}</span>
+                </button>
+                <Link
+                  to="/tka"
+                  className="inline-flex items-center gap-1 rounded-xl border border-amber-300 dark:border-amber-700 bg-white/80 dark:bg-slate-900/70 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-50"
+                >
+                  Simulasi <ArrowUpRight size={13} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-3 border-b border-slate-100 p-4 dark:border-slate-800 lg:grid-cols-[minmax(0,1fr)_220px]">
           <div className="relative">

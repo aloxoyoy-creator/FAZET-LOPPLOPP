@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppConfig } from '../context/AppConfigContext';
 import {
@@ -12,6 +13,8 @@ import { calculateOfflinePrayerTimes, PRAYER_WISDOM } from '../utils/jadwalShola
 import { getWIBDateForDay } from '../utils/timeUtils';
 import { getDailySweetGreeting } from '../utils/sweetLoveMessages';
 import { loadWorkspaceSchedule } from '../services/workspaceService';
+import { syncTkaToNotifications, purgeExpiredTkaDataAndAlarms } from '../services/tkaNotificationService';
+import { getExamDayByDate, isTkaFeatureActive } from '../data/tkaSchedule2026';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -209,6 +212,7 @@ function cancelTaskReminders(taskId: string) {
 }
 
 export function usePushNotifications() {
+  const { user } = useAuth();
   const { workspaceId } = useWorkspace();
   const { lifestyle } = useAppConfig();
 
@@ -458,14 +462,20 @@ export function usePushNotifications() {
                   morningBody = `Hari ini tidak ada perkuliahan. Selamat beristirahat atau belajar santai ya manis! 🍃`;
                 }
               } else {
-                morningTitle = `📚 Jadwal Pelajaran Hari Ini (${dayNameIndo})`;
+                const todayTka = getExamDayByDate(todayStr);
+                morningTitle = todayTka
+                  ? `🎯 HARI UJIAN TKA Ke-${todayTka.hariKe} & Jadwal (${dayNameIndo})`
+                  : `📚 Jadwal Pelajaran Hari Ini (${dayNameIndo})`;
+                const tkaPrefix = todayTka
+                  ? `🔥 UJIAN TKA (${todayTka.mulaiWib}-${todayTka.perkiraanSelesaiWib} WIB): ${todayTka.shortTitle} (${todayTka.totalMenit} Menit)\n\n`
+                  : '';
                 if (todayClasses.length > 0) {
                   const listText = todayClasses
                     .map(c => `• ${c.subject}`)
                     .join('\n');
-                  morningBody = `${listText}\n\nFokus dan semangat belajarnya hari ini sayang! 🌟`;
+                  morningBody = `${tkaPrefix}${listText}\n\nFokus dan semangat belajarnya hari ini sayang! 🌟`;
                 } else {
-                  morningBody = `Hari ini tidak ada jadwal kelas. Selamat beristirahat ya sayang! 🍃`;
+                  morningBody = `${tkaPrefix}Hari ini tidak ada jadwal kelas reguler. Fokus penuh dan semangat ya sayang! 🌟`;
                 }
               }
 
@@ -485,6 +495,7 @@ export function usePushNotifications() {
             if (eveningScheduleTime > now) {
               const tomorrowDate = new Date(targetDate);
               tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+              const tomorrowDateStr = tomorrowDate.toLocaleDateString('en-CA');
               const tomorrowDayName = dayNamesIndo[tomorrowDate.getDay()];
               const tomorrowClasses = scheduleItems.filter(s => s.active && s.day === tomorrowDayName);
 
@@ -502,14 +513,20 @@ export function usePushNotifications() {
                   eveningBody = `Besok tidak ada jadwal perkuliahan (libur). Selamat beristirahat ya cintaku! 🍃`;
                 }
               } else {
-                eveningTitle = `📚 Jadwal Pelajaran Besok (${tomorrowDayName})`;
+                const tomorrowTka = getExamDayByDate(tomorrowDateStr);
+                eveningTitle = tomorrowTka
+                  ? `🎯 Besok Ujian TKA Hari Ke-${tomorrowTka.hariKe} & Jadwal (${tomorrowDayName})`
+                  : `📚 Jadwal Pelajaran Besok (${tomorrowDayName})`;
+                const tkaPrefix = tomorrowTka
+                  ? `⚡ UJIAN TKA BESOK (${tomorrowTka.mulaiWib}-${tomorrowTka.perkiraanSelesaiWib} WIB):\n• ${tomorrowTka.mapel} (${tomorrowTka.totalMenit} Menit)\n\n`
+                  : '';
                 if (tomorrowClasses.length > 0) {
                   const listText = tomorrowClasses
                     .map(c => `• ${c.subject}`)
                     .join('\n');
-                  eveningBody = `${listText}\n\nSiapkan buku & perlengkapan malam ini ya sayang! ✨`;
+                  eveningBody = `${tkaPrefix}Jadwal Sekolah:\n${listText}\n\nSiapkan kartu peserta, buku & perlengkapan malam ini ya sayang! ✨`;
                 } else {
-                  eveningBody = `Besok tidak ada jadwal pelajaran (libur). Selamat beristirahat ya sayang! 🍃`;
+                  eveningBody = `${tkaPrefix}Besok tidak ada jadwal pelajaran reguler. Istirahat lebih awal malam ini ya sayang! ✨`;
                 }
               }
 
@@ -678,6 +695,23 @@ export function usePushNotifications() {
         } catch (err) {
           console.warn('Failed to pre-schedule active tasks:', err);
         }
+
+        // -------------------------------------------------------------
+        // E. Automatic Synchronization or Friday Purge of TKA SMA 2026 Schedule
+        // -------------------------------------------------------------
+        if (!isTkaFeatureActive()) {
+          await purgeExpiredTkaDataAndAlarms(user?.id);
+        } else if (workspaceId !== 'mazet') {
+          try {
+            await syncTkaToNotifications({
+              userId: user?.id,
+              workspaceId,
+              triggerImmediateConfirmation: false,
+            });
+          } catch (tkaErr) {
+            console.warn('Failed to auto-sync TKA schedule to notifications:', tkaErr);
+          }
+        }
       } catch (err) {
         console.error('[Notification Scheduler] Failed:', err);
       }
@@ -688,5 +722,5 @@ export function usePushNotifications() {
     return () => {
       supabase.removeChannel(tasksSubscription);
     };
-  }, [workspaceId, lifestyle]);
+  }, [workspaceId, lifestyle, user?.id]);
 }

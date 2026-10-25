@@ -3,7 +3,7 @@ import {
   BellRing, Check, ExternalLink, BellDot, ShieldAlert, X, 
   AlertTriangle, CheckSquare, MessageSquare, AtSign, Focus, 
   Megaphone, Calendar, Trophy, Settings, Trash2, Volume2, VolumeX,
-  Sparkles, Clock, Compass, BookOpen, Filter, Info
+  Sparkles, Compass, BookOpen, Info, Target, RefreshCw, Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,8 +26,16 @@ import {
   showSystemNotification,
   playNotificationSound 
 } from '../services/systemNotificationService';
+import {
+  syncTkaToNotifications,
+  getSavedTkaSyncStatus,
+  buildTkaExamNotificationBody,
+  type TkaSyncStatus
+} from '../services/tkaNotificationService';
+import { EXAM_DAYS_2026, getActiveOrNextExamDay, isTkaFeatureActive } from '../data/tkaSchedule2026';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useToast } from '../components/ui/Toast';
 import PullToRefresh from '../components/ui/PullToRefresh';
 import ContinuousMotion from '../components/ui/ContinuousMotion';
 import { PRAYER_WISDOM } from '../utils/jadwalSholat';
@@ -36,6 +44,7 @@ import type { Notification } from '../types';
 function getNotificationIcon(type: Notification['type'], read: boolean) {
   const iconProps = { size: 20 };
   switch (type) {
+    case 'tka': return <Target {...iconProps} className={read ? "text-rose-400" : "text-rose-600 dark:text-rose-400"} />;
     case 'deadline': return <AlertTriangle {...iconProps} className={read ? "text-red-400" : "text-red-500"} />;
     case 'task': return <CheckSquare {...iconProps} className={read ? "text-blue-400" : "text-blue-500"} />;
     case 'comment': return <MessageSquare {...iconProps} className={read ? "text-teal-400" : "text-teal-500"} />;
@@ -53,6 +62,7 @@ function getNotificationIcon(type: Notification['type'], read: boolean) {
 function getNotificationColorClass(type: Notification['type'], read: boolean) {
   if (read) return "bg-slate-100 dark:bg-slate-800 text-slate-500";
   switch (type) {
+    case 'tka': return "bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300";
     case 'deadline':
     case 'security': return "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300";
     case 'comment': return "bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-300";
@@ -66,13 +76,15 @@ function getNotificationColorClass(type: Notification['type'], read: boolean) {
   }
 }
 
-type FilterTab = 'all' | 'unread' | 'task' | 'prayer' | 'academic';
+type FilterTab = 'all' | 'unread' | 'tka' | 'task' | 'prayer' | 'academic';
 
 export default function Notifications() {
   const { user } = useAuth();
   const { workspaceId } = useWorkspace();
   const { notifications, unreadCount } = useNotifications();
+  const { push } = useToast();
   const nav = useNavigate();
+
   const [permissionStatus, setPermissionStatus] = useState<string>('granted');
   const [hideBanner, setHideBanner] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
@@ -81,9 +93,24 @@ export default function Notifications() {
   });
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [testingCategory, setTestingCategory] = useState<string | null>(null);
+  const [tkaSyncStatus, setTkaSyncStatus] = useState<TkaSyncStatus | null>(() => getSavedTkaSyncStatus());
+  const [syncingTka, setSyncingTka] = useState(false);
+
+  const isMazet = workspaceId === 'mazet';
+  const tkaActive = !isMazet && isTkaFeatureActive();
+  const activeExamInfo = useMemo(() => getActiveOrNextExamDay(new Date()), []);
 
   useEffect(() => {
     checkNotificationPermission().then(setPermissionStatus);
+  }, []);
+
+  useEffect(() => {
+    const onSynced = (e: Event) => {
+      const custom = e as CustomEvent<TkaSyncStatus>;
+      if (custom.detail) setTkaSyncStatus(custom.detail);
+    };
+    window.addEventListener('fazet:tka-synced', onSynced);
+    return () => window.removeEventListener('fazet:tka-synced', onSynced);
   }, []);
 
   const toggleSound = () => {
@@ -112,18 +139,78 @@ export default function Notifications() {
     }
   };
 
-  // Filtered list
+  const handleSyncTkaScheduleNow = async () => {
+    setSyncingTka(true);
+    try {
+      const res = await syncTkaToNotifications({
+        userId: user?.id,
+        workspaceId,
+        triggerImmediateConfirmation: true,
+      });
+      setTkaSyncStatus(res);
+      push({
+        tone: 'success',
+        title: 'Jadwal TKA 2026 Tersinkronisasi!',
+        description: `Seluruh 4 hari ujian TKA & ${res.scheduledCount} alarm otomatis telah terhubung ke Pusat Notifikasi.`
+      });
+    } catch {
+      push({
+        tone: 'danger',
+        title: 'Gagal menyinkronkan TKA ke Notifikasi'
+      });
+    } finally {
+      setSyncingTka(false);
+    }
+  };
+
+  // Count TKA notifications
+  const tkaNotifCount = useMemo(() => {
+    return notifications.filter(
+      (n) => n.type === 'tka' || n.title.toLowerCase().includes('tka') || n.title.toLowerCase().includes('snbt')
+    ).length;
+  }, [notifications]);
+
+  // Filtered list (automatically hides TKA notifications once Friday arrives)
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
+      const isTkaItem = item.type === 'tka' || item.title.toLowerCase().includes('tka') || item.title.toLowerCase().includes('snbt');
+      if (!tkaActive && isTkaItem) return false;
       if (activeTab === 'unread') return !item.read;
+      if (activeTab === 'tka') return isTkaItem;
       if (activeTab === 'task') return item.type === 'task' || item.type === 'deadline';
       if (activeTab === 'prayer') return item.type === 'calendar' || item.title.toLowerCase().includes('sholat') || item.title.toLowerCase().includes('adzan');
-      if (activeTab === 'academic') return item.type === 'calendar' || item.type === 'announcement' || item.type === 'focus';
+      if (activeTab === 'academic') return item.type === 'calendar' || item.type === 'announcement' || item.type === 'focus' || (tkaActive && item.type === 'tka');
       return true;
     });
-  }, [notifications, activeTab]);
+  }, [notifications, activeTab, tkaActive]);
 
   // Interactive Test Dispatchers with Deep Details
+  const handleTestTkaNotification = async () => {
+    setTestingCategory('tka');
+    const exam = activeExamInfo.exam || EXAM_DAYS_2026[0];
+    const title = `🎯 Pengingat Ujian TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`;
+    const body = buildTkaExamNotificationBody(
+      exam,
+      `Simulasi Alarm TKA (${exam.mulaiWib} – ${exam.perkiraanSelesaiWib} WIB). Kartu peserta & kesiapan CBT 100%!`
+    );
+
+    await showSystemNotification(title, body, '/tka', {
+      channelId: 'fazet_tka_channel',
+      soundType: 'tka'
+    });
+
+    if (user) {
+      await createNotification({
+        userId: user.id,
+        title,
+        message: body,
+        type: 'tka',
+        actionUrl: '/tka'
+      });
+    }
+    setTestingCategory(null);
+  };
+
   const handleTestPrayerNotification = async () => {
     setTestingCategory('prayer');
     const city = workspaceId === 'fathur' ? 'Tuban' : 'Tasikmalaya';
@@ -151,7 +238,7 @@ export default function Notifications() {
   const handleTestTaskNotification = async () => {
     setTestingCategory('task');
     const title = `📝 Tugas Baru: [Matematika Peminatan] Turunan Fungsi Trigonometri`;
-    const body = `📚 Mapel: Matematika Peminatan (Pak Bambang, M.Pd)\n⚡ Prioritas: Tinggi ⚡\n⏰ Batas Waktu: Jumat, 16 Oktober 2026 • 23:59 WIB\n📝 Detail: "Kerjakan 5 latihan soal essay Bab 3 di buku bergaris dan sertakan langkahnya."\n💡 Catatan: "Kumpulkan sebelum jam istirahat pertama di meja guru."\n👉 Buka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
+    const body = `📚 Mapel: Matematika Peminatan (Pak Bambang, M.Pd)\n⚡ Prioritas: Tinggi ⚡\n⏰ Batas Waktu: Senin, 26 Oktober 2026 • 23:59 WIB\n📝 Detail: "Kerjakan 5 latihan soal essay Bab 3 di buku bergaris dan sertakan langkahnya."\n💡 Catatan: "Kumpulkan sebelum jam istirahat pertama di meja guru."\n👉 Buka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
 
     await showSystemNotification(title, body, '/tasks', {
       channelId: 'fazet_task_channel',
@@ -173,13 +260,12 @@ export default function Notifications() {
   const handleTestTomorrowAgenda = async () => {
     setTestingCategory('agenda');
     const tomorrowDay = 'Senin';
-    const isMazet = workspaceId === 'mazet';
     const title = isMazet 
       ? `🎓 Jadwal Kuliah Besok (${tomorrowDay})` 
-      : `📚 Jadwal Pelajaran Besok (${tomorrowDay})`;
+      : `🎯 Besok Ujian TKA Hari Ke-1 & Jadwal (${tomorrowDay})`;
     const body = isMazet
       ? `• Language Assessment\n• Quantitative Research in ELT\n\nSiapkan materi & laptop malam ini ya manisku! ✨`
-      : `• Matematika Wajib\n• Fisika\n• Biologi\n• Bahasa Indonesia\n\nSiapkan buku & perlengkapan malam ini ya sayang! ✨`;
+      : `⚡ UJIAN TKA BESOK (07.00-08.45 WIB):\n• Bahasa Indonesia Wajib dan Literasi Membaca (105 Menit)\n\nJadwal Sekolah:\n• Matematika Wajib\n• Fisika\n• Biologi\n\nSiapkan kartu peserta, buku & perlengkapan malam ini ya sayang! ✨`;
 
     await showSystemNotification(title, body, '/schedule', {
       channelId: 'fazet_default_channel',
@@ -252,7 +338,9 @@ export default function Notifications() {
               </ContinuousMotion>
               <div>
                 <h1 className="text-2xl font-black text-slate-900 dark:text-white">Pusat Notifikasi</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Informasi detail sholat, tugas, dan agenda akademik</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Sinkronisasi terpadu Ujian TKA 2026, adzan sholat, deadline tugas, dan agenda akademik
+                </p>
               </div>
             </div>
           </div>
@@ -308,7 +396,7 @@ export default function Notifications() {
                   <div className="flex-1">
                     <h3 className="text-sm font-black text-slate-900 dark:text-white">Izin Notifikasi Sistem Belum Aktif</h3>
                     <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
-                      Agar notifikasi adzan sholat, tugas baru, dan pengingat deadline berbunyi tepat waktu saat aplikasi diminimize atau ditutup, izinkan notifikasi sekarang.
+                      Agar alarm Ujian TKA 2026, adzan sholat, tugas baru, dan pengingat deadline berbunyi tepat waktu saat aplikasi diminimize atau ditutup, izinkan notifikasi sekarang.
                     </p>
                   </div>
                   <Button 
@@ -323,6 +411,81 @@ export default function Notifications() {
           )}
         </AnimatePresence>
 
+        {/* TKA 2026 Command Sync Hub Card */}
+        {tkaActive && (
+          <Card className="p-5 border-rose-200/80 dark:border-rose-900/50 bg-gradient-to-br from-rose-50/60 via-white to-indigo-50/40 dark:from-rose-950/25 dark:via-[#0f1219] dark:to-indigo-950/20 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800 pb-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">
+                  <Target size={22} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                      Sinkronisasi Alarm Ujian TKA SMA 2026
+                    </h2>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                      <Check size={11} /> {tkaSyncStatus ? 'Tersinkronisasi Otomatis' : 'Siap Sinkronisasi'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Gelombang 1 • Sesi 1 (26–29 Okt 2026 • 07.00 WIB) • Alarm Multi-Tahap: H-1 (19:00), Pagi (05:30), H-30m, H-10m, & Kickoff (07:00 WIB)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  onClick={() => void handleSyncTkaScheduleNow()}
+                  disabled={syncingTka}
+                  icon={syncingTka ? <RefreshCw size={14} className="animate-spin" /> : <BellRing size={14} />}
+                  className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs"
+                >
+                  {tkaSyncStatus ? 'Sinkronkan Ulang TKA' : 'Sinkronkan TKA Sekarang'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => nav('/tka')}
+                  className="rounded-xl"
+                >
+                  Buka Hub TKA
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
+              {EXAM_DAYS_2026.map((day) => (
+                <div
+                  key={day.hariKe}
+                  className="p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                        Hari {day.hariKe}
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-slate-500">
+                        {day.tanggal.slice(8)} Okt
+                      </span>
+                    </div>
+                    <div className="text-xs font-extrabold text-slate-900 dark:text-white line-clamp-1">
+                      {day.shortTitle}
+                    </div>
+                  </div>
+                  <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] font-mono text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Clock size={10} className="text-blue-500" /> {day.mulaiWib} WIB
+                    </span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{day.totalMenit}m</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         {/* Live Notification Testing & Playground Card */}
         <Card className="p-5 border-blue-100 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50 dark:from-blue-950/20 dark:via-[#0f1219] dark:to-indigo-950/20">
           <div className="flex items-center justify-between mb-3">
@@ -336,9 +499,21 @@ export default function Notifications() {
             Klik tombol di bawah ini untuk menguji format detail notifikasi langsung ke bilah status HP / browser kamu:
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+          <div className={`grid grid-cols-2 ${tkaActive ? 'sm:grid-cols-3 md:grid-cols-5' : 'sm:grid-cols-4'} gap-2.5`}>
+            {tkaActive && (
+              <button
+                onClick={() => void handleTestTkaNotification()}
+                disabled={testingCategory !== null}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 hover:bg-rose-100/80 transition-all text-center group cursor-pointer"
+              >
+                <Target size={22} className="text-rose-600 dark:text-rose-400 mb-1.5 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-black text-rose-900 dark:text-rose-300">🎯 Alarm TKA 2026</span>
+                <span className="text-[10px] text-rose-700/80 dark:text-rose-400/70 mt-0.5">Sesi, Mapel & Tips</span>
+              </button>
+            )}
+
             <button
-              onClick={handleTestPrayerNotification}
+              onClick={() => void handleTestPrayerNotification()}
               disabled={testingCategory !== null}
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/80 dark:bg-amber-950/30 hover:bg-amber-100/80 transition-all text-center group cursor-pointer"
             >
@@ -348,7 +523,7 @@ export default function Notifications() {
             </button>
 
             <button
-              onClick={handleTestTaskNotification}
+              onClick={() => void handleTestTaskNotification()}
               disabled={testingCategory !== null}
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/80 dark:bg-blue-950/30 hover:bg-blue-100/80 transition-all text-center group cursor-pointer"
             >
@@ -358,19 +533,19 @@ export default function Notifications() {
             </button>
 
             <button
-              onClick={handleTestTomorrowAgenda}
+              onClick={() => void handleTestTomorrowAgenda()}
               disabled={testingCategory !== null}
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100/80 transition-all text-center group cursor-pointer"
             >
               <BookOpen size={22} className="text-indigo-600 dark:text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-black text-indigo-900 dark:text-indigo-300">📚 Jadwal Minimalis</span>
-              <span className="text-[10px] text-indigo-700/80 dark:text-indigo-400/70 mt-0.5">18:30 & 05:30 (Tanpa Jam)</span>
+              <span className="text-xs font-black text-indigo-900 dark:text-indigo-300">📚 Jadwal Besok</span>
+              <span className="text-[10px] text-indigo-700/80 dark:text-indigo-400/70 mt-0.5">18:30 & 05:30 WIB</span>
             </button>
 
             <button
-              onClick={handleTestFocusComplete}
+              onClick={() => void handleTestFocusComplete()}
               disabled={testingCategory !== null}
-              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/80 dark:bg-emerald-950/30 hover:bg-emerald-100/80 transition-all text-center group cursor-pointer"
+              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/80 dark:bg-emerald-950/30 hover:bg-emerald-100/80 transition-all text-center group cursor-pointer col-span-2 sm:col-span-1"
             >
               <Focus size={22} className="text-emerald-600 dark:text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform" />
               <span className="text-xs font-black text-emerald-900 dark:text-emerald-300">⏱️ Sesi Fokus</span>
@@ -410,6 +585,25 @@ export default function Notifications() {
               </span>
             )}
           </button>
+
+          {tkaActive && (
+            <button
+              onClick={() => setActiveTab('tka')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                activeTab === 'tka'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70'
+              }`}
+            >
+              <Target size={13} />
+              <span>TKA & SNBT</span>
+              {tkaNotifCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 font-extrabold">
+                  {tkaNotifCount}
+                </span>
+              )}
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('task')}
@@ -480,7 +674,7 @@ export default function Notifications() {
                     }`}
                   >
                     {!n.read && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)]" />
+                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${n.type === 'tka' ? 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]' : 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)]'}`} />
                     )}
 
                     <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -494,7 +688,9 @@ export default function Notifications() {
                             {n.title}
                           </h3>
                           {!n.read && (
-                            <Badge variant="primary" size="sm">Baru</Badge>
+                            <Badge variant={n.type === 'tka' ? 'danger' : 'primary'} size="sm">
+                              {n.type === 'tka' ? 'TKA 2026' : 'Baru'}
+                            </Badge>
                           )}
                         </div>
 
@@ -573,7 +769,7 @@ export default function Notifications() {
                     </div>
                     <div>
                       <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Detail Notifikasi</h3>
-                      <p className="text-xs text-slate-400 capitalize">{selectedNotification.type} notification</p>
+                      <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">{selectedNotification.type} notification</p>
                     </div>
                   </div>
                   <button 

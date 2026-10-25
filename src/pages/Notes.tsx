@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { 
   Paperclip, Pin, PinOff, Plus, Save, Trash2, X, FileText, 
-  Image as ImageIcon, Search, Copy, Check, Hash, Clock
+  Image as ImageIcon, Search, Copy, Check, Hash, Clock,
+  Sparkles, Wand2, Download, ListChecks, Bold, Heading1, List, HelpCircle, Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -15,6 +16,7 @@ import {
   updateNote,
   type Note,
 } from '../services/notesService';
+import { askAiAssistant } from '../services/aiAssistantService';
 import { useToast } from '../components/ui/Toast';
 
 function formatSize(bytes?: number) {
@@ -27,6 +29,27 @@ function formatSize(bytes?: number) {
 function isImage(type?: string) {
   return !!type && type.startsWith('image/');
 }
+
+const NOTE_TEMPLATES = [
+  {
+    id: 'materi',
+    label: '📚 Ringkasan Materi',
+    title: 'Ringkasan Materi: ',
+    body: `## 📌 Konsep Utama\n- \n- \n\n## 🔑 Rumus / Poin Penting\n1. \n2. \n\n## ❓ Pertanyaan / Hal yang Perlu Diulas\n- [ ] `,
+  },
+  {
+    id: 'checklist',
+    label: '✅ Target & Checklist',
+    title: 'Target & Checklist Hari Ini',
+    body: `## 🎯 Fokus Utama\n- [ ] Prioritas 1: \n- [ ] Prioritas 2: \n- [ ] Prioritas 3: \n\n## 📝 Catatan Tambahan\n- `,
+  },
+  {
+    id: 'jurnal',
+    label: '💡 Ide & Evaluasi',
+    title: 'Jurnal & Ide Proyek',
+    body: `## 💡 Ide / Gagasan Utama\n\n\n## 🚀 Langkah Eksekusi\n1. \n2. \n\n## 📊 Evaluasi\n- `,
+  },
+];
 
 export default function Notes() {
   const { user, profile } = useAuth();
@@ -41,8 +64,11 @@ export default function Notes() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [searchQ, setSearchQ] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'pinned'>('all');
   const [copied, setCopied] = useState(false);
+  const [aiBusy, setAiBusy] = useState<'summarize' | 'polish' | 'quiz' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -68,10 +94,11 @@ export default function Notes() {
 
   const filteredNotes = useMemo(() => {
     return notes.filter((n) => {
+      if (filterMode === 'pinned' && !n.pinned) return false;
       const q = searchQ.toLowerCase();
       return (n.title || '').toLowerCase().includes(q) || (n.content || '').toLowerCase().includes(q);
     });
-  }, [notes, searchQ]);
+  }, [notes, searchQ, filterMode]);
 
   // Statistics: Word count, character count, read time
   const stats = useMemo(() => {
@@ -86,6 +113,89 @@ export default function Notes() {
     setTitle('');
     setContent('');
     setPendingFile(null);
+  }
+
+  function applyTemplate(tpl: typeof NOTE_TEMPLATES[number]) {
+    if (!title.trim()) setTitle(tpl.title);
+    setContent((prev) => (prev.trim() ? `${prev.trim()}\n\n${tpl.body}` : tpl.body));
+    void hapticSuccess();
+  }
+
+  function insertSnippet(snippet: string) {
+    const el = textareaRef.current;
+    if (!el) {
+      setContent((prev) => `${prev}${snippet}`);
+      return;
+    }
+    const start = el.selectionStart ?? content.length;
+    const end = el.selectionEnd ?? content.length;
+    const selected = content.slice(start, end);
+    let replacement = snippet;
+    if (snippet === '**teks tebal**' && selected) {
+      replacement = `**${selected}**`;
+    }
+    const next = `${content.slice(0, start)}${replacement}${content.slice(end)}`;
+    setContent(next);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + replacement.length, start + replacement.length);
+    }, 10);
+  }
+
+  async function runAiAction(mode: 'summarize' | 'polish' | 'quiz') {
+    if (!content.trim() || aiBusy) {
+      push({ tone: 'warning', title: 'Catatan Kosong', message: 'Tulis minimal beberapa kalimat terlebih dahulu.' });
+      return;
+    }
+    setAiBusy(mode);
+    try {
+      const promptMap = {
+        summarize: `Ringkas catatan berikut menjadi poin-poin inti yang sangat jelas, padat, dan mudah dihafal dalam Bahasa Indonesia:\n\nJudul: ${title || 'Catatan'}\nIsi:\n${content}`,
+        polish: `Rapikan, perjelas struktur kalimat, dan beri format subjudul/poin yang rapi untuk catatan berikut tanpa menghilangkan informasi pentingnya (gunakan Bahasa Indonesia):\n\nJudul: ${title || 'Catatan'}\nIsi:\n${content}`,
+        quiz: `Buatlah 3 soal latihan pemahaman beserta kunci jawaban singkat berdasarkan isi catatan berikut:\n\nJudul: ${title || 'Catatan'}\nIsi:\n${content}`,
+      };
+      const result = await askAiAssistant({
+        prompt: promptMap[mode],
+        workspace: workspaceId,
+      });
+      const sectionHeader =
+        mode === 'summarize'
+          ? '### ✨ Ringkasan Inti (FAZET AI)'
+          : mode === 'polish'
+          ? '### 🪄 Versi Terstruktur (FAZET AI)'
+          : '### 🧠 Latihan Kuis Mandiri (FAZET AI)';
+      setContent((prev) => `${prev.trim()}\n\n---\n${sectionHeader}\n${result.trim()}\n`);
+      void hapticSuccess();
+      push({
+        tone: 'success',
+        title: 'AI Selesai Memproses',
+        message: 'Hasil analisis telah ditambahkan di bagian bawah catatan.',
+      });
+    } catch (err) {
+      push({
+        tone: 'error',
+        title: 'AI Tidak Tersedia',
+        message: err instanceof Error ? err.message : 'Gagal memproses catatan dengan AI.',
+      });
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
+  function handleDownloadNote() {
+    const fullText = `# ${title || 'Catatan Tanpa Judul'}\n\n${content}`.trim();
+    if (!fullText) return;
+    const blob = new Blob([fullText], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = (title || 'catatan-fazet').toLowerCase().replace(/[^a-z0-9-_]+/g, '-');
+    link.href = url;
+    link.setAttribute('download', `${safeName}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    push({ tone: 'success', title: 'Catatan Diunduh', message: `File ${safeName}.md berhasil disimpan.` });
   }
 
   async function handleSave() {
@@ -153,8 +263,8 @@ export default function Notes() {
       <aside className="flex w-full flex-col gap-3 md:w-80 md:shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white">Catatan</h1>
-            <p className="text-xs text-slate-400 capitalize">Workspace {workspace.name}</p>
+            <h1 className="text-lg font-black text-slate-900 dark:text-white">Smart Notes Studio</h1>
+            <p className="text-xs text-slate-400 capitalize">Workspace {workspace.name} • {notes.length} catatan</p>
           </div>
           <button
             type="button"
@@ -181,7 +291,33 @@ export default function Notes() {
           )}
         </div>
 
-        <div className="flex flex-col gap-2 overflow-y-auto md:max-h-[calc(100vh-220px)] hide-scrollbar">
+        {/* Filter Tabs (Semua vs Dipin) */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilterMode('all')}
+            className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold transition ${
+              filterMode === 'all'
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                : 'bg-slate-100 dark:bg-slate-800/70 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            Semua ({notes.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterMode('pinned')}
+            className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold inline-flex items-center justify-center gap-1 transition ${
+              filterMode === 'pinned'
+                ? 'bg-amber-500 text-white'
+                : 'bg-slate-100 dark:bg-slate-800/70 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Pin size={11} /> Dipin ({notes.filter((n) => n.pinned).length})
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 overflow-y-auto md:max-h-[calc(100vh-260px)] hide-scrollbar">
           {loading && <p className="text-xs text-slate-400 p-2">Memuat catatan…</p>}
           {!loading && filteredNotes.length === 0 && (
             <p className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-4 text-xs text-slate-400 text-center">
@@ -230,6 +366,16 @@ export default function Notes() {
             className="w-full border-none text-xl font-black text-slate-900 dark:text-white outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 bg-transparent"
           />
           <div className="flex shrink-0 items-center gap-1.5">
+            {/* Download .md Button */}
+            <button
+              type="button"
+              onClick={handleDownloadNote}
+              className="grid h-9 w-9 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title="Unduh catatan (.md)"
+            >
+              <Download size={16} />
+            </button>
+
             {/* Copy Button */}
             <button
               type="button"
@@ -263,12 +409,100 @@ export default function Notes() {
           </div>
         </div>
 
+        {/* Formatting & Quick Template Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-slate-100 dark:border-slate-800/70">
+          {/* Formatting Helpers */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => insertSnippet('\n## Subjudul\n')}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Sisipkan Subjudul"
+            >
+              <Heading1 size={13} /> Subjudul
+            </button>
+            <button
+              type="button"
+              onClick={() => insertSnippet('**teks tebal**')}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Teks Tebal"
+            >
+              <Bold size={13} /> Tebal
+            </button>
+            <button
+              type="button"
+              onClick={() => insertSnippet('\n- ')}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Daftar Poin"
+            >
+              <List size={13} /> Poin
+            </button>
+            <button
+              type="button"
+              onClick={() => insertSnippet('\n- [ ] ')}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Checklist Tugas"
+            >
+              <ListChecks size={13} /> Checklist
+            </button>
+          </div>
+
+          {/* Quick Templates */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {NOTE_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => applyTemplate(tpl)}
+                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:border-indigo-400 transition"
+              >
+                {tpl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* AI Smart Actions Bar */}
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/25 border border-indigo-200/60 dark:border-indigo-800/40 px-3 py-2">
+          <span className="inline-flex items-center gap-1 text-[11px] font-black text-indigo-700 dark:text-indigo-300 mr-1">
+            <Sparkles size={13} /> FAZET AI Studio:
+          </span>
+          <button
+            type="button"
+            disabled={!!aiBusy}
+            onClick={() => runAiAction('summarize')}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition disabled:opacity-50"
+          >
+            {aiBusy === 'summarize' ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            Ringkas Poin Inti
+          </button>
+          <button
+            type="button"
+            disabled={!!aiBusy}
+            onClick={() => runAiAction('polish')}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition disabled:opacity-50"
+          >
+            {aiBusy === 'polish' ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+            Rapikan & Strukturkan
+          </button>
+          <button
+            type="button"
+            disabled={!!aiBusy}
+            onClick={() => runAiAction('quiz')}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition disabled:opacity-50"
+          >
+            {aiBusy === 'quiz' ? <Loader2 size={12} className="animate-spin" /> : <HelpCircle size={12} />}
+            Buat 3 Soal Latihan
+          </button>
+        </div>
+
         {/* Textarea */}
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Tulis ide, materi pelajaran, catatan tugas, atau hal penting di sini…"
-          className="min-h-[280px] flex-1 resize-none border-none text-sm leading-relaxed text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 bg-transparent"
+          placeholder="Tulis ide, materi pelajaran, catatan tugas, atau klik template di atas untuk mulai dengan cepat…"
+          className="min-h-[280px] flex-1 resize-none border-none text-sm leading-relaxed text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 bg-transparent font-sans"
         />
 
         {/* Attachment Preview */}
@@ -341,3 +575,4 @@ export default function Notes() {
     </div>
   );
 }
+
