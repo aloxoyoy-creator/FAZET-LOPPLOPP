@@ -6,3 +6,4 @@ ops/private/*.env
 
 .vercel
 .env*
+mediabox-main/

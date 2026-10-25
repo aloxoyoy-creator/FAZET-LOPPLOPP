@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { LanguageProvider } from './context/LanguageContext';
 import { AppConfigProvider, useAppConfig } from './context/AppConfigContext';
 import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 import AnimatedBackground from './components/ui/AnimatedBackground';
@@ -143,7 +144,8 @@ function NotFound() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
       <AuthProvider>
         <WorkspaceProvider>
           <YoutubePlayerProvider>
@@ -229,7 +231,8 @@ export default function App() {
           </YoutubePlayerProvider>
         </WorkspaceProvider>
       </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
 
