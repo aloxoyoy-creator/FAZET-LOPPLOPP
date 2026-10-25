@@ -1,227 +1,127 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Badge, Button } from '@schoolhub/ui';
-import { ScheduleData, ScheduleItem } from '@/types/schedule';
-import { timeToMinutes } from '@/lib/utils';
+import { TimeBoxScheduleItem as ScheduleItem } from '../hooks/useTimeBoxSchedule';
 import { useTranslation } from '@/context/LanguageContext';
-import { useWatchParty } from '@/context/WatchPartyContext';
-import { CountdownOverlay } from '@/components/CountdownOverlay';
-import { Sparkles, Timer } from 'lucide-react';
+import { Card } from '@schoolhub/ui';
 
-const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+interface ScheduleSectionProps {
+  currentSchedule: ScheduleItem | null;
+  nextSchedule: ScheduleItem | null;
+  upcomingItems?: ScheduleItem[];
+  isVideoPlaying?: boolean;
+}
 
-export const ScheduleSection: React.FC = () => {
+export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
+  currentSchedule,
+  nextSchedule,
+  upcomingItems = [],
+  isVideoPlaying = false,
+}) => {
   const { t } = useTranslation();
-  const { roomState } = useWatchParty();
-  const [scheduleData, setScheduleData] = useState<ScheduleData | null>(null);
-  const [now, setNow] = useState<Date>(new Date());
-  const [activeCountdown, setActiveCountdown] = useState<{
-    item: ScheduleItem;
-    targetTimeMs: number;
-  } | null>(null);
+
+  // Dynamic rotation through upcomingItems every 5s when video is actively playing
+  const [carouselIdx, setCarouselIdx] = useState(0);
+  const [animClass, setAnimClass] = useState('animate-fade-in-slide-up');
+
+  const validUpcoming = upcomingItems.filter((item) => Boolean(item.startTime));
+  const shouldRotate = isVideoPlaying && validUpcoming.length > 1;
 
   useEffect(() => {
-    fetch('/schedule.json')
-      .then((res) => res.json())
-      .then((data: ScheduleData) => setScheduleData(data))
-      .catch((err) => console.error('Failed to load schedule.json:', err));
-  }, []);
+    setCarouselIdx(0);
+  }, [validUpcoming.length, isVideoPlaying]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!shouldRotate) return;
 
-  const dayName = DAYS_ID[now.getDay()];
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const intervalId = setInterval(() => {
+      setAnimClass('animate-fade-out-slide-up');
+      timeoutId = setTimeout(() => {
+        setCarouselIdx((prev) => (prev + 1) % validUpcoming.length);
+        setAnimClass('animate-fade-in-slide-up');
+      }, 280);
+    }, 5000);
 
-  const getScheduleDetails = (): {
-    current: ScheduleItem;
-    next: ScheduleItem;
-    progress: number;
-    secondsToNext: number;
-    nextEndDateMs: number;
-  } => {
-    const fallbackItem = { start: "00:00", sub: t('schedule.loading') };
-    if (!scheduleData) return { current: fallbackItem, next: fallbackItem, progress: 0, secondsToNext: 99999, nextEndDateMs: 0 };
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [shouldRotate, validUpcoming.length]);
 
-    const daySchedule = scheduleData[dayName] || scheduleData["Senin"] || [];
-    if (daySchedule.length === 0) return { current: fallbackItem, next: fallbackItem, progress: 0, secondsToNext: 99999, nextEndDateMs: 0 };
+  const displayedNext: ScheduleItem | null = shouldRotate
+    ? validUpcoming[carouselIdx % validUpcoming.length]
+    : nextSchedule;
 
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    let currentItem = daySchedule[0];
-    let nextItem = daySchedule[1] || daySchedule[0];
-    let isNextTomorrow = false;
-    let found = false;
-
-    for (let i = 0; i < daySchedule.length; i++) {
-      const current = daySchedule[i];
-      const next = daySchedule[i + 1];
-
-      if (next) {
-        if (currentMinutes >= timeToMinutes(current.start) && currentMinutes < timeToMinutes(next.start)) {
-          currentItem = current;
-          nextItem = next;
-          isNextTomorrow = false;
-          found = true;
-          break;
-        }
-      } else {
-        if (currentMinutes >= timeToMinutes(current.start)) {
-          currentItem = current;
-          const tomorrowIdx = (DAYS_ID.indexOf(dayName) + 1) % 7;
-          const tomorrowName = DAYS_ID[tomorrowIdx];
-          const tomorrowSchedule = scheduleData[tomorrowName] || scheduleData["Senin"] || [];
-          nextItem = tomorrowSchedule[0] || current;
-          isNextTomorrow = true;
-          found = true;
-          break;
-        }
-      }
-    }
-
-    if (!found) {
-      currentItem = daySchedule[0];
-      nextItem = daySchedule[1] || daySchedule[0];
-    }
-
-    const startDate = new Date(now);
-    const [startH, startM] = currentItem.start.split(':').map(Number);
-    startDate.setHours(startH, startM, 0, 0);
-
-    const endDate = new Date(now);
-    const [nextH, nextM] = nextItem.start.split(':').map(Number);
-    endDate.setHours(nextH, nextM, 0, 0);
-
-    if (isNextTomorrow || endDate.getTime() <= startDate.getTime()) {
-      endDate.setDate(endDate.getDate() + 1);
-    }
-
-    const totalDuration = endDate.getTime() - startDate.getTime();
-    const remainingTime = endDate.getTime() - now.getTime();
-    const elapsedTime = now.getTime() - startDate.getTime();
-    const secondsToNext = Math.ceil(remainingTime / 1000);
-
-    let progress = 0;
-    if (totalDuration > 0) {
-      const ratio = Math.max(0, Math.min(1, elapsedTime / totalDuration));
-      progress = ratio * 100;
-    }
-
-    return { current: currentItem, next: nextItem, progress, secondsToNext, nextEndDateMs: endDate.getTime() };
-  };
-
-  const { current, next, progress, secondsToNext, nextEndDateMs } = getScheduleDetails();
-
-  // Handle auto-triggering countdown state
-  useEffect(() => {
-    const isCountdownEnabled = Boolean(roomState?.isCountdownEnabled);
-
-    if (isCountdownEnabled && next.countdown && secondsToNext <= 10 && secondsToNext > 0) {
-      if (!activeCountdown || Math.abs(activeCountdown.targetTimeMs - nextEndDateMs) > 3000) {
-        setActiveCountdown({
-          item: next,
-          targetTimeMs: nextEndDateMs,
-        });
-      }
-    }
-  }, [next, secondsToNext, nextEndDateMs, roomState?.isCountdownEnabled, activeCountdown]);
-
-  // Handle countdown tick & auto-dismiss after 3s post zero
-  useEffect(() => {
-    if (!activeCountdown) return;
-
-    const diffSeconds = Math.ceil((activeCountdown.targetTimeMs - now.getTime()) / 1000);
-    if (diffSeconds <= -3) {
-      setActiveCountdown(null);
-    }
-  }, [now, activeCountdown]);
-
-  const activeSecondsLeft = activeCountdown
-    ? Math.max(0, Math.ceil((activeCountdown.targetTimeMs - now.getTime()) / 1000))
-    : 0;
-
-  const handleTestCountdown = () => {
-    setActiveCountdown((prev) =>
-      prev
-        ? null
-        : {
-            item: next,
-            targetTimeMs: Date.now() + 10000,
-          }
-    );
+  const formatTime = (item: ScheduleItem | null) => {
+    if (!item || !item.startTime) return '';
+    return `${item.startTime} - ${item.endTime}`;
   };
 
   return (
-    <div className="flex flex-col gap-3 sm:gap-4 h-full md:min-h-0">
-      {/* Fullscreen Countdown Overlay when active */}
-      {activeCountdown && (
-        <CountdownOverlay
-          item={activeCountdown.item}
-          targetTimeMs={activeCountdown.targetTimeMs}
-          secondsLeft={activeSecondsLeft}
-          onDismiss={() => setActiveCountdown(null)}
-        />
-      )}
-
-      {/* Current Schedule Box */}
+    <div className="grid grid-cols-2 gap-3 lg:gap-4 flex-shrink-0">
+      {/* Current Schedule Card */}
       <Card
-        className="relative p-4 sm:p-5 md:flex-1 md:min-h-0 flex flex-col justify-center"
+        chamfer="top-right"
+        className="p-3 sm:p-4 flex flex-col justify-center items-center text-center transition-colors duration-300 shadow-md relative overflow-hidden"
       >
-        <div>
-          <div className="text-sm font-bold uppercase tracking-wider mb-1 text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <h2 className="font-body text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             {t('schedule.currentSchedule')}
-          </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-            {current.sub}
-          </div>
+          </h2>
+          {currentSchedule?.endTime && (
+            <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-muted text-foreground border border-border rounded-full">
+              {t('schedule.endsAt', { time: currentSchedule.endTime })}
+            </span>
+          )}
         </div>
-        {/* Progress Bar at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-border/20 overflow-hidden">
-          <div
-            className="h-full bg-primary/50 transition-all duration-1000 ease-linear"
-            style={{ width: `${progress}%` }}
-          />
+        <div
+          id="current-schedule"
+          className="font-body text-lg sm:text-xl md:text-2xl font-bold text-foreground truncate max-w-full px-1"
+        >
+          {currentSchedule ? currentSchedule.name : t('schedule.loading')}
+        </div>
+        <div id="current-schedule-time" className="text-xs sm:text-sm mt-1 text-muted-foreground font-mono">
+          {formatTime(currentSchedule)}
         </div>
       </Card>
 
-      {/* Next Schedule Box */}
+      {/* Next Schedule Card (Dynamic Carousel during Playback) */}
       <Card
-        className="relative p-4 sm:p-5 md:flex-1 md:min-h-0 flex flex-col justify-center opacity-85 group"
+        chamfer="top-right"
+        className="p-3 sm:p-4 flex flex-col justify-center items-center text-center transition-colors duration-300 shadow-md relative overflow-hidden"
       >
-        <div className="pl-2">
-          <div className="text-sm font-bold uppercase tracking-wider mb-1 flex items-center justify-between text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span>{t('schedule.nextSchedule')}</span>
-              {next.countdown && (
-                <Badge variant="outline" className="text-[10px] uppercase font-mono px-1.5 py-0.5 gap-1 bg-primary/10 text-primary border-primary/40 rounded-none">
-                  <Sparkles className="w-3 h-3" /> Special
-                </Badge>
-              )}
-            </div>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <h2 className="font-body text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {t('schedule.nextSchedule')}
+          </h2>
+          {shouldRotate && (
+            <span className="text-[10px] font-mono font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              {(carouselIdx % validUpcoming.length) + 1}/{validUpcoming.length}
+            </span>
+          )}
+        </div>
 
-            {/* Dev Mode Test Button */}
-            {import.meta.env.DEV && (
-              <Button
-                variant="outline"
-                size="sm"
-                chamfer="top-right"
-                onClick={handleTestCountdown}
-                className="h-6 text-[10px] font-mono px-2 py-0 border-dashed border-amber-500/50 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 gap-1 tracking-wider cursor-pointer"
-                title="DEV: Test 10-Second Countdown Overlay"
-              >
-                <Timer className="w-3 h-3" />
-                <span>{activeCountdown ? 'STOP TEST' : 'TEST COUNTDOWN'}</span>
-              </Button>
-            )}
+        <div className={`w-full flex flex-col items-center ${shouldRotate ? animClass : ''}`}>
+          <div
+            id="next-schedule"
+            className="font-body text-lg sm:text-xl md:text-2xl font-bold text-foreground truncate max-w-full px-1"
+          >
+            {displayedNext ? displayedNext.name : t('schedule.loading')}
           </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-            {next.sub} <span className="text-foreground/80 font-normal">({next.start})</span>
+          <div id="next-schedule-time" className="text-xs sm:text-sm mt-1 text-muted-foreground font-mono">
+            {formatTime(displayedNext)}
           </div>
         </div>
+
+        {/* Bottom Progress Bar when rotating */}
+        {shouldRotate && (
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-border/30 overflow-hidden">
+            <div
+              key={carouselIdx}
+              className="h-full bg-foreground/50 animate-schedule-progress"
+            />
+          </div>
+        )}
       </Card>
     </div>
   );
 };
-

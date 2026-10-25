@@ -1,13 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
-import { ScheduleItem } from '@/types/schedule';
 import { useTranslation } from '@/context/LanguageContext';
 import { X } from 'lucide-react';
 import { Button } from '@schoolhub/ui';
 
+interface CountdownItemLike {
+  name?: string;
+  sub?: string;
+  startTime?: string;
+  endTime?: string;
+  type?: string;
+}
+
 interface CountdownOverlayProps {
-  item: ScheduleItem;
+  item: CountdownItemLike;
   secondsLeft?: number;
   targetTimeMs?: number;
   onDismiss?: () => void;
@@ -41,7 +48,7 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({
     };
 
     update();
-    const interval = setInterval(update, 50);
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [targetTimeMs, initialSecondsLeft]);
 
@@ -61,39 +68,33 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({
     } else if (seconds <= 0 && !hasFiredConfetti.current) {
       hasFiredConfetti.current = true;
 
-      // Confetti burst from multiple angles
-      const duration = 2.5 * 1000;
-      const animationEnd = Date.now() + duration;
-
-      const frame = () => {
+      try {
         confetti({
-          particleCount: 10,
+          particleCount: 35,
           angle: 60,
-          spread: 60,
-          origin: { x: 0, y: 0.7 },
+          spread: 55,
+          origin: { x: 0.1, y: 0.7 },
           zIndex: 10001,
           colors: ['#00c8d4', '#3b82f6', '#ec4899', '#f59e0b', '#10b981'],
         });
         confetti({
-          particleCount: 10,
+          particleCount: 35,
           angle: 120,
-          spread: 60,
-          origin: { x: 1, y: 0.7 },
+          spread: 55,
+          origin: { x: 0.9, y: 0.7 },
           zIndex: 10001,
           colors: ['#00c8d4', '#3b82f6', '#ec4899', '#f59e0b', '#10b981'],
         });
-
-        if (Date.now() < animationEnd) {
-          requestAnimationFrame(frame);
-        }
-      };
-      frame();
+      } catch (e) {
+        console.warn('Confetti burst error:', e);
+      }
     }
   }, [seconds]);
 
+  const displayName = item.name || item.sub || '';
+
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-black/85 backdrop-blur-2xl animate-overlay-fade select-none">
-      {/* Dismiss Button */}
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-black/90 animate-overlay-fade select-none">
       {onDismiss && (
         <Button
           variant="ghost"
@@ -107,10 +108,6 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({
         </Button>
       )}
 
-      {/* Subtle neutral radial vignette for depth */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_20%,_rgba(0,0,0,0.7)_100%)] pointer-events-none" />
-
-      {/* Main Countdown / Completion Container */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center w-full max-w-6xl mx-auto px-4">
         {seconds > 0 ? (
           <div
@@ -122,7 +119,7 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 max-w-5xl animate-in fade-in zoom-in-95 duration-500">
             <div className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display uppercase tracking-wider text-amber-300 drop-shadow-[0_0_45px_rgba(251,191,36,0.65)] leading-tight">
-              {t('schedule.timeFor', { name: item.sub })}
+              {t('schedule.timeFor', { name: displayName })}
             </div>
           </div>
         )}

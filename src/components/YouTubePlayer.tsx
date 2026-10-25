@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { parseYouTubeVideoId } from '@/lib/roomUtils';
 import { useTranslation } from '@/context/LanguageContext';
 import { AlertTriangle, Play } from 'lucide-react';
@@ -15,7 +15,13 @@ interface YouTubePlayerProps {
   isPlaying: boolean;
   volume: number; // 0 to 100
   muted: boolean;
+  startSeconds?: number;
+  onPlaying?: (currentSec: number, durationSec: number) => void;
+  onBuffering?: (currentSec: number) => void;
+  onPaused?: (currentSec: number) => void;
   onEnded?: () => void;
+  onPlayerInstance?: (player: any) => void;
+  hidden?: boolean;
 }
 
 export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
@@ -23,17 +29,49 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   isPlaying,
   volume,
   muted,
+  startSeconds = 0,
+  onPlaying,
+  onBuffering,
+  onPaused,
   onEnded,
+  onPlayerInstance,
+  hidden = false,
 }) => {
   const { t } = useTranslation();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
+
+  // Callback refs to avoid stale closures in YouTube API event handlers
+  const onPlayingRef = useRef(onPlaying);
+  const onBufferingRef = useRef(onBuffering);
+  const onPausedRef = useRef(onPaused);
   const onEndedRef = useRef(onEnded);
   const isPlayingRef = useRef(isPlaying);
+  const onPlayerInstanceRef = useRef(onPlayerInstance);
+
   const [embedError, setEmbedError] = useState<string | null>(null);
+  const [errorCountdown, setErrorCountdown] = useState<number | null>(null);
   const [needsUserInteraction, setNeedsUserInteraction] = useState<boolean>(false);
 
+  const hasStartedCurrentTrackRef = useRef<boolean>(false);
+  const lastLoadedVideoIdRef = useRef<string | null>(null);
+  const pausedDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorSkipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorCountdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const videoId = parseYouTubeVideoId(url);
+
+  useEffect(() => {
+    onPlayingRef.current = onPlaying;
+  }, [onPlaying]);
+
+  useEffect(() => {
+    onBufferingRef.current = onBuffering;
+  }, [onBuffering]);
+
+  useEffect(() => {
+    onPausedRef.current = onPaused;
+  }, [onPaused]);
 
   useEffect(() => {
     onEndedRef.current = onEnded;
@@ -43,7 +81,42 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  // Load YouTube IFrame API script dynamically if not present
+  useEffect(() => {
+    onPlayerInstanceRef.current = onPlayerInstance;
+  }, [onPlayerInstance]);
+
+  const clearErrorTimers = useCallback(() => {
+    if (errorSkipTimerRef.current) {
+      clearTimeout(errorSkipTimerRef.current);
+      errorSkipTimerRef.current = null;
+    }
+    if (errorCountdownIntervalRef.current) {
+      clearInterval(errorCountdownIntervalRef.current);
+      errorCountdownIntervalRef.current = null;
+    }
+    setErrorCountdown(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pausedDebounceTimerRef.current) {
+        clearTimeout(pausedDebounceTimerRef.current);
+      }
+      clearErrorTimers();
+      if (onPlayerInstanceRef.current) onPlayerInstanceRef.current(null);
+    };
+  }, [clearErrorTimers]);
+
+  useEffect(() => {
+    hasStartedCurrentTrackRef.current = false;
+    if (pausedDebounceTimerRef.current) {
+      clearTimeout(pausedDebounceTimerRef.current);
+      pausedDebounceTimerRef.current = null;
+    }
+    clearErrorTimers();
+    setEmbedError(null);
+  }, [videoId, clearErrorTimers]);
+
   useEffect(() => {
     if (window.YT && window.YT.Player) return;
 
@@ -56,42 +129,58 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     }
   }, []);
 
-  // Initialize YT.Player once
   useEffect(() => {
-    if (!videoId || !wrapperRef.current) return;
+    if (!videoId || !wrapperRef.current) {
+      if (!videoId) {
+        lastLoadedVideoIdRef.current = null;
+      }
+      return;
+    }
+
+    if (playerRef.current && lastLoadedVideoIdRef.current === videoId) {
+      return;
+    }
 
     let isSubscribed = true;
-    setEmbedError(null);
 
-    // If player instance already exists, just load the new video ID!
     if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
       try {
-        if (isPlaying) {
-          playerRef.current.loadVideoById(videoId);
+        lastLoadedVideoIdRef.current = videoId;
+        if (onPlayerInstanceRef.current) onPlayerInstanceRef.current(playerRef.current);
+        const shouldPlay = isPlayingRef.current;
+        if (shouldPlay) {
+          playerRef.current.loadVideoById({
+            videoId,
+            startSeconds: Math.max(0, startSeconds),
+          });
         } else {
-          playerRef.current.cueVideoById(videoId);
+          playerRef.current.cueVideoById({
+            videoId,
+            startSeconds: Math.max(0, startSeconds),
+          });
         }
         return;
       } catch (e) {
-        console.warn('Failed to loadVideoById, re-creating player:', e);
+        console.warn('[YouTubePlayer] loadVideoById error, falling back to re-init:', e);
       }
     }
 
-    // Clear wrapper DOM contents before initializing
     wrapperRef.current.innerHTML = '';
     const playerDiv = document.createElement('div');
     playerDiv.style.width = '100%';
     playerDiv.style.height = '100%';
     wrapperRef.current.appendChild(playerDiv);
 
-    // Only pass origin parameter if on https protocol to avoid "origin cannot be verified" error on http/localhost
     const playerVars: Record<string, any> = {
-      autoplay: 1,
-      controls: 1,
+      autoplay: 0,
+      controls: 0,
       modestbranding: 1,
       rel: 0,
       playsinline: 1,
       enablejsapi: 1,
+      disablekb: 1,
+      fs: 0,
+      iv_load_policy: 3,
     };
 
     if (window.location.protocol === 'https:') {
@@ -102,7 +191,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       if (!isSubscribed) return;
 
       playerRef.current = new window.YT.Player(playerDiv, {
-        videoId: videoId,
+        videoId,
         width: '100%',
         height: '100%',
         playerVars,
@@ -110,50 +199,70 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           onReady: (event: any) => {
             if (!isSubscribed) return;
             try {
+              lastLoadedVideoIdRef.current = videoId;
+              if (onPlayerInstanceRef.current) onPlayerInstanceRef.current(event.target);
               event.target.setVolume(volume);
               if (muted) {
                 event.target.mute();
               } else {
                 event.target.unMute();
               }
+
               if (isPlayingRef.current) {
-                const playPromise = event.target.playVideo();
-                if (playPromise && typeof playPromise.catch === 'function') {
-                  playPromise.catch(() => {
-                    setNeedsUserInteraction(true);
-                  });
-                }
+                event.target.loadVideoById({
+                  videoId,
+                  startSeconds: Math.max(0, startSeconds),
+                });
               } else {
-                event.target.cueVideoById(videoId);
+                event.target.cueVideoById({
+                  videoId,
+                  startSeconds: Math.max(0, startSeconds),
+                });
               }
             } catch (e) {
-              console.error('Error on YT player ready:', e);
+              console.error('[YouTubePlayer] Error on YT player ready:', e);
             }
           },
           onStateChange: (event: any) => {
-            // YT.PlayerState.ENDED === 0
-            if (event.data === 0) {
-              console.log('[YouTubePlayer] Video ended (YT.PlayerState.ENDED = 0). Playing next item in queue...');
-              if (onEndedRef.current) {
-                onEndedRef.current();
-              }
-            }
+            let currentSec = 0;
+            let durSec = 0;
+            try {
+              currentSec = Math.max(0, event.target.getCurrentTime?.() || 0);
+              durSec = Math.max(0, event.target.getDuration?.() || 0);
+            } catch (_) {}
+
             if (event.data === 1) {
-              // Playing
-              setNeedsUserInteraction(false);
-            }
-            // If YouTube iframe transitions to CUED (5), UNSTARTED (-1), or PAUSED (2) while TV expects playing:
-            if (isPlayingRef.current && (event.data === 5 || event.data === -1 || event.data === 2)) {
-              try {
-                const playPromise = event.target.playVideo();
-                if (playPromise && typeof playPromise.catch === 'function') {
-                  playPromise.catch(() => {
-                    setNeedsUserInteraction(true);
-                  });
-                }
-              } catch (e) {
-                console.warn('[YouTubePlayer] Autoplay enforce error:', e);
+              if (pausedDebounceTimerRef.current) {
+                clearTimeout(pausedDebounceTimerRef.current);
+                pausedDebounceTimerRef.current = null;
               }
+              hasStartedCurrentTrackRef.current = true;
+              setNeedsUserInteraction(false);
+              onPlayingRef.current?.(currentSec, durSec);
+            } else if (event.data === 3) {
+              if (pausedDebounceTimerRef.current) {
+                clearTimeout(pausedDebounceTimerRef.current);
+                pausedDebounceTimerRef.current = null;
+              }
+              if (hasStartedCurrentTrackRef.current) {
+                onBufferingRef.current?.(currentSec);
+              } else {
+                onBufferingRef.current?.(0);
+              }
+            } else if (event.data === 2) {
+              if (pausedDebounceTimerRef.current) {
+                clearTimeout(pausedDebounceTimerRef.current);
+              }
+              pausedDebounceTimerRef.current = setTimeout(() => {
+                pausedDebounceTimerRef.current = null;
+                onPausedRef.current?.(currentSec);
+              }, 250);
+            } else if (event.data === 0) {
+              if (pausedDebounceTimerRef.current) {
+                clearTimeout(pausedDebounceTimerRef.current);
+                pausedDebounceTimerRef.current = null;
+              }
+              onEndedRef.current?.();
             }
           },
           onError: (event: any) => {
@@ -168,12 +277,25 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               setEmbedError(t('player.playbackErrorCode', { code: event.data }));
             }
 
-            // Auto-skip to next video in queue after 3.5 seconds if restricted
-            setTimeout(() => {
-              if (onEndedRef.current) {
-                onEndedRef.current();
+            clearErrorTimers();
+            let secondsLeft = 5;
+            setErrorCountdown(secondsLeft);
+
+            errorCountdownIntervalRef.current = setInterval(() => {
+              secondsLeft -= 1;
+              if (secondsLeft <= 0) {
+                if (errorCountdownIntervalRef.current) {
+                  clearInterval(errorCountdownIntervalRef.current);
+                  errorCountdownIntervalRef.current = null;
+                }
               }
-            }, 3500);
+              setErrorCountdown(Math.max(0, secondsLeft));
+            }, 1000);
+
+            errorSkipTimerRef.current = setTimeout(() => {
+              clearErrorTimers();
+              onEndedRef.current?.();
+            }, 5000);
           },
         },
       });
@@ -192,35 +314,34 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     return () => {
       isSubscribed = false;
     };
-  }, [videoId, t]);
+  }, [videoId, t, clearErrorTimers]);
 
-  // Sync isPlaying state
   useEffect(() => {
-    if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
-      try {
-        if (isPlaying) {
-          playerRef.current.playVideo();
-        } else {
-          playerRef.current.pauseVideo();
+    if (!playerRef.current || typeof playerRef.current.playVideo !== 'function') return;
+    try {
+      if (isPlaying) {
+        const playPromise = playerRef.current.playVideo();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => setNeedsUserInteraction(true));
         }
-      } catch (e) {
-        console.error('Error toggling play/pause:', e);
+      } else {
+        playerRef.current.pauseVideo();
       }
+    } catch (e) {
+      console.warn('[YouTubePlayer] Error syncing isPlaying state:', e);
     }
   }, [isPlaying]);
 
-  // Sync volume state
   useEffect(() => {
     if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
       try {
         playerRef.current.setVolume(volume);
       } catch (e) {
-        console.error('Error setting volume:', e);
+        console.error('[YouTubePlayer] Error setting volume:', e);
       }
     }
   }, [volume]);
 
-  // Sync muted state
   useEffect(() => {
     if (playerRef.current && typeof playerRef.current.mute === 'function') {
       try {
@@ -228,14 +349,18 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           playerRef.current.mute();
         } else {
           playerRef.current.unMute();
+          if (typeof playerRef.current.setVolume === 'function') {
+            playerRef.current.setVolume(volume);
+          }
         }
       } catch (e) {
-        console.error('Error toggling mute:', e);
+        console.error('[YouTubePlayer] Error toggling mute:', e);
       }
     }
-  }, [muted]);
+  }, [muted, volume]);
 
-  const handleStartPlayUserClick = () => {
+  const handleStartPlayUserClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setNeedsUserInteraction(false);
     if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
       try {
@@ -244,6 +369,11 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         console.error(e);
       }
     }
+  };
+
+  const handleSkipErrorNow = () => {
+    clearErrorTimers();
+    onEndedRef.current?.();
   };
 
   if (!videoId) {
@@ -255,17 +385,21 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center">
+    <div
+      className={`absolute inset-0 w-full h-full bg-black flex items-center justify-center transition-opacity duration-300 ${
+        hidden ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}
+    >
       {embedError && (
         <div className="absolute inset-0 z-30 bg-slate-950/95 p-6 flex flex-col items-center justify-center text-center gap-3 border border-amber-900/50">
           <AlertTriangle className="w-10 h-10 text-amber-500 animate-bounce" />
           <p className="text-sm font-bold text-amber-400">{embedError}</p>
           <p className="text-xs text-slate-400 max-w-md">
-            {t('player.autoSkippingNotice')}
+            {errorCountdown !== null ? `Auto-skipping in ${errorCountdown}s...` : t('player.autoSkippingNotice')}
           </p>
           <button
-            onClick={() => onEnded && onEnded()}
-            className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold uppercase text-xs tracking-wider cursor-pointer"
+            onClick={handleSkipErrorNow}
+            className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold uppercase text-xs tracking-wider cursor-pointer rounded-md"
           >
             {t('player.skipRestrictedNow')}
           </button>
@@ -286,8 +420,12 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
 
       <div
         ref={wrapperRef}
-        className="absolute inset-0 w-full h-full [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:border-none"
+        className="absolute inset-0 w-full h-full pointer-events-none select-none [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:border-none [&>iframe]:pointer-events-none"
       />
+      {/* Transparent Click Shield over YouTube iframe */}
+      <div className="absolute inset-0 z-10 pointer-events-auto" aria-hidden="true" />
     </div>
   );
 };
+
+export default YouTubePlayer;

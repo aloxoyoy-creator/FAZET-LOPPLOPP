@@ -49,9 +49,14 @@ interface WatchPartyContextType {
   handleEndRoom: () => Promise<void>;
   handleTogglePlayPause: () => Promise<void>;
   handlePlayNextInQueue: () => Promise<void>;
+  handlePlayPreviousTrack: () => Promise<boolean>;
+  canGoPrevious: boolean;
+  handlePlayQueueItem: (itemId: string) => Promise<void>;
   handleRemoveQueueItem: (itemId: string) => Promise<void>;
   showSettingsModal: boolean;
   setShowSettingsModal: (show: boolean) => void;
+  showSearchModal: boolean;
+  setShowSearchModal: (show: boolean) => void;
   handleAddUrlHost: (url: string, explicitTitle?: string) => Promise<boolean>;
   handleToggleFullscreen: () => Promise<void>;
   handleToggleRoomLock: () => Promise<void>;
@@ -62,6 +67,7 @@ interface WatchPartyContextType {
   handleUpdateSearchSettings: (patch: Partial<SearchSettings>) => Promise<void>;
   handleManageLocalKeys: (action: 'add' | 'delete' | 'update', data: any) => Promise<void>;
   handleClearAllRateLimits: () => Promise<void>;
+  registerPlayerInstance: (player: any) => void;
 }
 
 const WatchPartyContext = createContext<WatchPartyContextType | undefined>(undefined);
@@ -71,6 +77,7 @@ export const WatchPartyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
+  const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [memberCount, setMemberCount] = useState<number>(0);
 
@@ -78,6 +85,7 @@ export const WatchPartyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [muted, setMuted] = useState<boolean>(false);
+  const [canGoPrevious, setCanGoPrevious] = useState<boolean>(false);
 
   // Search settings state & refs
   const [searchSettings, setSearchSettings] = useState<SearchSettings>(() => getEffectiveSearchSettings());
@@ -110,6 +118,12 @@ export const WatchPartyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const recentAutoplayHistoryRef = useRef<string[]>([]);
   const recentAutoplayUrlHistoryRef = useRef<string[]>([]);
   const recentAutoplayArtistHistoryRef = useRef<string[]>([]);
+  const playedHistoryRef = useRef<{ url: string; title: string }[]>([]);
+  const playerInstanceRef = useRef<any>(null);
+
+  const registerPlayerInstance = (player: any) => {
+    playerInstanceRef.current = player;
+  };
 
   // Subscribe to admins list from Firebase RTDB
   useEffect(() => {
@@ -741,8 +755,57 @@ export const WatchPartyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const pushCurrentToHistory = () => {
+    const curUrl = roomStateRef.current?.currentlyPlaying;
+    const curTitle = roomStateRef.current?.currentlyPlayingTitle || '';
+    if (curUrl) {
+      playedHistoryRef.current = [
+        { url: curUrl, title: curTitle },
+        ...playedHistoryRef.current.filter((h) => h.url !== curUrl),
+      ].slice(0, 25);
+      setCanGoPrevious(playedHistoryRef.current.length > 0);
+    }
+  };
+
+  const handlePlayPreviousTrack = async (): Promise<boolean> => {
+    if (!roomCode || playedHistoryRef.current.length === 0) return false;
+    const [prevTrack, ...rest] = playedHistoryRef.current;
+    playedHistoryRef.current = rest;
+    setCanGoPrevious(rest.length > 0);
+
+    await update(ref(database, `rooms/${roomCode}/state`), {
+      currentlyPlaying: prevTrack.url,
+      currentlyPlayingTitle: prevTrack.title || '',
+    });
+    await update(ref(database, `rooms/${roomCode}/state/playback`), {
+      status: 'playing',
+      updatedAt: Date.now(),
+    });
+    return true;
+  };
+
+  const handlePlayQueueItem = async (itemId: string) => {
+    if (!roomCode) return;
+    const target = queueRefState.current.find((q) => q.id === itemId);
+    if (!target) return;
+
+    pushCurrentToHistory();
+
+    await update(ref(database, `rooms/${roomCode}/state`), {
+      currentlyPlaying: target.url,
+      currentlyPlayingTitle: target.title || '',
+    });
+    await update(ref(database, `rooms/${roomCode}/state/playback`), {
+      status: 'playing',
+      updatedAt: Date.now(),
+    });
+    await remove(ref(database, `rooms/${roomCode}/queue/${target.id}`));
+  };
+
   const handlePlayNextInQueue = async () => {
     if (!roomCode) return;
+
+    pushCurrentToHistory();
 
     const currentQueue = queueRefState.current;
     if (currentQueue && currentQueue.length > 0) {
@@ -1003,6 +1066,8 @@ export const WatchPartyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setShowQrModal,
         showSettingsModal,
         setShowSettingsModal,
+        showSearchModal,
+        setShowSearchModal,
         muted,
         setMuted,
         copiedLink,
@@ -1011,6 +1076,9 @@ export const WatchPartyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         handleEndRoom,
         handleTogglePlayPause,
         handlePlayNextInQueue,
+        handlePlayPreviousTrack,
+        canGoPrevious,
+        handlePlayQueueItem,
         handleRemoveQueueItem,
         handleAddUrlHost,
         handleToggleFullscreen,
@@ -1023,6 +1091,7 @@ export const WatchPartyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         handleUpdateSearchSettings,
         handleManageLocalKeys,
         handleClearAllRateLimits,
+        registerPlayerInstance,
       }}
     >
       {children}

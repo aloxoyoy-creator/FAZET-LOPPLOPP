@@ -38,6 +38,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useToast } from '../components/ui/Toast';
 import PullToRefresh from '../components/ui/PullToRefresh';
 import ContinuousMotion from '../components/ui/ContinuousMotion';
+import { triggerSystemUpdatePopup, SYSTEM_RELEASE_VERSION } from '../components/ui/SystemUpdatePopup';
 import { PRAYER_WISDOM } from '../utils/jadwalSholat';
 import type { Notification } from '../types';
 
@@ -485,6 +486,40 @@ export default function Notifications() {
             </div>
           </Card>
         )}
+
+        {/* Minimalist System Update & New Features Card */}
+        <Card className="p-4 sm:p-5 border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0f1219] shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-950">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm font-black text-slate-900 dark:text-white">
+                    Pembaruan Sistem & Penambahan Fitur Baru ({SYSTEM_RELEASE_VERSION})
+                  </h2>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Minimalis Pro
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  TimeBox / MediaBox v2 HUD, Smart Notes AI Studio, Tugas AI Prioritizer, Quick Expense 1-Klik, & Habit Tracker Harian telah aktif.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              size="sm"
+              onClick={triggerSystemUpdatePopup}
+              icon={<Sparkles size={14} />}
+              className="shrink-0 rounded-xl bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+            >
+              Pop-Up Info Update
+            </Button>
+          </div>
+        </Card>
 
         {/* Live Notification Testing & Playground Card */}
         <Card className="p-5 border-blue-100 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50 dark:from-blue-950/20 dark:via-[#0f1219] dark:to-indigo-950/20">

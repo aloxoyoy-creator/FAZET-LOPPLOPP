@@ -62,6 +62,7 @@ import LiveStatusBar from "./LiveStatusBar";
 import Watermark from "./Watermark";
 import { useWorkspace } from "../../context/WorkspaceContext";
 import AutoUpdateButton from "../ui/AutoUpdateButton";
+import SystemUpdatePopup, { triggerSystemUpdatePopup, SYSTEM_RELEASE_VERSION } from "../ui/SystemUpdatePopup";
 import FloatingYoutubePlayer from "../widgets/FloatingYoutubePlayer";
 import { isTkaFeatureActive } from "../../data/tkaSchedule2026";
 
@@ -434,6 +435,16 @@ export default function AppShell({ children }: AppShellProps) {
 
             <button
               type="button"
+              onClick={triggerSystemUpdatePopup}
+              className="tf-btn-ghost hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-mono font-bold rounded-xl border border-slate-200/60 dark:border-slate-800/80"
+              title="Lihat Info Update & Sistem Baru"
+            >
+              <Sparkles size={13} className="text-emerald-500" />
+              <span>{SYSTEM_RELEASE_VERSION}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => go("/notifications")}
               className="tf-icon-btn relative grid h-10 w-10 shrink-0 place-items-center"
               aria-label="Notifikasi"
@@ -753,6 +764,7 @@ export default function AppShell({ children }: AppShellProps) {
       <FloatingYoutubePlayer />
       <FloatingActionMenu onAddTask={() => setTaskOpen(true)} />
       <TaskForm open={taskOpen} initial={null} onClose={() => setTaskOpen(false)} onSaved={() => setTaskOpen(false)} />
+      <SystemUpdatePopup />
     </div>
   );
 }

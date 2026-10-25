@@ -391,3 +391,74 @@ html.dark .timebox-scope {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
+
+/* MediaBox v2 Schedule, Agenda, & Countdown Keyframe Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+
+.animate-blink {
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes fadeOutSlideUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes fadeInSlideUp {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-out-slide-up {
+  animation: fadeOutSlideUp 0.28s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-fade-in-slide-up {
+  animation: fadeInSlideUp 0.28s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes agendaProgress {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+.animate-agenda-progress {
+  width: 100%;
+  transform-origin: left center;
+  animation: agendaProgress 15s linear forwards;
+}
+
+@keyframes scheduleProgress {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+.animate-schedule-progress {
+  width: 100%;
+  transform-origin: left center;
+  animation: scheduleProgress 5s linear forwards;
+}
+
+@keyframes countdownFade {
+  0% { opacity: 0; transform: scale(0.8); }
+  20% { opacity: 1; transform: scale(1.03); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+.animate-countdown-fade {
+  animation: countdownFade 0.98s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes overlayFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-overlay-fade {
+  animation: overlayFade 0.3s ease-out forwards;
+}
+

@@ -57,6 +57,7 @@ import AiPulseCard from '../components/dashboard/AiPulseCard';
 import AiBriefing from '../components/dashboard/AiBriefing';
 import DailyQuote from '../components/widgets/DailyQuote';
 import FinanceQuickCard from '../components/widgets/FinanceQuickCard';
+import DailyHabitTrackerCard from '../components/dashboard/DailyHabitTrackerCard';
 import TaskForm from '../components/tasks/TaskForm';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -393,6 +394,9 @@ export default function Dashboard() {
 
       {/* 3.1 Finance Quick Card */}
       <RandomMotion delayIndex={0}><FinanceQuickCard /></RandomMotion>
+
+      {/* 3.2 Minimalist Daily Habit & Target Tracker + Quick Focus Sprint */}
+      <RandomMotion delayIndex={0}><DailyHabitTrackerCard /></RandomMotion>
 
       {/* 4. WAKTU SHOLAT & IBADAH (PALING ATAS SESUAI PERMINTAAN USER) */}
       <div className="space-y-3">

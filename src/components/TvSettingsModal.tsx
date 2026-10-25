@@ -1,8 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { ref, onValue, off } from "firebase/database";
-import { database } from "@/lib/firebase";
-import { useWatchParty } from "@/context/WatchPartyContext";
-import { useTranslation } from "@/context/LanguageContext";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,680 +9,468 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-  Switch,
   Button,
   Input,
   Badge,
-} from "@schoolhub/ui";
+  Switch,
+} from '@schoolhub/ui';
 import {
   Key,
-  Gauge,
-  Sliders,
-  Plus,
+  ShieldAlert,
+  Settings2,
   Trash2,
   Eye,
   EyeOff,
-  Check,
-  AlertCircle,
-  Clock,
-  ShieldAlert,
-  RotateCcw,
-  Sparkles,
-  X,
-} from "lucide-react";
-import { loadKeys, deleteKey, getMaskedKey } from "@/lib/apiKeyStore";
-import { ApiKeyRecord } from "@/lib/roomUtils";
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
+import { useWatchParty } from '@/context/WatchPartyContext';
+import {
+  loadKeys,
+  loadSearchConfig,
+  getMaskedKey,
+  resetDailyUsageIfNeeded,
+  SearchConfig,
+} from '@/lib/apiKeyStore';
+import { ApiKeyRecord } from '@/lib/roomUtils';
+import { ref, onValue, off } from 'firebase/database';
+import { database } from '@/lib/firebase';
 
 interface TvSettingsModalProps {
   open: boolean;
-  onClose: () => void;
-}
-
-interface RateLimitEntry {
-  uid: string;
-  count: number;
-  windowStart: number;
+  onOpenChange: (open: boolean) => void;
 }
 
 export const TvSettingsModal: React.FC<TvSettingsModalProps> = ({
   open,
-  onClose,
+  onOpenChange,
 }) => {
   const { t } = useTranslation();
   const {
     roomCode,
     roomState,
-    searchSettings,
+    handleToggleCountdown,
     handleUpdateSearchSettings,
     handleManageLocalKeys,
     handleClearAllRateLimits,
-    handleToggleCountdown,
   } = useWatchParty();
 
-  const [activeTab, setActiveTab] = useState<string>("api-keys");
-  const [keysList, setKeysList] = useState<ApiKeyRecord[]>([]);
+  // API Keys state (Old Multi-Key Rotation System)
+  const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
+  const [config, setConfig] = useState<SearchConfig>(loadSearchConfig());
+  const [newLabel, setNewLabel] = useState('');
+  const [newKeyVal, setNewKeyVal] = useState('');
+  const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Add Key Form state
-  const [newKeyLabel, setNewKeyLabel] = useState("");
-  const [newKeyValue, setNewKeyValue] = useState("");
-  const [addKeyError, setAddKeyError] = useState<string | null>(null);
+  // Rate limit state
+  const [rateLimitCount, setRateLimitCount] = useState<number>(config.rateLimitCount || 10);
+  const [rateLimitMinutes, setRateLimitMinutes] = useState<number>(
+    Math.round((config.rateLimitWindowMs || 300000) / 60000)
+  );
+  const [activeLimits, setActiveLimits] = useState<
+    Record<string, { count: number; windowStart: number }>
+  >({});
 
-  // Temporary key reveal state (5 seconds)
-  const [revealedKeyId, setRevealedKeyId] = useState<string | null>(null);
-  const [revealCountdown, setRevealCountdown] = useState<number>(0);
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
-    null,
-  );
-
-  // Rate Limit configuration form state
-  const [rateLimitCountInput, setRateLimitCountInput] = useState<number>(
-    searchSettings.rateLimitCount || 10,
-  );
-  const [rateLimitWindowInput, setRateLimitWindowInput] = useState<number>(
-    searchSettings.rateLimitWindowMs || 300000,
-  );
-  const [maxResultsInput, setMaxResultsInput] = useState<number>(
-    searchSettings.maxResults || 25,
-  );
-  const [rateLimitSaved, setRateLimitSaved] = useState(false);
-
-  // Active Rate Limits data from RTDB
-  const [activeRateLimits, setActiveRateLimits] = useState<RateLimitEntry[]>(
-    [],
-  );
-
-  // Refresh keys from localStorage whenever modal opens or keys are modified
-  const refreshKeys = () => {
-    setKeysList(loadKeys());
+  const refreshData = () => {
+    resetDailyUsageIfNeeded();
+    setKeys(loadKeys());
+    const cfg = loadSearchConfig();
+    setConfig(cfg);
+    setRateLimitCount(cfg.rateLimitCount || 10);
+    setRateLimitMinutes(Math.round((cfg.rateLimitWindowMs || 300000) / 60000));
   };
 
   useEffect(() => {
     if (open) {
-      refreshKeys();
-      setRateLimitCountInput(searchSettings.rateLimitCount || 10);
-      setRateLimitWindowInput(searchSettings.rateLimitWindowMs || 300000);
-      setMaxResultsInput(searchSettings.maxResults || 25);
+      refreshData();
     }
-  }, [open, searchSettings]);
+  }, [open]);
 
-  // Handle 5-second countdown for key reveal
   useEffect(() => {
-    if (!revealedKeyId) return;
-
-    setRevealCountdown(5);
-    const interval = setInterval(() => {
-      setRevealCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setRevealedKeyId(null);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [revealedKeyId]);
-
-  // Subscribe to RTDB searchRateLimits when modal is open and on Rate Limits tab
-  useEffect(() => {
-    if (!open || !roomCode || activeTab !== "rate-limits") return;
-
-    const rateLimitsRef = ref(database, `rooms/${roomCode}/searchRateLimits`);
-    const unsub = onValue(rateLimitsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const val = snapshot.val();
-        const entries: RateLimitEntry[] = Object.entries(val).map(
-          ([uid, item]: [string, any]) => ({
-            uid,
-            count: item?.count || 0,
-            windowStart: item?.windowStart || Date.now(),
-          }),
-        );
-        setActiveRateLimits(entries);
-      } else {
-        setActiveRateLimits([]);
-      }
-    });
-
-    return () => off(rateLimitsRef);
-  }, [open, roomCode, activeTab]);
-
-  const handleAddKeySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newKeyValue.trim()) {
-      setAddKeyError("API Key string cannot be empty.");
+    if (!open || !roomCode) {
+      setActiveLimits({});
       return;
     }
-
-    try {
-      await handleManageLocalKeys("add", {
-        key: newKeyValue.trim(),
-        label: newKeyLabel.trim(),
-      });
-      setNewKeyLabel("");
-      setNewKeyValue("");
-      setAddKeyError(null);
-      refreshKeys();
-    } catch (err: any) {
-      setAddKeyError(err.message || "Failed to add API key.");
-    }
-  };
-
-  const handleToggleKeyEnabled = async (keyRecord: ApiKeyRecord) => {
-    await handleManageLocalKeys("update", {
-      id: keyRecord.id,
-      patch: { enabled: !keyRecord.enabled },
+    const limitsRef = ref(database, `rooms/${roomCode}/searchRateLimits`);
+    onValue(limitsRef, (snap) => {
+      setActiveLimits(snap.exists() ? snap.val() : {});
     });
-    refreshKeys();
-  };
+    return () => off(limitsRef);
+  }, [open, roomCode]);
 
-  const handleDeleteKey = async (keyId: string) => {
-    try {
-      deleteKey(keyId);
-      refreshKeys();
-      setConfirmingDeleteId(null);
-      await handleManageLocalKeys("delete", { id: keyId });
-    } catch (err) {
-      console.warn("Error deleting API key:", err);
-      refreshKeys();
-    }
-  };
-
-  const handleToggleReveal = (keyId: string) => {
-    if (revealedKeyId === keyId) {
-      setRevealedKeyId(null);
-    } else {
-      setRevealedKeyId(keyId);
-    }
-  };
-
-  const handleSaveRateLimits = async (e: React.FormEvent) => {
+  const handleAddKey = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleUpdateSearchSettings({
-      rateLimitCount: Number(rateLimitCountInput) || 10,
-      rateLimitWindowMs: Number(rateLimitWindowInput) || 300000,
-      maxResults: Math.max(1, Math.min(50, Number(maxResultsInput) || 25)),
+    if (!newKeyVal.trim()) return;
+    await handleManageLocalKeys('add', {
+      key: newKeyVal.trim(),
+      label: newLabel.trim() || `Key ${keys.length + 1}`,
     });
-    setRateLimitSaved(true);
-    setTimeout(() => setRateLimitSaved(false), 2000);
+    setNewLabel('');
+    setNewKeyVal('');
+    refreshData();
   };
 
-  const handleStrategyChange = async (strategy: "roundRobin" | "leastUsed") => {
-    await handleUpdateSearchSettings({ strategy });
+  const handleToggleKey = async (id: string, currentEnabled: boolean) => {
+    await handleManageLocalKeys('update', {
+      id,
+      patch: { enabled: !currentEnabled },
+    });
+    refreshData();
   };
 
-  const handleAllowHostChange = async (checked: boolean) => {
-    await handleUpdateSearchSettings({ allowHostKeyManagement: checked });
+  const handleDeleteKey = async (id: string) => {
+    await handleManageLocalKeys('delete', { id });
+    setDeleteConfirmId(null);
+    refreshData();
   };
+
+  const handleUpdateConfig = async (partial: Partial<SearchConfig>) => {
+    const next = { ...config, ...partial };
+    setConfig(next);
+    await handleUpdateSearchSettings(partial);
+    refreshData();
+  };
+
+  const handleSaveRateLimit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleUpdateConfig({
+      rateLimitCount: Math.max(1, rateLimitCount),
+      rateLimitWindowMs: Math.max(1, rateLimitMinutes) * 60000,
+    });
+  };
+
+  const handleClearLimits = async () => {
+    await handleClearAllRateLimits();
+    setActiveLimits({});
+  };
+
+  const toggleReveal = (id: string) => {
+    setRevealedIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const now = Date.now();
+  const windowMs = (config.rateLimitWindowMs || 300000);
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-2xl w-full h-[620px] max-h-[85vh] bg-card/95 border-border shadow-2xl backdrop-blur-xl flex flex-col p-6 overflow-hidden">
-        <DialogHeader className="border-b border-border pb-3 flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-foreground font-display tracking-wider uppercase text-base">
-            <Sliders className="w-5 h-5 text-primary" />
-            <span>{t("tvSettings.title")}</span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        chamfer="detached"
+        className="max-w-xl bg-card border-border text-foreground max-h-[85vh] overflow-y-auto"
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg font-bold tracking-wider uppercase text-primary">
+            <Settings2 className="w-5 h-5" />
+            {t('tvSettings.title')}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            {t("tvSettings.description")}
+            {t('tvSettings.description')}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Tab Navigation */}
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full flex-1 flex flex-col min-h-0 overflow-hidden"
-        >
-          <TabsList className="grid grid-cols-3 w-full border-b border-border bg-muted/40 p-1 mb-4 rounded-none flex-shrink-0">
-            <TabsTrigger
-              value="api-keys"
-              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider py-2"
-            >
+        <Tabs defaultValue="api-keys" className="w-full mt-2">
+          <TabsList className="grid grid-cols-3 w-full bg-muted/40 p-1">
+            <TabsTrigger value="api-keys" className="text-xs flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5" />
-              <span>{t("tvSettings.tabApiKeys")}</span>
-              {keysList.length > 0 && (
-                <Badge
-                  variant="outline"
-                  className="ml-1 px-1.5 py-0 text-[10px] bg-primary/10 text-primary border-primary/40 font-mono"
-                >
-                  {keysList.length}
-                </Badge>
-              )}
+              {t('tvSettings.tabApiKeys')}
             </TabsTrigger>
-            <TabsTrigger
-              value="rate-limits"
-              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider py-2"
-            >
-              <Gauge className="w-3.5 h-3.5" />
-              <span>{t("tvSettings.tabRateLimits")}</span>
+            <TabsTrigger value="rate-limits" className="text-xs flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              {t('tvSettings.tabRateLimits')}
             </TabsTrigger>
-            <TabsTrigger
-              value="room"
-              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider py-2"
-            >
-              <Clock className="w-3.5 h-3.5" />
-              <span>{t("tvSettings.tabRoom")}</span>
+            <TabsTrigger value="room" className="text-xs flex items-center gap-1.5">
+              <Settings2 className="w-3.5 h-3.5" />
+              {t('tvSettings.tabRoom')}
             </TabsTrigger>
           </TabsList>
 
-          {/* TAB 1: API KEYS */}
-          {activeTab === "apikeys" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-4">
-                <h3 className="font-bold text-cyan-200">Manajemen API Key</h3>
-                <p className="mt-2 text-sm text-cyan-300/80">
-                  Pengaturan API Key YouTube sekarang telah dipindahkan
-                  sepenuhnya ke <strong>Panel Admin</strong> untuk keamanan.
-                </p>
-                <p className="mt-1 text-sm text-cyan-300/80">
-                  Tidak ada lagi API key yang disimpan secara lokal di
-                  perangkat. Fitur ini hanya dapat dikelola dari{" "}
-                  <strong>Admin &gt; Kontrol Aplikasi</strong>.
-                </p>
-              </div>
-            </div>
-          )}
-          {false && (
-            <TabsContent
-              value="api-keys"
-              className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-4 focus-visible:outline-none"
-            >
-              {/* Header / Description */}
+          {/* TAB 1: API KEYS (Old Multi-Key Rotation System Active) */}
+          <TabsContent value="api-keys" className="space-y-4 pt-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                    {t("tvSettings.apiKeysTitle")}
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    {t('tvSettings.apiKeysTitle')}
                   </h4>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("tvSettings.apiKeysDesc")}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground">{t('tvSettings.apiKeysDesc')}</p>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refreshData}
+                  className="h-7 px-2 text-xs"
+                  title="Refresh Quota Status"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </Button>
               </div>
 
-              {/* Existing Keys List */}
-              <div className="space-y-2">
-                {keysList.length === 0 ? (
-                  <div className="p-4 bg-muted/20 border border-dashed border-border text-center">
-                    <Key className="w-6 h-6 text-muted-foreground mx-auto mb-1 opacity-50" />
-                    <p className="text-xs text-muted-foreground">
-                      {t("tvSettings.noKeys")}
-                    </p>
-                  </div>
-                ) : (
-                  keysList.map((keyItem) => {
-                    const isRevealed = revealedKeyId === keyItem.id;
-                    return (
-                      <div
-                        key={keyItem.id}
-                        className={`p-3 border transition-all flex flex-col gap-2 ${
-                          keyItem.enabled
-                            ? "bg-muted/30 border-border"
-                            : "bg-muted/10 border-border/50 opacity-60"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-bold text-xs text-foreground truncate">
-                              {keyItem.label}
-                            </span>
-                            <Badge
-                              variant={
-                                keyItem.enabled ? "outline" : "secondary"
-                              }
-                              className="px-1.5 py-0 text-[9px] font-mono"
-                            >
-                              {keyItem.enabled ? "ENABLED" : "DISABLED"}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground font-mono">
-                              Today: {keyItem.usageToday || 0} reqs
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {/* Enable/Disable Switch */}
-                            <Switch
-                              checked={keyItem.enabled}
-                              onCheckedChange={() =>
-                                handleToggleKeyEnabled(keyItem)
-                              }
-                              aria-label={`Toggle ${keyItem.label}`}
-                            />
-                            {/* Delete Key Button with inline confirmation */}
-                            {confirmingDeleteId === keyItem.id ? (
-                              <div className="flex items-center gap-1 animate-in fade-in duration-150">
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleDeleteKey(keyItem.id)}
-                                  className="h-7 px-2 text-[10px] font-bold uppercase rounded-none flex items-center gap-1"
-                                  title="Confirm Delete"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  <span>
-                                    {t("tvSettings.confirmDelete") || "Delete"}
-                                  </span>
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setConfirmingDeleteId(null)}
-                                  className="h-7 px-1.5 text-[10px] text-muted-foreground hover:text-foreground rounded-none"
-                                  title="Cancel"
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  setConfirmingDeleteId(keyItem.id)
-                                }
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors rounded-none"
-                                title="Delete API key"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Key Display Row with 5s Reveal */}
-                        <div className="flex items-center justify-between gap-2 bg-background/80 p-1.5 border border-border/70 font-mono text-xs">
-                          <span className="truncate text-primary select-all">
-                            {isRevealed
-                              ? keyItem.key
-                              : getMaskedKey(keyItem.key)}
+              {keys.length === 0 ? (
+                <div className="p-4 border border-dashed border-border text-center text-xs text-muted-foreground">
+                  {t('tvSettings.noKeys')}
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {keys.map((k) => (
+                    <div
+                      key={k.id}
+                      className="p-2.5 bg-muted/20 border border-border flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-xs text-foreground truncate">
+                            {k.label}
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleToggleReveal(keyItem.id)}
-                            className="h-6 px-2 text-[10px] uppercase font-bold flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                            title={
-                              isRevealed
-                                ? "Hide API key"
-                                : "Temporarily reveal key for 5 seconds"
-                            }
+                          <Badge
+                            variant={k.enabled ? 'cyber' : 'secondary'}
+                            className="text-[9px] px-1.5 py-0"
                           >
-                            {isRevealed ? (
-                              <>
-                                <EyeOff className="w-3 h-3 text-amber-400" />
-                                <span className="text-amber-400 font-mono">
-                                  {revealCountdown}s
-                                </span>
-                              </>
+                            {k.enabled ? 'ACTIVE' : 'DISABLED'}
+                          </Badge>
+                          <span className="text-[10px] font-mono text-muted-foreground">
+                            ({k.usageToday || 0} reqs today)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <code className="text-[11px] font-mono text-muted-foreground">
+                            {revealedIds[k.id] ? k.key : getMaskedKey(k.key)}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => toggleReveal(k.id)}
+                            className="text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                          >
+                            {revealedIds[k.id] ? (
+                              <EyeOff className="w-3 h-3" />
                             ) : (
-                              <>
-                                <Eye className="w-3 h-3" />
-                                <span>Reveal</span>
-                              </>
+                              <Eye className="w-3 h-3" />
                             )}
-                          </Button>
+                          </button>
                         </div>
                       </div>
-                    );
-                  })
-                )}
-              </div>
 
-              {/* Add Key Form */}
-              <form
-                onSubmit={handleAddKeySubmit}
-                className="p-3 bg-muted/20 border border-border flex flex-col gap-2.5"
-              >
-                <span className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1">
-                  <Plus className="w-3.5 h-3.5 text-primary" />
-                  <span>{t("tvSettings.addKeyBtn")}</span>
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
-                      {t("tvSettings.keyLabel")}
-                    </label>
-                    <Input
-                      type="text"
-                      value={newKeyLabel}
-                      onChange={(e) => setNewKeyLabel(e.target.value)}
-                      placeholder={t("tvSettings.keyLabelPlaceholder")}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
-                      {t("tvSettings.keyValue")}
-                    </label>
-                    <Input
-                      type="password"
-                      value={newKeyValue}
-                      onChange={(e) => setNewKeyValue(e.target.value)}
-                      placeholder={t("tvSettings.keyValuePlaceholder")}
-                      className="text-xs font-mono h-8"
-                    />
-                  </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Switch
+                          checked={k.enabled}
+                          onCheckedChange={() => handleToggleKey(k.id, k.enabled)}
+                        />
+                        {deleteConfirmId === k.id ? (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteKey(k.id)}
+                              className="h-6 px-2 text-[10px]"
+                            >
+                              {t('tvSettings.confirmDelete')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDeleteConfirmId(null)}
+                              className="h-6 px-2 text-[10px]"
+                            >
+                              {t('tvSettings.cancel')}
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmId(k.id)}
+                            className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              )}
+            </div>
 
-                {addKeyError && (
-                  <p className="text-[11px] text-destructive font-mono bg-destructive/10 p-1 border border-destructive/30">
-                    {addKeyError}
-                  </p>
-                )}
-
-                <Button
-                  type="submit"
-                  variant="cyber"
-                  chamfer="top-right"
-                  className="py-1.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 h-8 mt-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{t("tvSettings.addKeyBtn")}</span>
-                </Button>
-              </form>
-
-              {/* Strategy & Host Management Settings */}
-              <div className="p-3 bg-muted/20 border border-border space-y-3">
-                <div className="flex items-center justify-between border-b border-border pb-2">
-                  <div>
-                    <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
-                      {t("tvSettings.strategyTitle")}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      Balances quota usage across all active keys.
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-muted/60 p-0.5 border border-border">
-                    <Button
-                      type="button"
-                      variant={
-                        searchSettings.strategy === "roundRobin"
-                          ? "cyber"
-                          : "ghost"
-                      }
-                      size="sm"
-                      onClick={() => handleStrategyChange("roundRobin")}
-                      className="px-2.5 py-1 text-[10px] font-bold uppercase h-6"
-                    >
-                      {t("tvSettings.roundRobin")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        searchSettings.strategy === "leastUsed"
-                          ? "cyber"
-                          : "ghost"
-                      }
-                      size="sm"
-                      onClick={() => handleStrategyChange("leastUsed")}
-                      className="px-2.5 py-1 text-[10px] font-bold uppercase h-6"
-                    >
-                      {t("tvSettings.leastUsed")}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Allow Host Key Management Toggle */}
-                <div className="flex items-center justify-between pt-1">
-                  <div>
-                    <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
-                      {t("tvSettings.allowHostManagement")}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {t("tvSettings.allowHostDesc")}
-                    </span>
-                  </div>
-                  <Switch
-                    checked={searchSettings.allowHostKeyManagement}
-                    onCheckedChange={handleAllowHostChange}
-                    aria-label="Allow Host to Manage Keys"
-                  />
-                </div>
-              </div>
-            </TabsContent>
-          )}
-          {/* TAB 2: RATE LIMITS */}
-          <TabsContent
-            value="rate-limits"
-            className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-4 focus-visible:outline-none"
-          >
-            <form
-              onSubmit={handleSaveRateLimits}
-              className="p-4 bg-muted/20 border border-border space-y-3"
-            >
-              <div>
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  {t("tvSettings.rateLimitTitle")}
-                </h4>
-                <p className="text-[11px] text-muted-foreground">
-                  {t("tvSettings.rateLimitDesc")}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {/* Add New Key Form */}
+            <form onSubmit={handleAddKey} className="p-3 bg-muted/10 border border-border space-y-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
-                    Searches allowed
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
+                    {t('tvSettings.keyLabel')}
                   </label>
                   <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={rateLimitCountInput}
-                    onChange={(e) =>
-                      setRateLimitCountInput(parseInt(e.target.value, 10) || 10)
-                    }
-                    className="text-xs h-8"
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder={t('tvSettings.keyLabelPlaceholder')}
+                    className="h-8 text-xs"
                   />
                 </div>
-
                 <div>
-                  <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
-                    Time Window
-                  </label>
-                  <select
-                    value={rateLimitWindowInput}
-                    onChange={(e) =>
-                      setRateLimitWindowInput(parseInt(e.target.value, 10))
-                    }
-                    className="w-full h-8 text-xs bg-background border border-border px-2 text-foreground font-sans focus:outline-none focus:border-primary"
-                  >
-                    <option value={60000}>1 Minute</option>
-                    <option value={300000}>5 Minutes (Default)</option>
-                    <option value={600000}>10 Minutes</option>
-                    <option value={3600000}>1 Hour</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
-                    {t("tvSettings.maxResults")} (1 - 50)
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
+                    {t('tvSettings.keyValue')}
                   </label>
                   <Input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={maxResultsInput}
-                    onChange={(e) =>
-                      setMaxResultsInput(parseInt(e.target.value, 10) || 5)
-                    }
-                    className="text-xs h-8"
+                    value={newKeyVal}
+                    onChange={(e) => setNewKeyVal(e.target.value)}
+                    placeholder={t('tvSettings.keyValuePlaceholder')}
+                    className="h-8 text-xs font-mono"
+                    required
                   />
                 </div>
               </div>
-
               <Button
                 type="submit"
                 variant="cyber"
-                chamfer="top-right"
-                className="py-1.5 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 h-8 mt-2"
+                size="sm"
+                className="w-full h-8 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5"
               >
-                {rateLimitSaved ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Saved!</span>
-                  </>
-                ) : (
-                  <span>{t("tvSettings.saveLimitBtn")}</span>
-                )}
+                <Plus className="w-3.5 h-3.5" />
+                {t('tvSettings.addKeyBtn')}
               </Button>
             </form>
 
-            {/* Active Rate Limits Table */}
-            <div className="p-3 bg-muted/20 border border-border space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  {t("tvSettings.activeRateLimits")}
+            {/* Load Balancing Strategy & Max Results */}
+            <div className="p-3 bg-muted/10 border border-border space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground">
+                  {t('tvSettings.strategyTitle')}
                 </span>
-                {activeRateLimits.length > 0 && (
+                <div className="flex gap-1">
                   <Button
-                    variant="outline"
+                    type="button"
+                    variant={config.strategy === 'roundRobin' ? 'cyber' : 'outline'}
                     size="sm"
-                    onClick={handleClearAllRateLimits}
-                    className="h-6 px-2 text-[10px] uppercase font-bold text-destructive hover:text-destructive hover:border-destructive flex items-center gap-1"
+                    onClick={() => handleUpdateConfig({ strategy: 'roundRobin' })}
+                    className="h-7 px-2.5 text-[10px]"
                   >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>{t("tvSettings.clearRateLimits")}</span>
+                    {t('tvSettings.roundRobin')}
                   </Button>
-                )}
+                  <Button
+                    type="button"
+                    variant={config.strategy === 'leastUsed' ? 'cyber' : 'outline'}
+                    size="sm"
+                    onClick={() => handleUpdateConfig({ strategy: 'leastUsed' })}
+                    className="h-7 px-2.5 text-[10px]"
+                  >
+                    {t('tvSettings.leastUsed')}
+                  </Button>
+                </div>
               </div>
 
-              {activeRateLimits.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground italic py-2">
-                  {t("tvSettings.noRateLimits")}
-                </p>
-              ) : (
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {activeRateLimits.map((entry) => {
-                    const elapsed = Date.now() - (entry.windowStart || 0);
-                    const remainingMs = Math.max(
-                      0,
-                      (searchSettings.rateLimitWindowMs || 300000) - elapsed,
-                    );
-                    const remainingSec = Math.ceil(remainingMs / 1000);
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground">
+                  {t('tvSettings.maxResults')}
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={25}
+                  value={config.maxResults}
+                  onChange={(e) =>
+                    handleUpdateConfig({
+                      maxResults: Math.max(1, Math.min(25, Number(e.target.value) || 25)),
+                    })
+                  }
+                  className="w-20 h-7 text-xs text-center font-mono"
+                />
+              </div>
 
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                <div>
+                  <span className="text-xs font-semibold text-foreground block">
+                    {t('tvSettings.allowHostManagement')}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {t('tvSettings.allowHostDesc')}
+                  </span>
+                </div>
+                <Switch
+                  checked={config.allowHostKeyManagement}
+                  onCheckedChange={(checked) =>
+                    handleUpdateConfig({ allowHostKeyManagement: checked })
+                  }
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* TAB 2: RATE LIMITS */}
+          <TabsContent value="rate-limits" className="space-y-4 pt-3">
+            <form onSubmit={handleSaveRateLimit} className="p-3 bg-muted/10 border border-border space-y-3">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  {t('tvSettings.rateLimitTitle')}
+                </h4>
+                <p className="text-[11px] text-muted-foreground">{t('tvSettings.rateLimitDesc')}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={rateLimitCount}
+                  onChange={(e) =>
+                    setRateLimitCount(Math.max(1, Number(e.target.value) || 10))
+                  }
+                  className="w-20 h-8 text-xs font-mono text-center"
+                />
+                <span className="text-xs text-muted-foreground">{t('tvSettings.searches')}</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={rateLimitMinutes}
+                  onChange={(e) =>
+                    setRateLimitMinutes(Math.max(1, Number(e.target.value) || 5))
+                  }
+                  className="w-20 h-8 text-xs font-mono text-center"
+                />
+                <span className="text-xs text-muted-foreground">min</span>
+                <Button type="submit" variant="cyber" size="sm" className="ml-auto h-8 text-xs">
+                  {t('tvSettings.saveLimitBtn')}
+                </Button>
+              </div>
+            </form>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  {t('tvSettings.activeRateLimits')}
+                </h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearLimits}
+                  className="h-7 px-2.5 text-[10px]"
+                >
+                  {t('tvSettings.clearRateLimits')}
+                </Button>
+              </div>
+
+              {Object.keys(activeLimits).length === 0 ? (
+                <div className="p-4 border border-dashed border-border text-center text-xs text-muted-foreground">
+                  {t('tvSettings.noRateLimits')}
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {Object.entries(activeLimits).map(([uid, entry]) => {
+                    if (now - (entry.windowStart || 0) > windowMs) return null;
                     return (
                       <div
-                        key={entry.uid}
-                        className="flex items-center justify-between p-1.5 bg-background/60 border border-border text-xs font-mono"
+                        key={uid}
+                        className="p-2 bg-muted/20 border border-border flex items-center justify-between text-xs"
                       >
-                        <span className="text-muted-foreground text-[11px] truncate max-w-[180px]">
-                          UID: {entry.uid}
+                        <span className="font-mono text-[11px] truncate max-w-[200px]">
+                          UID: {uid}
                         </span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-foreground font-bold">
-                            {entry.count} /{" "}
-                            {searchSettings.rateLimitCount || 10}
-                          </span>
-                          <span className="text-[10px] text-primary">
-                            resets in {remainingSec}s
-                          </span>
-                        </div>
+                        <Badge
+                          variant={
+                            entry.count >= config.rateLimitCount ? 'destructive' : 'outline'
+                          }
+                          className="font-mono text-[10px]"
+                        >
+                          {entry.count} / {config.rateLimitCount}
+                        </Badge>
                       </div>
                     );
                   })}
@@ -696,44 +480,42 @@ export const TvSettingsModal: React.FC<TvSettingsModalProps> = ({
           </TabsContent>
 
           {/* TAB 3: ROOM SETTINGS */}
-          <TabsContent
-            value="room"
-            className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-4 focus-visible:outline-none"
-          >
-            <div className="p-4 bg-muted/20 border border-border space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
-                    {t("tvSettings.countdownTitle")}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {t("tvSettings.countdownDesc")}
-                  </span>
-                </div>
-                <Switch
-                  checked={Boolean(roomState?.isCountdownEnabled)}
-                  onCheckedChange={handleToggleCountdown}
-                  aria-label="Toggle Countdown"
-                />
+          <TabsContent value="room" className="space-y-4 pt-3">
+            <div className="p-4 bg-muted/10 border border-border flex items-center justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-bold text-foreground">
+                  {t('tvSettings.countdownTitle')}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('tvSettings.countdownDesc')}
+                </p>
               </div>
-
-              <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
-                    {t("tvSettings.preferMusicVideosTitle")}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {t("tvSettings.preferMusicVideosDesc")}
-                  </span>
-                </div>
-                <Switch
-                  checked={searchSettings?.preferMusicVideos ?? true}
-                  onCheckedChange={(checked) =>
-                    handleUpdateSearchSettings({ preferMusicVideos: checked })
+              <Switch
+                checked={roomState?.isCountdownEnabled !== false}
+                onCheckedChange={() => {
+                  if (roomCode) {
+                    handleToggleCountdown();
                   }
-                  aria-label="Toggle Prefer Music Videos"
-                />
+                }}
+                disabled={!roomCode}
+              />
+            </div>
+
+            <div className="p-4 bg-muted/10 border border-border flex items-center justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-bold text-foreground">
+                  {t('tvSettings.preferMusicVideosTitle')}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('tvSettings.preferMusicVideosDesc')}
+                </p>
               </div>
+              <Switch
+                checked={config.preferMusicVideos !== false}
+                onCheckedChange={(checked) =>
+                  handleUpdateConfig({ preferMusicVideos: checked })
+                }
+              />
             </div>
           </TabsContent>
         </Tabs>

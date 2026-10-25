@@ -10,7 +10,9 @@
     "openRemoteBtn": "Open Remote",
     "playBtn": "Play",
     "pauseBtn": "Pause",
+    "previousBtn": "Previous",
     "skipNextBtn": "Skip",
+    "loadingBtn": "Loading...",
     "muteBtn": "Mute",
     "unmuteBtn": "Unmute",
     "addYtPlaceholder": "Add YT URL to queue...",
@@ -24,8 +26,10 @@
     "autoplayOn": "Autoplay ON",
     "autoplayOff": "Autoplay OFF",
     "searchBtn": "Search & Add Video",
+    "searchLabel": "Search",
     "searchModalTitle": "Add to Queue",
-    "searchModalDesc": "Search YouTube or paste a direct video link to queue videos on the TV."
+    "searchModalDesc": "Search YouTube or paste a direct video link to queue videos on the TV.",
+    "endRoomBtn": "End Room"
   },
   "mediaBox": {
     "noVideoPlaying": " ",
@@ -99,7 +103,7 @@
     "submitBtn": "Submit",
     "searching": "Searching...",
     "ytKeyNeededTitle": "YouTube Data API Key Needed for Keyword Search",
-    "ytKeyNeededDesc": "Add VITE_YOUTUBE_API_KEY to your .env file to enable live keyword search. You can also paste any YouTube URL under the Paste Link tab with zero setup and free automatic title fetching!",
+    "ytKeyNeededDesc": "Add API Keys in TV Settings to enable live keyword search. You can also paste any YouTube URL under the Paste Link tab with zero setup!",
     "addBtn": "Add",
     "addedBtn": "Added",
     "pasteUrlPlaceholder": "Paste YouTube link or URL...",
@@ -174,6 +178,10 @@
   "schedule": {
     "currentSchedule": "Current Schedule",
     "nextSchedule": "Next Schedule",
+    "endsAt": "ENDS AT {time}",
+    "upNextBadge": "UP NEXT",
+    "upcomingAgenda": "Upcoming Schedule Agenda",
+    "pageIndicator": "Page {current}/{total}",
     "loading": "Loading...",
     "countdownTitle": "Special Schedule Starting Soon!",
     "itsTime": "IT'S TIME!",
