@@ -1,0 +1,125 @@
+/* ==========================================================================
+   THEME-NO-WHITE — tidak ada permukaan putih polos di tema mana pun.
+   Semua .bg-white / .bg-slate-* / input / modal / kartu mengikuti palet tema
+   aktif (data-tf-theme pada .app-shell). Dimuat paling akhir di main.tsx.
+   ========================================================================== */
+
+/* ---- Palet permukaan per tema (mode terang: bertint, bukan putih) ---- */
+:root {
+  --nw-base: #e9eef8; --nw-surface: #f1f5fc; --nw-raised: #e3eaf6; --nw-sunken: #dbe4f3;
+  --nw-border: #c9d5ea; --nw-ink: #0f172a; --nw-ink-soft: #334155; --nw-accent: #4f6bed;
+  --nw-glow: rgba(79,107,237,.18);
+}
+html.dark {
+  --nw-base: #0a0f1c; --nw-surface: #111827; --nw-raised: #172033; --nw-sunken: #0d1424;
+  --nw-border: #243049; --nw-ink: #f1f5f9; --nw-ink-soft: #b4c0d6; --nw-accent: #8ea2ff;
+  --nw-glow: rgba(142,162,255,.22);
+}
+
+.app-shell[data-tf-theme="paper-ink"]      { --nw-base:#efe8d8; --nw-surface:#f6efe0; --nw-raised:#eadfc9; --nw-sunken:#e0d4ba; --nw-border:#d3c6a8; --nw-ink:#123329; --nw-ink-soft:#2d5548; --nw-accent:#bf3626; --nw-glow:rgba(191,54,38,.16); }
+.app-shell[data-tf-theme="midnight-study"] { --nw-base:#dfe5f7; --nw-surface:#e9eefb; --nw-raised:#d9e0f5; --nw-sunken:#cdd6f0; --nw-border:#bcc7e8; --nw-ink:#12182c; --nw-ink-soft:#3b4668; --nw-accent:#6366f1; --nw-glow:rgba(99,102,241,.2); }
+.app-shell[data-tf-theme="sakura-diary"]   { --nw-base:#fbe6ec; --nw-surface:#fdeef2; --nw-raised:#f8dde5; --nw-sunken:#f3d0db; --nw-border:#eebfcd; --nw-ink:#4a212e; --nw-ink-soft:#7e3e52; --nw-accent:#e11d48; --nw-glow:rgba(225,29,72,.16); }
+.app-shell[data-tf-theme="lopp-duo"]       { --nw-base:#e6e4fa; --nw-surface:#eeecfc; --nw-raised:#e0ddf7; --nw-sunken:#d4d0f1; --nw-border:#c5c0ea; --nw-ink:#1b1740; --nw-ink-soft:#463f80; --nw-accent:#7048e8; --nw-glow:rgba(112,72,232,.2); }
+.app-shell[data-tf-theme="matcha-focus"]   { --nw-base:#e0ebd6; --nw-surface:#e9f2e0; --nw-raised:#dae7ce; --nw-sunken:#cfdfc1; --nw-border:#bfd3ae; --nw-ink:#16301a; --nw-ink-soft:#3c5c3d; --nw-accent:#4d8a1f; --nw-glow:rgba(77,138,31,.18); }
+.app-shell[data-tf-theme="mono-minimal"]   { --nw-base:#e4e5e8; --nw-surface:#ececef; --nw-raised:#dfe0e4; --nw-sunken:#d3d5da; --nw-border:#c3c6cc; --nw-ink:#16181d; --nw-ink-soft:#43474f; --nw-accent:#343a40; --nw-glow:rgba(52,58,64,.14); }
+
+html.dark .app-shell[data-tf-theme="paper-ink"]      { --nw-base:#0d1612; --nw-surface:#15211b; --nw-raised:#1c2d25; --nw-sunken:#0f1a15; --nw-border:#29403a; --nw-ink:#ebf2ee; --nw-ink-soft:#b0c9be; --nw-accent:#e05341; --nw-glow:rgba(224,83,65,.24); }
+html.dark .app-shell[data-tf-theme="midnight-study"] { --nw-base:#080b16; --nw-surface:#10152a; --nw-raised:#171f3b; --nw-sunken:#0b0f20; --nw-border:#252f55; --nw-ink:#f1f4fd; --nw-ink-soft:#a9b5d4; --nw-accent:#818cf8; --nw-glow:rgba(129,140,248,.26); }
+html.dark .app-shell[data-tf-theme="sakura-diary"]   { --nw-base:#150b10; --nw-surface:#20131a; --nw-raised:#2c1a23; --nw-sunken:#180d13; --nw-border:#44283a; --nw-ink:#fdeef3; --nw-ink-soft:#e0a9bc; --nw-accent:#fb7185; --nw-glow:rgba(251,113,133,.24); }
+html.dark .app-shell[data-tf-theme="lopp-duo"]       { --nw-base:#0c0a1c; --nw-surface:#15122e; --nw-raised:#1e1a42; --nw-sunken:#0f0c24; --nw-border:#2f2a63; --nw-ink:#f0eeff; --nw-ink-soft:#b6aef0; --nw-accent:#a78bfa; --nw-glow:rgba(167,139,250,.26); }
+html.dark .app-shell[data-tf-theme="matcha-focus"]   { --nw-base:#0b130b; --nw-surface:#131f13; --nw-raised:#1a2b1a; --nw-sunken:#0d170d; --nw-border:#284228; --nw-ink:#eef6e8; --nw-ink-soft:#b3cca8; --nw-accent:#a9e34b; --nw-glow:rgba(169,227,75,.2); }
+html.dark .app-shell[data-tf-theme="mono-minimal"]   { --nw-base:#0c0d0f; --nw-surface:#15171a; --nw-raised:#1d2024; --nw-sunken:#101113; --nw-border:#2c3036; --nw-ink:#f1f2f4; --nw-ink-soft:#b5b9c0; --nw-accent:#dee2e6; --nw-glow:rgba(222,226,230,.16); }
+
+/* ---- Latar halaman & app shell ---- */
+html, body, #root { background: var(--nw-base) !important; color: var(--nw-ink); }
+.app-shell {
+  background:
+    radial-gradient(60% 45% at 8% 0%, var(--nw-glow), transparent 70%),
+    radial-gradient(55% 40% at 100% 100%, var(--nw-glow), transparent 70%),
+    var(--nw-base) !important;
+  color: var(--nw-ink);
+}
+
+/* ---- Semua utilitas putih/abu terang → permukaan tema ---- */
+.bg-white, .bg-slate-50, .bg-gray-50, .bg-zinc-50, .bg-neutral-50, .bg-stone-50,
+html.dark .bg-white, html.dark .bg-slate-50 { background-color: var(--nw-surface) !important; }
+.bg-slate-100, .bg-gray-100, .bg-zinc-100, .bg-neutral-100,
+html.dark .bg-slate-100 { background-color: var(--nw-raised) !important; }
+.bg-slate-200, .bg-gray-200, html.dark .bg-slate-200 { background-color: var(--nw-sunken) !important; }
+.bg-white\/95, .bg-white\/90, .bg-white\/88, .bg-white\/85, .bg-white\/80, .bg-white\/70, .bg-white\/60,
+html.dark .bg-white\/90, html.dark .bg-white\/88, html.dark .bg-white\/80 {
+  background-color: color-mix(in srgb, var(--nw-surface) 88%, transparent) !important;
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.bg-white\/50, .bg-white\/40, .bg-white\/30, .bg-white\/20, .bg-white\/10 {
+  background-color: color-mix(in srgb, var(--nw-surface) 55%, transparent) !important;
+}
+
+/* Warna pastel Tailwind (kartu status) ikut menyatu dengan tema */
+.bg-blue-50, .bg-indigo-50, .bg-sky-50, .bg-violet-50, .bg-purple-50 { background-color: color-mix(in srgb, var(--nw-accent) 12%, var(--nw-surface)) !important; }
+.bg-emerald-50, .bg-green-50, .bg-teal-50, .bg-lime-50 { background-color: color-mix(in srgb, #10b981 13%, var(--nw-surface)) !important; }
+.bg-amber-50, .bg-yellow-50, .bg-orange-50 { background-color: color-mix(in srgb, #f59e0b 14%, var(--nw-surface)) !important; }
+.bg-rose-50, .bg-red-50, .bg-pink-50 { background-color: color-mix(in srgb, #f43f5e 12%, var(--nw-surface)) !important; }
+
+/* Border & teks */
+.border-slate-100, .border-slate-200, .border-slate-300, .border-gray-200, .border-gray-100, .border-white,
+html.dark .border-slate-200, html.dark .border-slate-100 { border-color: var(--nw-border) !important; }
+.text-slate-900, .text-slate-800, .text-slate-950, .text-gray-900, .text-gray-800 { color: var(--nw-ink) !important; }
+.text-slate-700, .text-slate-600, .text-gray-700, .text-gray-600 { color: var(--nw-ink-soft) !important; }
+.divide-slate-100 > :not([hidden]) ~ :not([hidden]), .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: var(--nw-border) !important; }
+
+/* ---- Kartu, panel, modal, popover, dropdown ---- */
+.card, .tf-card, .fazet-card, [class*="rounded-2xl"][class*="border"], [class*="rounded-3xl"][class*="border"],
+[role="dialog"], [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper] > *,
+.modal, .popover, .dropdown-menu, .toast {
+  background-color: var(--nw-surface);
+  border-color: var(--nw-border);
+  color: var(--nw-ink);
+}
+[role="dialog"], .modal { box-shadow: 0 30px 80px -20px var(--nw-glow), 0 0 0 1px var(--nw-border); }
+
+/* ---- Form: input, select, textarea ---- */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+select, textarea {
+  background-color: var(--nw-sunken) !important;
+  color: var(--nw-ink) !important;
+  border-color: var(--nw-border) !important;
+}
+input::placeholder, textarea::placeholder { color: color-mix(in srgb, var(--nw-ink-soft) 65%, transparent) !important; }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--nw-accent) !important;
+  box-shadow: 0 0 0 3px var(--nw-glow) !important;
+  outline: none;
+}
+select option { background: var(--nw-surface); color: var(--nw-ink); }
+
+/* ---- Header, sidebar, nav mobile, tabel ---- */
+header, aside, nav, .mobile-nav, .app-header, .app-sidebar {
+  background-color: color-mix(in srgb, var(--nw-surface) 90%, transparent);
+  border-color: var(--nw-border);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+}
+table { background: var(--nw-surface); color: var(--nw-ink); }
+thead, th { background: var(--nw-raised) !important; color: var(--nw-ink); }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nw-raised) 40%, transparent); }
+td, th { border-color: var(--nw-border) !important; }
+
+/* ---- Scrollbar & seleksi ---- */
+* { scrollbar-color: var(--nw-border) transparent; }
+::selection { background: var(--nw-accent); color: #fff; }
+
+/* ---- Iframe & kanvas (simulasi TKA, dll) tidak flash putih ---- */
+iframe { background: var(--nw-base); color-scheme: normal; }
+
+/* ---- Sinkronkan variabel token lama agar komponen berbasis var(--tf-*) ikut tidak putih ---- */
+.app-shell, .app-shell[data-tf-theme] {
+  --tf-bg-base: var(--nw-base);
+  --tf-bg-surface: var(--nw-surface);
+  --tf-bg-elevated: var(--nw-raised);
+  --tf-bg-subtle: var(--nw-sunken);
+  --tf-border: var(--nw-border);
+  --tf-border-subtle: color-mix(in srgb, var(--nw-border) 60%, transparent);
+  --tf-text-primary: var(--nw-ink);
+  --tf-text-secondary: var(--nw-ink-soft);
+}
+html { --tf-bg: var(--nw-base); --tf-surface: color-mix(in srgb, var(--nw-surface) 90%, transparent); }
