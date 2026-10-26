@@ -160,6 +160,10 @@ interface SavedCbtSession {
 const STORAGE_HISTORY = 'fazet_tka_history_v2';
 const STORAGE_ACTIVE_CBT = 'fazet_tka_active_cbt_session_v2';
 const STORAGE_UNLOCK_LOCKOUT = 'fazet_tka_unlock_lockout_until';
+const STORAGE_BLOCKED_STATE = 'fazet_tka_is_blocked_v3';
+const STORAGE_BLOCKED_REASON = 'fazet_tka_blocked_reason_v3';
+const STORAGE_PENALTY_TIER = 'fazet_tka_penalty_tier_v3';
+const STORAGE_PENALTY_UNTIL = 'fazet_tka_penalty_lockout_until_v3';
 
 function shuffleArray<T>(arr: T[]): T[] {
   const result = [...arr];
@@ -242,10 +246,34 @@ export default function TkaPage() {
   const [unlockPassword, setUnlockPassword] = useState('');
   const [unlockError, setUnlockError] = useState('');
 
-  // Pembekuan Akses Otorisasi (Salah 1x Tunggu 15 Menit)
+  const examStartedTimeRef = useRef<number>(0);
+
+  // SISTEM TERBLOKIR KETAT (Perubahan Layar / Pindah Tab / Blur)
+  const [isBlocked, setIsBlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STORAGE_BLOCKED_STATE) === 'true';
+    } catch {}
+    return false;
+  });
+
+  const [blockReason, setBlockReason] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_BLOCKED_REASON) || 'Perubahan layar atau fokus jendela terdeteksi';
+    } catch {}
+    return 'Perubahan layar atau fokus jendela terdeteksi';
+  });
+
+  const [penaltyTier, setPenaltyTier] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_PENALTY_TIER);
+      return stored ? parseInt(stored, 10) : 0;
+    } catch {}
+    return 0;
+  });
+
   const [lockoutUntil, setLockoutUntil] = useState<number>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_UNLOCK_LOCKOUT);
+      const stored = localStorage.getItem(STORAGE_PENALTY_UNTIL);
       if (stored) {
         const val = parseInt(stored, 10);
         if (val > Date.now()) return val;
@@ -256,7 +284,7 @@ export default function TkaPage() {
 
   const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState<number>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_UNLOCK_LOCKOUT);
+      const stored = localStorage.getItem(STORAGE_PENALTY_UNTIL);
       if (stored) {
         const val = parseInt(stored, 10);
         return Math.max(0, Math.ceil((val - Date.now()) / 1000));
@@ -265,24 +293,136 @@ export default function TkaPage() {
     return 0;
   });
 
-  useEffect(() => {
-    if (lockoutUntil <= Date.now()) {
-      setLockoutSecondsLeft(0);
-      return;
-    }
-    const updateCountdown = () => {
-      const diff = Math.max(0, Math.ceil((lockoutUntil - Date.now()) / 1000));
-      setLockoutSecondsLeft(diff);
-      if (diff <= 0) {
-        try {
-          localStorage.removeItem(STORAGE_UNLOCK_LOCKOUT);
-        } catch {}
+  // Grace timer 15 detik untuk memasukkan password saat terblokir
+  const [graceSecondsLeft, setGraceSecondsLeft] = useState<number>(15);
+  const [blockPassword, setBlockPassword] = useState('');
+  const [blockError, setBlockError] = useState('');
+
+  // Penalti Bertingkat (Tiered Penalty: 2 menit bertingkat -> 2m, 4m, 6m...)
+  const applyTieredPenalty = useCallback((customMessage?: string) => {
+    setPenaltyTier(prev => {
+      const nextTier = prev + 1;
+      const penaltySeconds = nextTier * 120; // 2 menit bertingkat: 120s, 240s, 360s...
+      const until = Date.now() + penaltySeconds * 1000;
+
+      try {
+        localStorage.setItem(STORAGE_PENALTY_TIER, nextTier.toString());
+        localStorage.setItem(STORAGE_PENALTY_UNTIL, until.toString());
+      } catch {}
+
+      setLockoutUntil(until);
+      setLockoutSecondsLeft(penaltySeconds);
+      setGraceSecondsLeft(0);
+      setBlockPassword('');
+      setBlockError(customMessage || `Waktu habis / password salah. Sesi dibekukan selama ${nextTier * 2} menit (Penalti Tingkat ${nextTier}).`);
+
+      return nextTier;
+    });
+  }, []);
+
+  const triggerBlock = useCallback((reason: string) => {
+    if (!quizStarted || isFinished) return;
+
+    setViolationCount(prev => prev + 1);
+    setIsBlocked(true);
+    setBlockReason(reason);
+    setBlockPassword('');
+    setBlockError('');
+    try {
+      localStorage.setItem(STORAGE_BLOCKED_STATE, 'true');
+      localStorage.setItem(STORAGE_BLOCKED_REASON, reason);
+    } catch {}
+
+    const now = Date.now();
+    let currentLockout = 0;
+    try {
+      const stored = localStorage.getItem(STORAGE_PENALTY_UNTIL);
+      if (stored) {
+        const val = parseInt(stored, 10);
+        if (val > now) currentLockout = val;
       }
-    };
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    } catch {}
+
+    if (currentLockout > now) {
+      setLockoutUntil(currentLockout);
+      setLockoutSecondsLeft(Math.ceil((currentLockout - now) / 1000));
+      setGraceSecondsLeft(0);
+    } else {
+      setGraceSecondsLeft(15);
+      setLockoutUntil(0);
+      setLockoutSecondsLeft(0);
+    }
+
+    push({
+      tone: 'error',
+      title: 'Ujian CBT Terblokir!',
+      description: `${reason}. Masukkan password pengawas dalam 15 detik.`
+    });
+  }, [quizStarted, isFinished, push]);
+
+  // Unified Countdown Effect: Penalti Bertingkat (2 menit bertingkat) & Grace Timer 15 Detik
+  useEffect(() => {
+    if (!isBlocked) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+
+      // 1. Jika masih dalam masa penalti (lockout)
+      if (lockoutUntil > now) {
+        const diff = Math.max(0, Math.ceil((lockoutUntil - now) / 1000));
+        setLockoutSecondsLeft(diff);
+        if (diff <= 1) {
+          try {
+            localStorage.removeItem(STORAGE_PENALTY_UNTIL);
+          } catch {}
+          setLockoutUntil(0);
+          setLockoutSecondsLeft(0);
+          setGraceSecondsLeft(15);
+          setBlockError('Waktu penalti selesai. Masukkan password pengawas dalam 15 detik untuk membuka blokir.');
+        }
+        return;
+      }
+
+      // 2. Jika penalti selesai atau baru terblokir: Grace countdown 15 detik
+      setGraceSecondsLeft(prev => {
+        if (prev <= 1) {
+          applyTieredPenalty('Waktu 15 detik habis tanpa otorisasi pengawas.');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, [lockoutUntil]);
+  }, [isBlocked, lockoutUntil, applyTieredPenalty]);
+
+  const handleUnblockWithPassword = () => {
+    if (lockoutSecondsLeft > 0) return;
+    const trimmed = blockPassword.trim();
+    if (trimmed === 'admin2026') {
+      setIsBlocked(false);
+      setLockoutUntil(0);
+      setLockoutSecondsLeft(0);
+      setGraceSecondsLeft(0);
+      setBlockPassword('');
+      setBlockError('');
+      setPenaltyTier(0);
+      try {
+        localStorage.removeItem(STORAGE_BLOCKED_STATE);
+        localStorage.removeItem(STORAGE_BLOCKED_REASON);
+        localStorage.removeItem(STORAGE_PENALTY_UNTIL);
+        localStorage.removeItem(STORAGE_PENALTY_TIER);
+      } catch {}
+      void enterBrowserFullscreen();
+      push({
+        tone: 'success',
+        title: 'Blokir Berhasil Dibuka',
+        description: 'Otorisasi pengawas terverifikasi. Layar ujian dikembalikan ke tampilan penuh.'
+      });
+    } else {
+      applyTieredPenalty('Password otorisasi salah! Sesi dibekukan selama 2 menit bertingkat.');
+    }
+  };
 
   // CBT Comfort Features: Font Size & Image Lightbox
   const [fontScale, setFontScale] = useState<'sm' | 'md' | 'lg'>('md');
@@ -335,7 +475,7 @@ export default function TkaPage() {
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  // Screen WakeLock + Anti-Tab-Switch Detection (Exambrowser Proctoring) during active CBT
+  // Screen WakeLock + Anti-Tab-Switch, Blur & Screen-Change Detection
   useEffect(() => {
     if (!quizStarted || isFinished) return;
 
@@ -349,15 +489,25 @@ export default function TkaPage() {
     };
     void requestWakeLock();
 
+    const isWarmedUp = () => Date.now() - examStartedTimeRef.current > 1500;
+
     const handleVisibilityChange = () => {
-      if (document.hidden && isScreenPinned) {
-        setViolationCount(prev => prev + 1);
-        setShowViolationBanner(true);
-        push({
-          tone: 'warning',
-          title: 'Peringatan Sistem Sematkan Layar CBT',
-          description: 'Terdeteksi perpindahan tab/jendela di luar layar ujian TKA. Tetap berada di layar CBT.'
-        });
+      if (document.hidden && quizStarted && !isFinished && isWarmedUp()) {
+        triggerBlock('Perpindahan tab atau minimasi browser terdeteksi');
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (quizStarted && !isFinished && isWarmedUp()) {
+        triggerBlock('Fokus jendela ujian hilang (terdeteksi membuka aplikasi lain atau beralih jendela)');
+      }
+    };
+
+    const handleFsChange = () => {
+      const active = Boolean(document.fullscreenElement);
+      setIsFullscreenActive(active);
+      if (!active && quizStarted && !isFinished && isWarmedUp()) {
+        triggerBlock('Keluar dari mode layar penuh (Fullscreen)');
       }
     };
 
@@ -367,16 +517,20 @@ export default function TkaPage() {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('fullscreenchange', handleFsChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('fullscreenchange', handleFsChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       if (wakeLockSentinel) {
         wakeLockSentinel.release().catch(() => {});
       }
     };
-  }, [quizStarted, isFinished, isScreenPinned, push]);
+  }, [quizStarted, isFinished, triggerBlock]);
 
   const enterBrowserFullscreen = useCallback(async () => {
     try {
@@ -414,14 +568,8 @@ export default function TkaPage() {
   };
 
   const handleUnlockWithPassword = async () => {
-    if (lockoutSecondsLeft > 0) return;
     const trimmed = unlockPassword.trim();
     if (trimmed === 'admin2026') {
-      try {
-        localStorage.removeItem(STORAGE_UNLOCK_LOCKOUT);
-      } catch {}
-      setLockoutUntil(0);
-      setLockoutSecondsLeft(0);
       await exitBrowserFullscreen();
       setIsScreenPinned(false);
       setShowExitPinModal(false);
@@ -433,14 +581,10 @@ export default function TkaPage() {
         description: 'Otorisasi pengawas terverifikasi. Layar kembali ke mode biasa.'
       });
     } else {
-      const penaltyTime = Date.now() + 15 * 60 * 1000;
-      try {
-        localStorage.setItem(STORAGE_UNLOCK_LOCKOUT, penaltyTime.toString());
-      } catch {}
-      setLockoutUntil(penaltyTime);
-      setLockoutSecondsLeft(15 * 60);
+      setShowExitPinModal(false);
       setUnlockPassword('');
-      setUnlockError('Password otorisasi salah. Sesuai protokol ketat, akses otorisasi dibekukan selama 15 menit.');
+      triggerBlock('Percobaan pembukaan layar manual tidak sah');
+      applyTieredPenalty('Password otorisasi salah! Sesi dibekukan selama 2 menit bertingkat.');
     }
   };
 
@@ -562,12 +706,23 @@ export default function TkaPage() {
     if (!quizStarted || isFinished) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Intercept F11 to prevent escaping screen pinning
+      // Intercept F11 to prevent escaping screen pinning and trigger block
       if (e.key === 'F11') {
         e.preventDefault();
         e.stopPropagation();
-        if (!document.fullscreenElement && cbtContainerRef.current) {
-          void enterBrowserFullscreen();
+        triggerBlock('Percobaan penekanan tombol F11 terdeteksi');
+        return;
+      }
+
+      // If blocked, disallow shortcuts and handle Enter to submit blockPassword
+      if (isBlocked) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          return;
+        }
+        if (e.key === 'Enter' && lockoutSecondsLeft === 0) {
+          e.preventDefault();
+          handleUnblockWithPassword();
         }
         return;
       }
@@ -619,7 +774,7 @@ export default function TkaPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [quizStarted, isFinished, showConfirmModal, lightboxImage, showExitPinModal, currentQ, activeQuestions.length, enterBrowserFullscreen]);
+  }, [quizStarted, isFinished, isBlocked, lockoutSecondsLeft, showConfirmModal, lightboxImage, showExitPinModal, currentQ, activeQuestions.length, enterBrowserFullscreen, triggerBlock, handleUnblockWithPassword]);
 
   const formatTimer = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -644,6 +799,21 @@ export default function TkaPage() {
 
     // MODE KETAT CBT PUSMENDIK: Acak urutan butir soal (paket wacana) & acak opsi jawaban (A-E)
     const randomized = randomizeExamQuestions(questionsToUse);
+
+    examStartedTimeRef.current = Date.now();
+    setIsBlocked(false);
+    setBlockPassword('');
+    setBlockError('');
+    setLockoutUntil(0);
+    setLockoutSecondsLeft(0);
+    setGraceSecondsLeft(15);
+    setPenaltyTier(0);
+    try {
+      localStorage.removeItem(STORAGE_BLOCKED_STATE);
+      localStorage.removeItem(STORAGE_BLOCKED_REASON);
+      localStorage.removeItem(STORAGE_PENALTY_UNTIL);
+      localStorage.removeItem(STORAGE_PENALTY_TIER);
+    } catch {}
 
     setActiveQuestions(randomized);
     setActiveFilterSubject(subjectFilter);
@@ -704,6 +874,13 @@ export default function TkaPage() {
   const handleFinishExam = async () => {
     await exitBrowserFullscreen();
     setIsScreenPinned(false);
+    setIsBlocked(false);
+    try {
+      localStorage.removeItem(STORAGE_BLOCKED_STATE);
+      localStorage.removeItem(STORAGE_BLOCKED_REASON);
+      localStorage.removeItem(STORAGE_PENALTY_UNTIL);
+      localStorage.removeItem(STORAGE_PENALTY_TIER);
+    } catch {}
 
     let correctCount = 0;
     activeQuestions.forEach(q => {
@@ -1149,6 +1326,117 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
         }}
       >
         <div className="max-w-[1480px] mx-auto space-y-3.5 pb-12">
+          {/* MODAL TERBLOKIR KETAT (Perubahan Layar / Tab Switch / Window Blur) */}
+          {isBlocked && (
+            <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 select-none animate-fade-in">
+              <div className="bg-[#141311] rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-rose-500/40 shadow-[0_0_50px_rgba(244,63,94,0.25)] space-y-5 text-center">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/35 flex items-center justify-center text-rose-500 animate-pulse">
+                  <ShieldAlert size={36} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                    <Lock size={11} /> SESI CBT TERBLOKIR
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight" style={{ fontFamily: 'var(--tf-font-display)' }}>
+                    Pelanggaran Layar Terdeteksi
+                  </h2>
+                  <p className="text-xs text-[#A39E95] max-w-sm mx-auto">
+                    Sistem pengawasan ketat CBT mendeteksi aktivitas di luar lingkungan ujian yang telah ditentukan.
+                  </p>
+                </div>
+
+                {/* Info Detail Pelanggaran */}
+                <div className="p-3.5 rounded-xl bg-white/[0.04] border border-white/10 space-y-2 text-xs text-left">
+                  <div className="flex justify-between items-center text-rose-300">
+                    <span className="text-[#A39E95]">Alasan Pemblokiran:</span>
+                    <span className="font-semibold text-right">{blockReason}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[#F5F3EE] pt-1.5 border-t border-white/10">
+                    <span className="text-[#A39E95]">Jumlah Pelanggaran:</span>
+                    <span className="font-mono font-bold text-rose-400">{violationCount} Kali</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[#F5F3EE]">
+                    <span className="text-[#A39E95]">Tingkat Penalti Saat Ini:</span>
+                    <span className="font-mono font-bold text-[#E5CFA0]">Tingkat {penaltyTier || 1} ({Math.max(2, penaltyTier * 2)} Menit)</span>
+                  </div>
+                </div>
+
+                {/* Kondisi 1: Sedang Dalam Masa Penalti Bertingkat (Tunggu 2 Menit dan Bertingkat) */}
+                {lockoutSecondsLeft > 0 ? (
+                  <div className="p-5 rounded-2xl bg-rose-950/60 border border-rose-500/50 space-y-3">
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider text-rose-300">
+                      <Timer size={15} /> Sesi Ujian Dibekukan Sementara
+                    </div>
+                    <div className="font-mono text-3xl sm:text-4xl font-extrabold text-white tracking-widest text-center">
+                      {Math.floor(lockoutSecondsLeft / 60)}:{String(lockoutSecondsLeft % 60).padStart(2, '0')}
+                    </div>
+                    <p className="text-[11px] text-rose-200/80 leading-relaxed">
+                      Sesuai protokol ketat, sistem dibekukan selama {Math.max(2, penaltyTier * 2)} menit bertingkat. Form otorisasi akan terbuka setelah waktu penalti berakhir.
+                    </p>
+                  </div>
+                ) : (
+                  /* Kondisi 2: Masa Grace 15 Detik Memasukkan Password */
+                  <div className="space-y-4">
+                    <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs text-amber-200 space-y-1.5">
+                      <div className="flex items-center justify-between font-mono font-bold text-sm">
+                        <span>Waktu Input Otorisasi:</span>
+                        <span className="text-amber-400 text-base">{graceSecondsLeft} Detik</span>
+                      </div>
+                      <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-amber-400 h-full transition-all duration-1000 ease-linear rounded-full"
+                          style={{ width: `${(graceSecondsLeft / 15) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-amber-300/80 text-left pt-0.5">
+                        Panggil pengawas ruang segera. Jika salah atau waktu 15 detik habis, sesi akan dibekukan {Math.max(2, (penaltyTier + 1) * 2)} menit.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-[#F5F3EE] block text-left">
+                        Kode Otorisasi Pengawas Ruang:
+                      </label>
+                      <input
+                        type="password"
+                        value={blockPassword}
+                        onChange={(e) => {
+                          setBlockPassword(e.target.value);
+                          if (blockError) setBlockError('');
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleUnblockWithPassword();
+                          }
+                        }}
+                        placeholder="••••••••••••"
+                        className="w-full px-4 py-3 rounded-xl text-center text-sm font-mono tracking-widest bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-[#C8A96E] focus:ring-1 focus:ring-[#C8A96E]"
+                        autoFocus
+                      />
+                      {blockError && (
+                        <div className="text-[11px] text-rose-400 font-medium text-left">
+                          {blockError}
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      size="md"
+                      fullWidth
+                      onClick={handleUnblockWithPassword}
+                      disabled={!blockPassword.trim()}
+                      className="bg-rose-600 hover:bg-rose-500 text-white border-0 font-semibold"
+                    >
+                      Buka Blokir Sesi Ujian
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Lightbox Zoom Gambar */}
           {lightboxImage && (
             <div
