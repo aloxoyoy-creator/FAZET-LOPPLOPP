@@ -33,21 +33,21 @@ function isImage(type?: string) {
 const NOTE_TEMPLATES = [
   {
     id: 'materi',
-    label: '📚 Ringkasan Materi',
+    label: 'Ringkasan Materi',
     title: 'Ringkasan Materi: ',
-    body: `## 📌 Konsep Utama\n- \n- \n\n## 🔑 Rumus / Poin Penting\n1. \n2. \n\n## ❓ Pertanyaan / Hal yang Perlu Diulas\n- [ ] `,
+    body: `## Konsep Utama\n- \n- \n\n## Rumus / Poin Penting\n1. \n2. \n\n## Pertanyaan / Hal yang Perlu Diulas\n- [ ] `,
   },
   {
     id: 'checklist',
-    label: '✅ Target & Checklist',
+    label: 'Target & Checklist',
     title: 'Target & Checklist Hari Ini',
-    body: `## 🎯 Fokus Utama\n- [ ] Prioritas 1: \n- [ ] Prioritas 2: \n- [ ] Prioritas 3: \n\n## 📝 Catatan Tambahan\n- `,
+    body: `## Fokus Utama\n- [ ] Prioritas 1: \n- [ ] Prioritas 2: \n- [ ] Prioritas 3: \n\n## Catatan Tambahan\n- `,
   },
   {
     id: 'jurnal',
-    label: '💡 Ide & Evaluasi',
+    label: 'Ide & Evaluasi',
     title: 'Jurnal & Ide Proyek',
-    body: `## 💡 Ide / Gagasan Utama\n\n\n## 🚀 Langkah Eksekusi\n1. \n2. \n\n## 📊 Evaluasi\n- `,
+    body: `## Ide / Gagasan Utama\n\n\n## Langkah Eksekusi\n1. \n2. \n\n## Evaluasi\n- `,
   },
 ];
 
@@ -160,10 +160,10 @@ export default function Notes() {
       });
       const sectionHeader =
         mode === 'summarize'
-          ? '### ✨ Ringkasan Inti (FAZET AI)'
+          ? '### Ringkasan Inti (FAZET AI)'
           : mode === 'polish'
-          ? '### 🪄 Versi Terstruktur (FAZET AI)'
-          : '### 🧠 Latihan Kuis Mandiri (FAZET AI)';
+          ? '### Versi Terstruktur (FAZET AI)'
+          : '### Latihan Kuis Mandiri (FAZET AI)';
       setContent((prev) => `${prev.trim()}\n\n---\n${sectionHeader}\n${result.trim()}\n`);
       void hapticSuccess();
       push({

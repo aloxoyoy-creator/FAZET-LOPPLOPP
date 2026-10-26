@@ -27,12 +27,14 @@ export default function AiBriefing({
     const tkaActive = workspaceId !== 'mazet' && isTkaFeatureActive(now);
     try {
       const activeTka = getActiveOrNextExamDay(now);
-      const taskStr = tasks.length > 0 
-        ? tasks.slice(0, 5).map(t => `- ${t.title} ${t.subject ? `(${t.subject})` : ''}`).join('\n')
-        : 'Tidak ada tugas mendesak.';
-      const subjStr = tomorrowSubjects.length > 0
-        ? tomorrowSubjects.join(', ')
-        : 'Tidak ada jadwal spesifik.';
+      const taskStr =
+        tasks.length > 0
+          ? tasks
+              .slice(0, 5)
+              .map((t) => `- ${t.title} ${t.subject ? `(${t.subject})` : ''}`)
+              .join('\n')
+          : 'Tidak ada tugas mendesak.';
+      const subjStr = tomorrowSubjects.length > 0 ? tomorrowSubjects.join(', ') : 'Tidak ada jadwal spesifik.';
       const tkaContext = tkaActive
         ? `- Target Ujian TKA SMA 2026 Terdekat: Hari Ke-${activeTka.exam.hariKe} (${activeTka.exam.tanggalFormatted}, ${activeTka.exam.mulaiWib} WIB) — ${activeTka.exam.shortTitle}`
         : '';
@@ -44,20 +46,22 @@ Konteks:
 - Jadwal besok: ${subjStr}
 ${tkaContext}
 
-Gaya bahasa: ${ai.greetingStyle || 'Kasual dan bersahabat'}, berbahasa Indonesia. Jangan menggunakan sapaan selamat pagi/siang/malam karena waktunya dinamis, cukup sapa namanya dan beri semangat menjalani agenda terdekat.`;
+Gaya bahasa: ${ai.greetingStyle || 'Kasual, elegan, dan bersahabat'}, berbahasa Indonesia. Jangan menggunakan emoji. Sapa namanya dan beri semangat menjalani agenda terdekat.`;
 
       const { data, error } = await supabase.functions.invoke('ai-proxy', { body: { prompt, workspace: 'personal' } });
       if (error) throw error;
       const response = data.text;
-      setBriefing(response || 'Semangat menjalani harimu! Fokus pada tujuanmu hari ini.');
+      setBriefing(response || 'Selamat menjalani aktivitas hari ini. Fokus pada prioritas utamamu dengan tenang.');
     } catch {
       const activeTka = getActiveOrNextExamDay(now);
       if (tkaActive) {
         setBriefing(
-          `Hai ${firstName}! Persiapkan dirimu sebaik mungkin untuk TKA Hari Ke-${activeTka.exam.hariKe} (${activeTka.exam.shortTitle}) pada ${activeTka.exam.tanggalFormatted} pukul ${activeTka.exam.mulaiWib} WIB. Semua alarm pengingat sudah siap menjagamu!`
+          `Halo ${firstName}, persiapkan dirimu dengan tenang untuk TKA Hari Ke-${activeTka.exam.hariKe} (${activeTka.exam.shortTitle}) pada ${activeTka.exam.tanggalFormatted} pukul ${activeTka.exam.mulaiWib} WIB.`
         );
       } else {
-        setBriefing(`Hai ${firstName}! Jangan lupa cek tugas, jadwal harian, dan target produktivitasmu hari ini ya. Tetap semangat!`);
+        setBriefing(
+          `Halo ${firstName}, pastikan jadwal harian, prioritas tugas, dan waktu istirahatmu berjalan seimbang hari ini.`
+        );
       }
     } finally {
       setLoading(false);
@@ -70,29 +74,33 @@ Gaya bahasa: ${ai.greetingStyle || 'Kasual dan bersahabat'}, berbahasa Indonesia
   }, [firstName, workspaceId]);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/20">
-      <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-fuchsia-400 to-indigo-500 opacity-10 blur-xl" />
-      
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-          <Sparkles size={14} className="text-fuchsia-500" />
-          {ai.personalityName || 'FAZET AI'} Briefing
+    <div className="relative overflow-hidden rounded-[var(--tf-radius-card)] border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] p-5 sm:p-6 shadow-[var(--tf-shadow-raised)] flex flex-col justify-between">
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="studio-eyebrow">
+            <Sparkles size={12} />
+            <span>{ai.personalityName || 'FAZET AI'} Briefing</span>
+          </div>
+          <button
+            onClick={() => void fetchBriefing()}
+            disabled={loading}
+            className="grid h-7 w-7 place-items-center rounded-lg border border-[var(--tf-border)] text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)] hover:bg-[var(--tf-bg-subtle)] transition-colors cursor-pointer"
+            aria-label="Segarkan sapaan"
+          >
+            <RefreshCcw size={12} className={loading ? 'animate-spin opacity-50' : ''} />
+          </button>
         </div>
-        <button
-          onClick={() => void fetchBriefing()}
-          disabled={loading}
-          className="grid h-6 w-6 place-items-center rounded-md text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
-          aria-label="Refresh sapaan"
-        >
-          <RefreshCcw size={12} className={loading ? 'animate-spin opacity-50' : ''} />
-        </button>
+
+        <h3 className="font-serif text-lg font-medium text-[var(--tf-text-primary)] mb-2">
+          Ringkasan &amp; Arahan Harian
+        </h3>
       </div>
-      
-      <div className="text-sm leading-6 text-slate-700 dark:text-slate-200">
+
+      <div className="text-xs sm:text-sm leading-relaxed text-[var(--tf-text-secondary)] rounded-xl bg-[var(--tf-bg-subtle)] border border-[var(--tf-border)] p-3.5">
         {loading ? (
-          <div className="flex items-center gap-2 text-indigo-500/70">
-            <Loader2 size={14} className="animate-spin" />
-            <span className="animate-pulse">Menyusun sapaan & briefing harian...</span>
+          <div className="flex items-center gap-2 text-[var(--tf-text-muted)]">
+            <Loader2 size={14} className="animate-spin text-[var(--tf-accent)]" />
+            <span>Menyusun catatan briefing harian...</span>
           </div>
         ) : (
           briefing

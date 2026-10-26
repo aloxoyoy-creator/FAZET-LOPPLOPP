@@ -80,7 +80,7 @@ export default function SmartAdvisorCard({ now, tasks, schedule, streak, variant
       )}
 
       <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.025] p-3 text-[11px] leading-5 text-slate-400">
-        💡 {plan.tip}
+        {plan.tip}
       </div>
 
       {variant === 'compact' && (

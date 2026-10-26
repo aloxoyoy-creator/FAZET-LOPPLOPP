@@ -189,7 +189,7 @@ export default function Notifications() {
   const handleTestTkaNotification = async () => {
     setTestingCategory('tka');
     const exam = activeExamInfo.exam || EXAM_DAYS_2026[0];
-    const title = `🎯 Pengingat Ujian TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`;
+    const title = `Pengingat Ujian TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`;
     const body = buildTkaExamNotificationBody(
       exam,
       `Simulasi Alarm TKA (${exam.mulaiWib} – ${exam.perkiraanSelesaiWib} WIB). Kartu peserta & kesiapan CBT 100%!`
@@ -216,8 +216,8 @@ export default function Notifications() {
     setTestingCategory('prayer');
     const city = workspaceId === 'fathur' ? 'Tuban' : 'Tasikmalaya';
     const wisdom = PRAYER_WISDOM['Subuh'];
-    const title = `🕌 Adzan Subuh (04:15 WIB) • Wilayah ${city}`;
-    const body = `${wisdom.exactAdvice}\n${wisdom.hadith}\n📍 Arah Kiblat: 295° barat laut • Ambil air wudhu dan laksanakan shalat!`;
+    const title = `Adzan Subuh (04:15 WIB) • Wilayah ${city}`;
+    const body = `${wisdom.exactAdvice}\n${wisdom.hadith}\nArah Kiblat: 295° barat laut • Ambil air wudhu dan laksanakan shalat!`;
 
     await showSystemNotification(title, body, '/schedule', {
       channelId: 'fazet_prayer_channel',
@@ -238,8 +238,8 @@ export default function Notifications() {
 
   const handleTestTaskNotification = async () => {
     setTestingCategory('task');
-    const title = `📝 Tugas Baru: [Matematika Peminatan] Turunan Fungsi Trigonometri`;
-    const body = `📚 Mapel: Matematika Peminatan (Pak Bambang, M.Pd)\n⚡ Prioritas: Tinggi ⚡\n⏰ Batas Waktu: Senin, 26 Oktober 2026 • 23:59 WIB\n📝 Detail: "Kerjakan 5 latihan soal essay Bab 3 di buku bergaris dan sertakan langkahnya."\n💡 Catatan: "Kumpulkan sebelum jam istirahat pertama di meja guru."\n👉 Buka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
+    const title = `Tugas Baru: [Matematika Peminatan] Turunan Fungsi Trigonometri`;
+    const body = `Mapel: Matematika Peminatan (Pak Bambang, M.Pd)\nPrioritas: Tinggi \nBatas Waktu: Senin, 26 Oktober 2026 • 23:59 WIB\nDetail: "Kerjakan 5 latihan soal essay Bab 3 di buku bergaris dan sertakan langkahnya."\nCatatan: "Kumpulkan sebelum jam istirahat pertama di meja guru."\nBuka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
 
     await showSystemNotification(title, body, '/tasks', {
       channelId: 'fazet_task_channel',
@@ -262,11 +262,11 @@ export default function Notifications() {
     setTestingCategory('agenda');
     const tomorrowDay = 'Senin';
     const title = isMazet 
-      ? `🎓 Jadwal Kuliah Besok (${tomorrowDay})` 
-      : `🎯 Besok Ujian TKA Hari Ke-1 & Jadwal (${tomorrowDay})`;
+      ? `Jadwal Kuliah Besok (${tomorrowDay})` 
+      : `Besok Ujian TKA Hari Ke-1 & Jadwal (${tomorrowDay})`;
     const body = isMazet
-      ? `• Language Assessment\n• Quantitative Research in ELT\n\nSiapkan materi & laptop malam ini ya manisku! ✨`
-      : `⚡ UJIAN TKA BESOK (07.00-08.45 WIB):\n• Bahasa Indonesia Wajib dan Literasi Membaca (105 Menit)\n\nJadwal Sekolah:\n• Matematika Wajib\n• Fisika\n• Biologi\n\nSiapkan kartu peserta, buku & perlengkapan malam ini ya sayang! ✨`;
+      ? `• Language Assessment\n• Quantitative Research in ELT\n\nSiapkan materi & laptop malam ini ya manisku! `
+      : `UJIAN TKA BESOK (07.00-08.45 WIB):\n• Bahasa Indonesia Wajib dan Literasi Membaca (105 Menit)\n\nJadwal Sekolah:\n• Matematika Wajib\n• Fisika\n• Biologi\n\nSiapkan kartu peserta, buku & perlengkapan malam ini ya sayang! `;
 
     await showSystemNotification(title, body, '/schedule', {
       channelId: 'fazet_default_channel',
@@ -287,7 +287,7 @@ export default function Notifications() {
 
   const handleTestFocusComplete = async () => {
     setTestingCategory('focus');
-    const title = `🎉 Sesi Fokus 25 Menit Selesai!`;
+    const title = `Sesi Fokus 25 Menit Selesai!`;
     const body = `Kerja bagus! Kamu telah menyelesaikan 1 sesi Pomodoro (25 menit). Istirahatkan matamu sejenak 5 menit sebelum lanjut ya.`;
 
     await showSystemNotification(title, body, '/focus', {
@@ -542,7 +542,7 @@ export default function Notifications() {
                 className="flex flex-col items-center justify-center p-3 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 hover:bg-rose-100/80 transition-all text-center group cursor-pointer"
               >
                 <Target size={22} className="text-rose-600 dark:text-rose-400 mb-1.5 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-black text-rose-900 dark:text-rose-300">🎯 Alarm TKA 2026</span>
+                <span className="text-xs font-black text-rose-900 dark:text-rose-300">Alarm TKA 2026</span>
                 <span className="text-[10px] text-rose-700/80 dark:text-rose-400/70 mt-0.5">Sesi, Mapel & Tips</span>
               </button>
             )}
@@ -553,7 +553,7 @@ export default function Notifications() {
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/80 dark:bg-amber-950/30 hover:bg-amber-100/80 transition-all text-center group cursor-pointer"
             >
               <Compass size={22} className="text-amber-600 dark:text-amber-400 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-black text-amber-900 dark:text-amber-300">🕌 Adzan Sholat</span>
+              <span className="text-xs font-black text-amber-900 dark:text-amber-300">Adzan Sholat</span>
               <span className="text-[10px] text-amber-700/80 dark:text-amber-400/70 mt-0.5">Hadits, Waktu, & Doa</span>
             </button>
 
@@ -563,7 +563,7 @@ export default function Notifications() {
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/80 dark:bg-blue-950/30 hover:bg-blue-100/80 transition-all text-center group cursor-pointer"
             >
               <CheckSquare size={22} className="text-blue-600 dark:text-blue-400 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-black text-blue-900 dark:text-blue-300">📝 Tugas & Deadline</span>
+              <span className="text-xs font-black text-blue-900 dark:text-blue-300">Tugas & Deadline</span>
               <span className="text-[10px] text-blue-700/80 dark:text-blue-400/70 mt-0.5">Mapel, Guru & Tenggat</span>
             </button>
 
@@ -573,7 +573,7 @@ export default function Notifications() {
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100/80 transition-all text-center group cursor-pointer"
             >
               <BookOpen size={22} className="text-indigo-600 dark:text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-black text-indigo-900 dark:text-indigo-300">📚 Jadwal Besok</span>
+              <span className="text-xs font-black text-indigo-900 dark:text-indigo-300">Jadwal Besok</span>
               <span className="text-[10px] text-indigo-700/80 dark:text-indigo-400/70 mt-0.5">18:30 & 05:30 WIB</span>
             </button>
 
@@ -583,7 +583,7 @@ export default function Notifications() {
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/80 dark:bg-emerald-950/30 hover:bg-emerald-100/80 transition-all text-center group cursor-pointer col-span-2 sm:col-span-1"
             >
               <Focus size={22} className="text-emerald-600 dark:text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-black text-emerald-900 dark:text-emerald-300">⏱️ Sesi Fokus</span>
+              <span className="text-xs font-black text-emerald-900 dark:text-emerald-300">Sesi Fokus</span>
               <span className="text-[10px] text-emerald-700/80 dark:text-emerald-400/70 mt-0.5">Pomodoro & Rehat</span>
             </button>
           </div>

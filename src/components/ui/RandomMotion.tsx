@@ -1,10 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 
-// Refined professional variants instead of random chaotic ones
 const ELEGANT_VARIANT = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 280, damping: 25 } }
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 0.61, 0.36, 1] as const } }
 };
 
 interface RandomMotionProps extends HTMLMotionProps<"div"> {
@@ -17,7 +16,7 @@ export default function RandomMotion({ children, delayIndex = 0, ...props }: Ran
     ...ELEGANT_VARIANT.show,
     transition: {
       ...ELEGANT_VARIANT.show.transition,
-      delay: delayIndex * 0.08, // Subtle stagger effect
+      delay: Math.min(delayIndex * 0.04, 0.2),
     }
   };
 
@@ -29,10 +28,6 @@ export default function RandomMotion({ children, delayIndex = 0, ...props }: Ran
       variants={{
         hidden: ELEGANT_VARIANT.hidden,
         show: showWithDelay
-      }}
-      whileHover={{ 
-        y: -2, 
-        transition: { type: 'spring', stiffness: 350, damping: 30 } 
       }}
       {...props}
     >

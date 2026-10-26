@@ -201,7 +201,7 @@ export default function FloatingYoutubePlayer() {
             </span>
           </div>
           <span className="text-emerald-400 font-semibold shrink-0 ml-1">
-            {autoPlayEnabled ? '⚡ Auto ON' : 'Manual'}
+            {autoPlayEnabled ? 'Auto ON' : 'Manual'}
           </span>
         </div>
       </div>

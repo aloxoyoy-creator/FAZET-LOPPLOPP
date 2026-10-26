@@ -246,7 +246,7 @@ export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolea
   const userName = (user?.user_metadata?.name as string | undefined) || user?.email?.split('@')[0] || 'Pengguna';
 
   return (
-    <aside className={cn('fazet-sidebar rail hidden lg:flex bg-white/40 dark:bg-[#070b14]/50 backdrop-blur-2xl border-r border-white/20 dark:border-white/5 shadow-[4px_0_30px_rgba(0,0,0,0.03)]', collapsed && 'fazet-sidebar--collapsed rail--collapsed')}>
+    <aside className={cn('fazet-sidebar rail hidden lg:flex', collapsed && 'fazet-sidebar--collapsed rail--collapsed')}>
       <div className="rail__inner">
         <header className="rail__head">
           <div className="rail__mark" data-workspace={workspaceId} aria-hidden="true">{initial}</div>

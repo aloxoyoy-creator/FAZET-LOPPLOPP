@@ -23,9 +23,9 @@ type AmbientSound = 'none' | 'rain' | 'whitenoise' | 'binaural';
 const PRESETS = [
   { minutes: 25, label: '25m Pomodoro', isTka: false },
   { minutes: 50, label: '50m Deep Work', isTka: false },
-  { minutes: 75, label: '🎯 75m Subtes TKA', isTka: true },
+  { minutes: 75, label: '75m Subtes TKA', isTka: true },
   { minutes: 90, label: '90m Marathon', isTka: false },
-  { minutes: 105, label: '🔥 105m Full Sesi TKA', isTka: true },
+  { minutes: 105, label: '105m Full Sesi TKA', isTka: true },
 ] as const;
 
 export default function Focus() {
@@ -196,7 +196,7 @@ export default function Focus() {
           ? `fokus mengerjakan "${taskObj.title}"`
           : 'sesi belajar bebas';
 
-      const notifTitle = `🎉 Sesi Fokus Selesai! (${minutes} Menit)`;
+      const notifTitle = `Sesi Fokus Selesai! (${minutes} Menit)`;
       const notifBody = `Hebat! Kamu telah menuntaskan ${taskLabel}. Luangkan 5 menit untuk istirahat mata dan stretching sejenak.`;
 
       void showSystemNotification(
@@ -225,12 +225,10 @@ export default function Focus() {
         // Persist to Supabase Inbox Notification Center
         void createNotification({
           userId,
-          taskId: validTaskId,
           title: notifTitle,
           message: notifBody,
-          type: 'success',
-          category: tkaDayMatch ? 'tka_exam' : 'focus_timer',
-          actionLink: tkaDayMatch ? '/tka' : '/focus',
+          type: tkaDayMatch ? 'tka' : 'focus',
+          actionUrl: tkaDayMatch ? '/tka' : '/focus',
         }).catch(() => {});
 
         void trackEvent('focus_session_completed', {
@@ -241,7 +239,7 @@ export default function Focus() {
     } else {
       // Break Finished
       void showSystemNotification(
-        `⏰ Waktu Istirahat Berakhir!`,
+        `Waktu Istirahat Berakhir!`,
         `Waktu istirahat selesai. Segarkan kembali pikiranmu dan mari mulai sesi fokus berikutnya!`,
         '/focus',
         { channelId: 'fazet_default_channel', soundType: 'reminder' }
@@ -387,7 +385,7 @@ export default function Focus() {
                     ? 'text-indigo-600 dark:text-indigo-400 animate-pulse' 
                     : 'text-slate-400'
                 }`}>
-                  {running ? (mode === 'focus' ? 'Sedang Fokus 🔥' : 'Rehat Sejenak ☕') : 'Siap Mulai'}
+                  {running ? (mode === 'focus' ? 'Sedang Fokus ' : 'Rehat Sejenak ') : 'Siap Mulai'}
                 </span>
               </div>
             </div>
@@ -430,16 +428,16 @@ export default function Focus() {
               >
                 <option value="">Belajar Bebas / Tugas Umum</option>
                 {workspaceId !== 'mazet' && isTkaFeatureActive() && (
-                  <optgroup label="🎯 Simulasi & Persiapan TKA 2026">
+                  <optgroup label="Simulasi & Persiapan TKA 2026">
                     {EXAM_DAYS_2026.map((day) => (
                       <option key={`tka-day-${day.hariKe}`} value={`tka-day-${day.hariKe}`}>
-                        🎯 Fokus TKA Hari ke-{day.hariKe}: {day.mapel} ({day.totalSoal} Soal • {day.totalMenit}m)
+                        Fokus TKA Hari ke-{day.hariKe}: {day.mapel} ({day.totalSoal} Soal • {day.totalMenit}m)
                       </option>
                     ))}
                   </optgroup>
                 )}
                 {activeTasks.length > 0 && (
-                  <optgroup label="📋 Tugas Sekolah Aktif">
+                  <optgroup label="Tugas Sekolah Aktif">
                     {activeTasks.slice(0, 50).map((task) => (
                       <option key={task.id} value={task.id}>
                         {task.subjectName ? `[${task.subjectName}] ` : ''}{task.title}
@@ -501,7 +499,7 @@ export default function Focus() {
                     : 'border-slate-200 dark:border-slate-800 text-slate-500'
                 }`}
               >
-                🌧️ Suara Hujan
+                Suara Hujan
               </button>
               <button
                 onClick={() => setAmbient('whitenoise')}
@@ -511,7 +509,7 @@ export default function Focus() {
                     : 'border-slate-200 dark:border-slate-800 text-slate-500'
                 }`}
               >
-                💨 White Noise
+                White Noise
               </button>
               <button
                 onClick={() => setAmbient('binaural')}
@@ -521,7 +519,7 @@ export default function Focus() {
                     : 'border-slate-200 dark:border-slate-800 text-slate-500'
                 }`}
               >
-                🧠 Gelombang Alfa
+                Gelombang Alfa
               </button>
             </div>
 

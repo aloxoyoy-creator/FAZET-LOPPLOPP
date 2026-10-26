@@ -156,7 +156,6 @@ export const TvSettingsModal: React.FC<TvSettingsModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        chamfer="detached"
         className="max-w-xl bg-card border-border text-foreground max-h-[85vh] overflow-y-auto"
       >
         <DialogHeader>
@@ -223,7 +222,7 @@ export const TvSettingsModal: React.FC<TvSettingsModalProps> = ({
                             {k.label}
                           </span>
                           <Badge
-                            variant={k.enabled ? 'cyber' : 'secondary'}
+                            variant={k.enabled ? 'default' : 'secondary'}
                             className="text-[9px] px-1.5 py-0"
                           >
                             {k.enabled ? 'ACTIVE' : 'DISABLED'}

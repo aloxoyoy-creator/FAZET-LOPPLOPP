@@ -116,7 +116,7 @@ export default function TogetherCard() {
           />
           <div className="mt-2 flex items-center justify-between gap-2">
             <span className="text-[10px]" style={{ color: 'var(--tf-ink-muted)' }}>{note.length}/180</span>
-            <button type="button" className="fazet-note-save" onClick={saveNote}>{saved ? 'Tersimpan ✓' : 'Simpan'}</button>
+            <button type="button" className="fazet-note-save" onClick={saveNote}>{saved ? 'Tersimpan' : 'Simpan'}</button>
           </div>
         </div>
 

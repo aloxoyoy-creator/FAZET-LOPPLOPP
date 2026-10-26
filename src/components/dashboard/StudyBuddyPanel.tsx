@@ -13,7 +13,7 @@ const ACTIVITY_LABEL: Record<string, string> = {
   idle: 'online',
 };
 
-const CHEER_MESSAGES = ['Semangat! 🔥', 'Kamu pasti bisa! 💪', 'Tetap fokus! ✨', 'Gas terus! 🚀'];
+const CHEER_MESSAGES = ['Semangat! ', 'Kamu pasti bisa! ', 'Tetap fokus! ', 'Gas terus! '];
 
 export default function StudyBuddyPanel() {
   const { buddies, lastCheer, sendCheer, isOnline } = usePresence('dashboard');

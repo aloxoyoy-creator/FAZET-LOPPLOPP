@@ -132,7 +132,7 @@ export default function TransactionList({
                           : 'bg-indigo-500/10 text-indigo-600 border border-indigo-500/30'
                       }`}
                     >
-                      {tx.workspaceId === 'joint' ? 'Bersama ❤️' : tx.workspaceId}
+                      {tx.workspaceId === 'joint' ? 'Bersama ' : tx.workspaceId}
                     </span>
                   </div>
 

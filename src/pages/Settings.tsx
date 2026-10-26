@@ -14,12 +14,12 @@ type ThemeMode = 'system' | 'light' | 'dark';
 type Density = 'compact' | 'comfortable' | 'spacious';
 
 const THEMES: Array<{ id: DashboardTheme; name: string; description: string; swatch: string[]; mood: string }> = [
-  { id: 'paper-ink', name: 'Paper Ink', description: 'Krem kertas, tinta hijau, aksen merah pena.', swatch: ['#f9f6f0', '#123329', '#bf3626'], mood: 'Editorial' },
-  { id: 'midnight-study', name: 'Midnight Study', description: 'Biru-ungu malam dengan glow fokus yang halus.', swatch: ['#0b0f19', '#6366f1', '#a855f7'], mood: 'Night' },
-  { id: 'sakura-diary', name: 'Sakura Diary', description: 'Pink pastel lembut dengan rasa diary pribadi.', swatch: ['#fdf5f7', '#e11d48', '#f43f5e'], mood: 'Diary' },
-  { id: 'lopp-duo', name: 'Lopp Duo', description: 'Indigo Fathur bertemu rose Mazet dalam satu ruang.', swatch: ['#4f46e5', '#db2777', '#e11d48'], mood: 'Together' },
-  { id: 'matcha-focus', name: 'Matcha Focus', description: 'Hijau matcha tenang untuk sesi belajar panjang.', swatch: ['#f4f7f4', '#2d6a4f', '#936639'], mood: 'Calm' },
-  { id: 'mono-minimal', name: 'Mono Minimal', description: 'Hitam-putih tegas untuk kepadatan data tinggi.', swatch: ['#ffffff', '#000000', '#666666'], mood: 'Minimal' },
+  { id: 'paper-ink', name: 'Alabaster & Gold', description: 'Warm ivory, tinta grafit dalam, dan aksen champagne gold.', swatch: ['#F6F4EF', '#181715', '#9E7B42'], mood: 'Quiet Luxury' },
+  { id: 'midnight-study', name: 'Obsidian Lounge', description: 'Permukaan espresso gelap dengan aksen emas perunggu hangat.', swatch: ['#0D0D0C', '#181715', '#C8A96E'], mood: 'Nocturne' },
+  { id: 'sakura-diary', name: 'Silk Blush', description: 'Krem porselen hangat dengan sentuhan terracotta rose halus.', swatch: ['#F9F5F3', '#231C1D', '#A4676E'], mood: 'Atelier' },
+  { id: 'lopp-duo', name: 'Lopp Atelier', description: 'Harmoni warm stone dan muted rosewood untuk ruang bersama.', swatch: ['#F6F3F0', '#1F1B1C', '#8F5B62'], mood: 'Together' },
+  { id: 'matcha-focus', name: 'Botanical Sage', description: 'Linen alami dengan hijau zaitun tua yang menenangkan fokus.', swatch: ['#F4F5F0', '#181D18', '#526A56'], mood: 'Botanical' },
+  { id: 'mono-minimal', name: 'Architectural Mono', description: 'Monokrom arsitektural bersih untuk kontras tipografi tajam.', swatch: ['#F8F8F7', '#141413', '#52514E'], mood: 'Monochrome' },
 ];
 
 const LAYOUTS: Array<{ id: DashboardLayout; name: string; description: string; icon: typeof LayoutGrid }> = [

@@ -106,7 +106,7 @@ export default function SystemUpdatePopup() {
 
       if (!hasLoggedNotif && user?.id) {
         localStorage.setItem(NOTIF_LOGGED_KEY, 'true');
-        const title = `✨ Pembaruan Sistem FAZET ${SYSTEM_RELEASE_VERSION} Aktif`;
+        const title = `Pembaruan Sistem FAZET ${SYSTEM_RELEASE_VERSION} Aktif`;
         const message =
           `Sistem telah diupgrade dengan desain minimalis profesional:\n` +
           `• TimeBox / MediaBox v2 HUD + Idle Schedule Timeline & Multi-Key API Rotation\n` +

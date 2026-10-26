@@ -182,7 +182,7 @@ export const STARTER_CATEGORIES: StarterCategory[] = [
   {
     id: 'pop_indo',
     name: 'Pop Hits Indo',
-    icon: '🇮🇩',
+    icon: '',
     tracks: [
       { id: 'jfKfPfyJRdk', title: 'TULUS - Hati-Hati di Jalan', thumbnail: 'https://img.youtube.com/vi/aL3N8p_K7gQ/hqdefault.jpg', channelTitle: 'Tulus' },
       { id: 'mSgN3iE2Kyo', title: 'Nadhif Basalamah - Penjaga Hati', thumbnail: 'https://img.youtube.com/vi/mSgN3iE2Kyo/hqdefault.jpg', channelTitle: 'Nadhif Basalamah' },
@@ -193,7 +193,7 @@ export const STARTER_CATEGORIES: StarterCategory[] = [
   {
     id: 'akustik_chill',
     name: 'Akustik & Indie',
-    icon: '🎸',
+    icon: '',
     tracks: [
       { id: 'Gj3K084o3fQ', title: 'Sheila On 7 - Dan (Akustik Santai)', thumbnail: 'https://img.youtube.com/vi/Gj3K084o3fQ/hqdefault.jpg', channelTitle: 'Akustik Chill' },
       { id: 'Yk0W-WcQf9o', title: 'Fourtwnty - Zona Nyaman', thumbnail: 'https://img.youtube.com/vi/Yk0W-WcQf9o/hqdefault.jpg', channelTitle: 'Fourtwnty Music' },
@@ -203,7 +203,7 @@ export const STARTER_CATEGORIES: StarterCategory[] = [
   {
     id: 'murottal',
     name: 'Murottal Al-Qur\'an',
-    icon: '📖',
+    icon: '',
     tracks: [
       { id: 'zR_qFmD67tE', title: 'Mishary Rashid Alafasy • Surat Ar-Rahman', thumbnail: 'https://img.youtube.com/vi/zR_qFmD67tE/hqdefault.jpg', channelTitle: 'Mishary Alafasy' },
       { id: 'Y06_FvX81G4', title: 'Surat Al-Kahfi Merdu Penenang Hati', thumbnail: 'https://img.youtube.com/vi/Y06_FvX81G4/hqdefault.jpg', channelTitle: 'Tadabbur Quran' },
@@ -213,7 +213,7 @@ export const STARTER_CATEGORIES: StarterCategory[] = [
   {
     id: 'lofi_study',
     name: 'Lo-Fi & Fokus',
-    icon: '☕',
+    icon: '',
     tracks: [
       { id: 'jfKfPfyJRdk', title: 'Lofi Girl - beats to relax/study to', thumbnail: 'https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg', channelTitle: 'Lofi Girl' },
       { id: '5qap5aO4i9A', title: 'Lofi Girl - beats to sleep/chill to', thumbnail: 'https://img.youtube.com/vi/5qap5aO4i9A/hqdefault.jpg', channelTitle: 'Lofi Girl' },
@@ -223,7 +223,7 @@ export const STARTER_CATEGORIES: StarterCategory[] = [
   {
     id: 'piano_klasik',
     name: 'Piano & Belajar',
-    icon: '🎹',
+    icon: '',
     tracks: [
       { id: '77ZozI0rw7w', title: 'Classical Music for Studying & Focus', thumbnail: 'https://img.youtube.com/vi/77ZozI0rw7w/hqdefault.jpg', channelTitle: 'HALIDONMUSIC' },
       { id: 'tfbC_Kz7c1E', title: 'Studio Ghibli Relaxing Piano Collection', thumbnail: 'https://img.youtube.com/vi/tfbC_Kz7c1E/hqdefault.jpg', channelTitle: 'Piano Peace' }

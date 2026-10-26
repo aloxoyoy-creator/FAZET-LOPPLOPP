@@ -20,10 +20,10 @@ interface Props {
 }
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; tone: string; icon: string }> = {
-  urgent: { label: 'Urgent', tone: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200', icon: '🔥' },
-  high: { label: 'Tinggi', tone: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200', icon: '⚡' },
-  medium: { label: 'Sedang', tone: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200', icon: '🔷' },
-  low: { label: 'Rendah', tone: 'text-slate-600 bg-slate-100 dark:bg-slate-800 border-slate-200', icon: '🔹' },
+  urgent: { label: 'Urgent', tone: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200', icon: '' },
+  high: { label: 'Tinggi', tone: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200', icon: '' },
+  medium: { label: 'Sedang', tone: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200', icon: '' },
+  low: { label: 'Rendah', tone: 'text-slate-600 bg-slate-100 dark:bg-slate-800 border-slate-200', icon: '' },
 };
 
 const STATUS_CONFIG: Record<TaskStatus, { label: string; tone: string }> = {
@@ -143,7 +143,7 @@ export default function MazetTaskHistory({ userId, isMazetView }: Props) {
         push({ tone: 'info', title: 'Status Diperbarui', message: 'Tugas ditandai belum selesai.' });
       } else {
         await completeTask(task.id);
-        push({ tone: 'success', title: 'Tugas Selesai! 🎉', message: 'Hebat, tugas berhasil diselesaikan!' });
+        push({ tone: 'success', title: 'Tugas Selesai! ', message: 'Hebat, tugas berhasil diselesaikan!' });
         try {
           confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
         } catch {}
@@ -265,10 +265,10 @@ export default function MazetTaskHistory({ userId, isMazetView }: Props) {
             className="input h-10 text-xs w-full rounded-xl"
           >
             <option value="all">Semua Status</option>
-            <option value="completed">✓ Selesai</option>
-            <option value="in_progress">⏳ Dikerjakan</option>
-            <option value="pending">⚪ Tertunda</option>
-            <option value="overdue">⚠️ Terlambat</option>
+            <option value="completed">Selesai</option>
+            <option value="in_progress">Dikerjakan</option>
+            <option value="pending">Tertunda</option>
+            <option value="overdue">Terlambat</option>
           </select>
         </div>
 
@@ -280,10 +280,10 @@ export default function MazetTaskHistory({ userId, isMazetView }: Props) {
             className="input h-10 text-xs w-full rounded-xl"
           >
             <option value="all">Semua Prioritas</option>
-            <option value="urgent">🔥 Urgent</option>
-            <option value="high">⚡ Tinggi</option>
-            <option value="medium">🔷 Sedang</option>
-            <option value="low">🔹 Rendah</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">Tinggi</option>
+            <option value="medium">Sedang</option>
+            <option value="low">Rendah</option>
           </select>
         </div>
 
@@ -548,7 +548,7 @@ export default function MazetTaskHistory({ userId, isMazetView }: Props) {
                     : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                 }`}
               >
-                {detailTask.status === 'completed' ? 'Tandai Belum Selesai' : '✓ Tandai Tugas Selesai'}
+                {detailTask.status === 'completed' ? 'Tandai Belum Selesai' : 'Tandai Tugas Selesai'}
               </button>
 
               <div className="flex gap-2">

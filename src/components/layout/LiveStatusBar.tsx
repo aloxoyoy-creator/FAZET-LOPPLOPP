@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Clock3, Sparkles, Wifi, WifiOff, Loader2, Target } from 'lucide-react';
+import { CalendarDays, Clock3, Wifi, WifiOff, Loader2, Target } from 'lucide-react';
 import { useConnectionState } from '../../hooks/useConnectionState';
 import { useSchedule, useScheduleHelpers } from '../../hooks/useSchedule';
 import { useGoogleHolidays } from '../../hooks/useGoogleHolidays';
@@ -15,13 +15,20 @@ function minutesFromString(value: string) {
 function formatClock(date: Date) {
   return new Intl.DateTimeFormat('id-ID', {
     timeZone: 'Asia/Jakarta',
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
   }).format(date);
 }
 
 function formatDay(date: Date) {
   return new Intl.DateTimeFormat('id-ID', {
-    timeZone: 'Asia/Jakarta', weekday: 'long', day: '2-digit', month: 'short', year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+    weekday: 'long',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   }).format(date);
 }
 
@@ -60,41 +67,62 @@ export default function LiveStatusBar() {
   }, [current, parts.hour, parts.minute, parts.second, weekend, holiday]);
 
   const label = todayTka
-    ? `🎯 TKA Hari Ke-${todayTka.hariKe}: ${todayTka.shortTitle} (${todayTka.mulaiWib}-${todayTka.perkiraanSelesaiWib} WIB)`
+    ? `TKA Hari Ke-${todayTka.hariKe}: ${todayTka.shortTitle} (${todayTka.mulaiWib}-${todayTka.perkiraanSelesaiWib} WIB)`
     : tomorrowTka
-      ? `⚡ H-1 TKA Hari Ke-${tomorrowTka.hariKe}: ${tomorrowTka.shortTitle} (Besok 07:00 WIB)`
+      ? `H-1 TKA Hari Ke-${tomorrowTka.hariKe}: ${tomorrowTka.shortTitle} (Besok 07:00 WIB)`
       : weekend
-        ? 'Hari libur - akhir pekan'
+        ? 'Akhir pekan'
         : holiday
-          ? `Hari libur - ${holiday.summary}`
+          ? `Libur: ${holiday.summary}`
           : current
-            ? `${current.subject} - ${current.startTime} - ${current.endTime}`
-            : 'Tidak ada sesi aktif';
+            ? `${current.subject} (${current.startTime} - ${current.endTime})`
+            : 'Tidak ada sesi terjadwal saat ini';
 
-  const connectionLabel = connection === 'ONLINE' ? 'ONLINE' : connection === 'SYNCING' ? 'SYNCING' : connection === 'DEGRADED' ? 'DEGRADED' : 'OFFLINE';
+  const connectionLabel =
+    connection === 'ONLINE'
+      ? 'TERHUBUNG'
+      : connection === 'SYNCING'
+        ? 'SINKRONISASI'
+        : connection === 'DEGRADED'
+          ? 'LAMBAT'
+          : 'OFFLINE';
   const ConnectionIcon = connection === 'OFFLINE' ? WifiOff : connection === 'SYNCING' ? Loader2 : Wifi;
 
   return (
-    <div className="live-statusbar" aria-label="Status waktu dan jadwal realtime">
-      <div className="live-statusbar__info">
-        <span className="live-statusbar__pulse" />
-        <CalendarDays size={13} />
-        <span className="hidden sm:inline">{formatDay(now)}</span>
-        <span className="sm:hidden">{parts.weekday}</span>
-        <span className="live-statusbar__divider" />
-        <Clock3 size={13} />
-        <span className="font-mono">{formatClock(now)}</span>
-        <span className="text-slate-400 text-[10px] sm:text-xs truncate max-w-[160px] sm:max-w-none ml-1 sm:ml-2"> - {label}</span>
-        {(todayTka || tomorrowTka) && (
-          <span className="live-statusbar__active"><Target size={12} /> TKA 2026</span>
-        )}
-        {current && !weekend && !holiday && !todayTka && (
-          <span className="live-statusbar__active"><Sparkles size={12} /> LIVE</span>
-        )}
-        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold ${connection === 'ONLINE' ? 'border-emerald-400/20 text-emerald-300' : connection === 'SYNCING' ? 'border-sky-400/20 text-sky-300' : connection === 'DEGRADED' ? 'border-amber-400/20 text-amber-300' : 'border-rose-400/20 text-rose-300'}`}><ConnectionIcon size={11} className={connection === 'SYNCING' ? 'animate-spin' : ''}/> {connectionLabel}</span>
+    <div
+      className="live-statusbar border-t border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)]"
+      aria-label="Status waktu dan jadwal realtime"
+    >
+      <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-3 px-4 py-2 text-[11px] sm:px-6 lg:px-10">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--tf-accent)]" />
+          <CalendarDays size={12} className="shrink-0 text-[var(--tf-text-muted)]" />
+          <span className="hidden sm:inline font-medium">{formatDay(now)}</span>
+          <span className="sm:hidden font-medium">{parts.weekday}</span>
+          <span className="opacity-30">|</span>
+          <Clock3 size={12} className="shrink-0 text-[var(--tf-text-muted)]" />
+          <span className="font-mono font-medium text-[var(--tf-text-primary)]">{formatClock(now)}</span>
+          <span className="opacity-30 hidden md:inline">|</span>
+          <span className="truncate text-[var(--tf-text-muted)]">{label}</span>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {(todayTka || tomorrowTka) && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--tf-accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--tf-accent)]">
+              <Target size={11} /> TKA 2026
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] px-2.5 py-0.5 text-[10px] font-mono font-medium text-[var(--tf-text-secondary)]">
+            <ConnectionIcon size={10} className={connection === 'SYNCING' ? 'animate-spin' : ''} />
+            {connectionLabel}
+          </span>
+        </div>
       </div>
-      <div className="live-statusbar__track" aria-hidden="true">
-        <div className="live-statusbar__fill" style={{ width: `${progress}%` }} />
+      <div className="h-[2px] w-full bg-[var(--tf-bg-subtle)] overflow-hidden" aria-hidden="true">
+        <div
+          className="h-full bg-[var(--tf-accent)] transition-all duration-500"
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </div>
   );

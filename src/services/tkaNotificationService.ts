@@ -75,12 +75,12 @@ export async function purgeExpiredTkaDataAndAlarms(userId?: string): Promise<voi
 export function buildTkaExamNotificationBody(exam: ExamDaySchedule, phaseLabel: string): string {
   const stepsFormatted = exam.steps.map((s) => `• ${s.name}: ${s.dur}`).join('\n');
   return [
-    `📅 Hari Ke-${exam.hariKe} (${exam.tanggalFormatted})`,
-    `⏰ Jadwal: ${exam.mulaiWib} – ${exam.perkiraanSelesaiWib} WIB (${exam.totalMenit} Menit • Sesi ${exam.sesi})`,
-    `📚 Mata Ujian: ${exam.mapel}`,
-    `📋 Komponen Sesi:\n${stepsFormatted}`,
-    `💡 Tips: ${exam.persiapanTips}`,
-    `🔔 Status: ${phaseLabel}`,
+    `Hari Ke-${exam.hariKe} (${exam.tanggalFormatted})`,
+    `Jadwal: ${exam.mulaiWib} – ${exam.perkiraanSelesaiWib} WIB (${exam.totalMenit} Menit • Sesi ${exam.sesi})`,
+    `Mata Ujian: ${exam.mapel}`,
+    `Komponen Sesi:\n${stepsFormatted}`,
+    `Tips: ${exam.persiapanTips}`,
+    `Status: ${phaseLabel}`,
   ].join('\n');
 }
 
@@ -113,7 +113,7 @@ export function scheduleSingleTkaDayAlarms(exam: ExamDaySchedule, now: Date = ne
   const hMinus1Evening = new Date(`${prevDateStr}T19:00:00+07:00`);
   if (hMinus1Evening > now) {
     void scheduleSystemNotification(
-      `🎯 Persiapan H-1 TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
+      `Persiapan H-1 TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
       buildTkaExamNotificationBody(
         exam,
         'Besok Pagi Pukul 07.00 WIB! Siapkan Kartu Peserta & Istirahat Lebih Awal.'
@@ -131,7 +131,7 @@ export function scheduleSingleTkaDayAlarms(exam: ExamDaySchedule, now: Date = ne
   const morningPrep = new Date(`${exam.tanggal}T05:30:00+07:00`);
   if (morningPrep > now) {
     void scheduleSystemNotification(
-      `🌅 Pagi Ujian TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
+      `Pagi Ujian TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
       buildTkaExamNotificationBody(
         exam,
         'Hari Ini Pukul 07.00 WIB! Jangan lupa sarapan, berdoa, dan cek kelengkapan kartu peserta.'
@@ -150,7 +150,7 @@ export function scheduleSingleTkaDayAlarms(exam: ExamDaySchedule, now: Date = ne
   hMinus30.setMinutes(hMinus30.getMinutes() - 30);
   if (hMinus30 > now) {
     void scheduleSystemNotification(
-      `⏳ 30 Menit Menuju Ujian TKA Hari Ke-${exam.hariKe} (${exam.mulaiWib} WIB)`,
+      `30 Menit Menuju Ujian TKA Hari Ke-${exam.hariKe} (${exam.mulaiWib} WIB)`,
       buildTkaExamNotificationBody(
         exam,
         'Waktu Ujian Kurang 30 Menit! Pastikan sudah berada di lokasi/ruang ujian & tenang.'
@@ -169,7 +169,7 @@ export function scheduleSingleTkaDayAlarms(exam: ExamDaySchedule, now: Date = ne
   hMinus10.setMinutes(hMinus10.getMinutes() - 10);
   if (hMinus10 > now) {
     void scheduleSystemNotification(
-      `🚨 10 Menit Menuju Kickoff TKA Hari Ke-${exam.hariKe}!`,
+      `10 Menit Menuju Kickoff TKA Hari Ke-${exam.hariKe}!`,
       buildTkaExamNotificationBody(
         exam,
         'Bersiap Login Sistem CBT! Baca doa sebelum memulai, fokus, dan teliti.'
@@ -187,7 +187,7 @@ export function scheduleSingleTkaDayAlarms(exam: ExamDaySchedule, now: Date = ne
   const exactStart = new Date(`${exam.tanggal}T${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}:00+07:00`);
   if (exactStart > now) {
     void scheduleSystemNotification(
-      `🔥 UJIAN DIMULAI: TKA Hari Ke-${exam.hariKe} (${exam.shortTitle})`,
+      `UJIAN DIMULAI: TKA Hari Ke-${exam.hariKe} (${exam.shortTitle})`,
       buildTkaExamNotificationBody(
         exam,
         `Sesi 1 Dimulai Sekarang (${exam.mulaiWib} - ${exam.perkiraanSelesaiWib} WIB). Bismillah, semoga lancar & meraih skor terbaik!`
@@ -207,11 +207,11 @@ export function scheduleSingleTkaDayAlarms(exam: ExamDaySchedule, now: Date = ne
     const nextDay = EXAM_DAYS_2026.find((d) => d.hariKe === exam.hariKe + 1);
     const nextInfo = nextDay
       ? `Selanjutnya besok (Hari Ke-${nextDay.hariKe}): ${nextDay.shortTitle} (${nextDay.totalMenit} Menit).`
-      : `Seluruh rangkaian 4 Hari Ujian TKA Gelombang 1 telah tuntas! Alhamdulillah! 🎉`;
+      : `Seluruh rangkaian 4 Hari Ujian TKA Gelombang 1 telah tuntas! Alhamdulillah! `;
 
     void scheduleSystemNotification(
-      `✅ Sesi TKA Hari Ke-${exam.hariKe} Selesai! Alhamdulillah`,
-      `Selamat! Kamu telah menyelesaikan ujian ${exam.shortTitle} (${exam.totalMenit} menit).\n${nextInfo}\nIstirahat yang cukup dan tetap semangat! ⭐`,
+      `Sesi TKA Hari Ke-${exam.hariKe} Selesai! Alhamdulillah`,
+      `Selamat! Kamu telah menyelesaikan ujian ${exam.shortTitle} (${exam.totalMenit} menit).\n${nextInfo}\nIstirahat yang cukup dan tetap semangat! `,
       exactEnd,
       actionUrl,
       generateHashId(`tka-end-${exam.hariKe}-${exam.tanggal}`),
@@ -287,8 +287,8 @@ export async function syncTkaToNotifications(options: {
 
       await createNotificationOnce({
         userId: options.userId,
-        title: `🎯 Jadwal Resmi TKA SMA 2026 Tersinkronisasi (Gelombang 1 • Sesi 1)`,
-        message: `Seluruh alarm pengingat otomatis (H-1 19:00, Pagi 05:30, H-30m, H-10m, & Kickoff 07:00 WIB) telah diaktifkan:\n\n${masterSummaryLines}\n\n💡 Klik untuk membuka Pusat Komando TKA & Simulasi CBT.`,
+        title: `Jadwal Resmi TKA SMA 2026 Tersinkronisasi (Gelombang 1 • Sesi 1)`,
+        message: `Seluruh alarm pengingat otomatis (H-1 19:00, Pagi 05:30, H-30m, H-10m, & Kickoff 07:00 WIB) telah diaktifkan:\n\n${masterSummaryLines}\n\nKlik untuk membuka Pusat Komando TKA & Simulasi CBT.`,
         type: 'tka',
         actionUrl: '/tka',
         idempotencyKey: 'tka-2026-master-schedule-sync-v1',
@@ -308,7 +308,7 @@ export async function syncTkaToNotifications(options: {
         if (todayWibStr === prevDateStr || options.specificDay === exam.hariKe) {
           await createNotificationOnce({
             userId: options.userId,
-            title: `⚡ Briefing H-1 Ujian TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
+            title: `Briefing H-1 Ujian TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
             message: buildTkaExamNotificationBody(
               exam,
               todayWibStr === prevDateStr
@@ -322,7 +322,7 @@ export async function syncTkaToNotifications(options: {
         } else if (todayWibStr === exam.tanggal) {
           await createNotificationOnce({
             userId: options.userId,
-            title: `🔥 HARI INI UJIAN TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
+            title: `HARI INI UJIAN TKA Hari Ke-${exam.hariKe}: ${exam.shortTitle}`,
             message: buildTkaExamNotificationBody(
               exam,
               `Berlangsung Hari Ini (${exam.mulaiWib} – ${exam.perkiraanSelesaiWib} WIB). Semangat & fokus penuh!`
@@ -339,7 +339,7 @@ export async function syncTkaToNotifications(options: {
       if (crucialStage) {
         await createNotificationOnce({
           userId: options.userId,
-          title: `📌 Tahapan Krusial: ${crucialStage.nama} (${crucialStage.rentangFormatted})`,
+          title: `Tahapan Krusial: ${crucialStage.nama} (${crucialStage.rentangFormatted})`,
           message: `Tahapan ${crucialStage.nama} berlangsung pada ${crucialStage.rentangFormatted}. Semua rincian durasi latihan, tes utama, dan survei karakter/lingkungan belajar telah terhubung ke kalender & alarm perangkat.`,
           type: 'tka',
           actionUrl: '/tka',
@@ -360,8 +360,8 @@ export async function syncTkaToNotifications(options: {
       : EXAM_DAYS_2026[0];
 
     const title = options.specificDay
-      ? `✅ Alarm TKA Hari Ke-${targetExam.hariKe} (${targetExam.shortTitle}) Aktif!`
-      : `🎯 Sinkronisasi TKA 2026 ke Notifikasi Berhasil!`;
+      ? `Alarm TKA Hari Ke-${targetExam.hariKe} (${targetExam.shortTitle}) Aktif!`
+      : `Sinkronisasi TKA 2026 ke Notifikasi Berhasil!`;
 
     const body = options.specificDay
       ? buildTkaExamNotificationBody(
@@ -402,18 +402,18 @@ export async function notifyTkaTryoutCompleted(args: {
 }) {
   const gradeLabel =
     args.score >= 750
-      ? 'Sangat Memuaskan (Top Tier 🏆)'
+      ? 'Sangat Memuaskan (Top Tier )'
       : args.score >= 600
-      ? 'Kompetitif & Stabil (Siap Tempur ⚡)'
-      : 'Perlu Evaluasi Pembahasan 📖';
+      ? 'Kompetitif & Stabil (Siap Tempur )'
+      : 'Perlu Evaluasi Pembahasan ';
 
-  const title = `🏆 Hasil Simulasi TKA: Skor IRT ${args.score}/1000`;
+  const title = `Hasil Simulasi TKA: Skor IRT ${args.score}/1000`;
   const message = [
-    `📝 Paket: ${args.tryoutName}`,
-    `🎯 Skor IRT: ${args.score} • Akurasi: ${args.accuracy}% (${args.correct}/${args.total} Benar)`,
-    `⏱️ Durasi Pengerjaan: ${args.durationMinutes} Menit`,
-    `📊 Evaluasi: ${gradeLabel}`,
-    `👉 Buka halaman TKA untuk meninjau pembahasan lengkap setiap soal!`,
+    `Paket: ${args.tryoutName}`,
+    `Skor IRT: ${args.score} • Akurasi: ${args.accuracy}% (${args.correct}/${args.total} Benar)`,
+    `Durasi Pengerjaan: ${args.durationMinutes} Menit`,
+    `Evaluasi: ${gradeLabel}`,
+    `Buka halaman TKA untuk meninjau pembahasan lengkap setiap soal!`,
   ].join('\n');
 
   await showSystemNotification(title, message, '/tka', {

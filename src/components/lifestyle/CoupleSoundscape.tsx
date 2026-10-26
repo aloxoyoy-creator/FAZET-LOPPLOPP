@@ -4,10 +4,10 @@ import { Headphones, Play, Square, Volume2, Clock, Sparkles } from 'lucide-react
 import { soundSynthesizer, type AmbienceType } from '../../utils/audioSynthesizer';
 
 const SOUNDS: Array<{ type: AmbienceType; name: string; emoji: string; desc: string }> = [
-  { type: 'rain', name: 'Hujan Alami', emoji: '🌧️', desc: 'Deru hujan rintik-rintik yang menenangkan dan membantu konsentrasi belajar.' },
-  { type: 'fire', name: 'Api Unggun', emoji: '🪵', desc: 'Suasana hangat yang tenang untuk membaca atau mengerjakan tugas.' },
-  { type: 'cafe', name: 'Kedai Kopi', emoji: '☕', desc: 'Ambience kafe santai untuk fokus bekerja dan belajar.' },
-  { type: 'binaural', name: 'Gelombang Fokus Theta', emoji: '🎧', desc: 'Frekuensi binaural 6Hz untuk ketenangan batin dan fokus tajam.' },
+  { type: 'rain', name: 'Hujan Alami', emoji: '', desc: 'Deru hujan rintik-rintik yang menenangkan dan membantu konsentrasi belajar.' },
+  { type: 'fire', name: 'Api Unggun', emoji: '', desc: 'Suasana hangat yang tenang untuk membaca atau mengerjakan tugas.' },
+  { type: 'cafe', name: 'Kedai Kopi', emoji: '', desc: 'Ambience kafe santai untuk fokus bekerja dan belajar.' },
+  { type: 'binaural', name: 'Gelombang Fokus Theta', emoji: '', desc: 'Frekuensi binaural 6Hz untuk ketenangan batin dan fokus tajam.' },
 ];
 
 export default function CoupleSoundscape() {

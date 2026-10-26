@@ -263,8 +263,8 @@ export async function addTransaction(
 
     if (percentUsed >= 100) {
       // Over-budget alert
-      const alertTitle = '🚨 Batas Anggaran Terlampaui!';
-      const alertBody = `Pengeluaran bulan ini sudah mencapai ${formatRupiah(monthlyExpense)} (${percentUsed.toFixed(0)}% dari limit ${formatRupiah(budget.monthlyLimit)}). Saatnya berhemat! 🛑`;
+      const alertTitle = 'Batas Anggaran Terlampaui!';
+      const alertBody = `Pengeluaran bulan ini sudah mencapai ${formatRupiah(monthlyExpense)} (${percentUsed.toFixed(0)}% dari limit ${formatRupiah(budget.monthlyLimit)}). Saatnya berhemat! `;
       
       void showSystemNotification(alertTitle, alertBody, '/finance', {
         soundType: 'alert',
@@ -282,7 +282,7 @@ export async function addTransaction(
       }
     } else if (percentUsed >= threshold) {
       // Warning approaching limit
-      const warnTitle = '⚠️ Pengeluaran Mendekati Limit!';
+      const warnTitle = 'Pengeluaran Mendekati Limit!';
       const warnBody = `Pengeluaran bulan ini sudah mencapai ${percentUsed.toFixed(0)}% (${formatRupiah(monthlyExpense)} dari batas ${formatRupiah(budget.monthlyLimit)}).`;
       
       void showSystemNotification(warnTitle, warnBody, '/finance', {

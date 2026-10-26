@@ -123,7 +123,7 @@ export default function AutoUpdateButton({ variant = 'header', className = '' }:
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[var(--tf-text-primary)]">
-                  {hasUpdate ? 'Pembaruan Baru Tersedia! 🚀' : 'Periksa & Segarkan Aplikasi'}
+                  {hasUpdate ? 'Pembaruan Baru Tersedia! ' : 'Periksa & Segarkan Aplikasi'}
                 </h3>
                 <p className="text-xs text-[var(--tf-text-muted)]">
                   Sinkronisasi langsung dengan build Vercel / Firebase
@@ -136,7 +136,7 @@ export default function AutoUpdateButton({ variant = 'header', className = '' }:
                 Fitur ini akan <strong>membersihkan cache internal WebView & Service Worker</strong> secara instan dan memuat ulang kode terbaru yang baru di-deploy.
               </p>
               <p className="text-slate-600 dark:text-slate-300 font-medium">
-                ✅ Tanpa perlu menghapus data atau cache di pengaturan Android secara manual.
+                Tanpa perlu menghapus data atau cache di pengaturan Android secara manual.
               </p>
             </div>
 

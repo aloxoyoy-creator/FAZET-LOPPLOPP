@@ -2,13 +2,13 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { friendlyError } from '../lib/errors';
-import { Mail, Lock, ArrowRight, Building2, Briefcase, Zap, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export function AuthLayout({
   children,
   title,
   subtitle,
-  eyebrow
+  eyebrow,
 }: {
   children: ReactNode;
   title: string;
@@ -16,50 +16,98 @@ export function AuthLayout({
   eyebrow?: string;
 }) {
   return (
-    <div className="min-h-screen flex w-full bg-[#f4f7f6] text-slate-800 font-sans selection:bg-indigo-200">
-      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-24">
-        <div className="mx-auto w-full max-w-sm lg:max-w-md">
-          {/* Logo & Branding */}
-          <div className="flex items-center gap-3 mb-10">
-            <div className="bg-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-600/20">
-              <Zap className="w-6 h-6 text-white" />
+    <div className="min-h-screen grid lg:grid-cols-12 bg-[#F6F4EF] dark:bg-[#0D0D0C] text-[#181715] dark:text-[#F2EFE9] selection:bg-[#9E7B42]/20">
+      {/* Left Form Column */}
+      <div className="lg:col-span-6 xl:col-span-5 flex flex-col justify-between px-6 py-10 sm:px-12 lg:px-16 xl:px-20">
+        {/* Top Brand Mark */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-[#181715] dark:bg-[#F2EFE9] text-[#F6F4EF] dark:text-[#0D0D0C] grid place-items-center font-serif text-lg font-semibold tracking-tight">
+              F
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-900">Fazet.</span>
+            <div>
+              <span className="text-sm font-semibold tracking-[0.18em] uppercase block">FAZET</span>
+              <span className="text-[10px] tracking-[0.14em] uppercase text-[#7A756C] block">Private Studio</span>
+            </div>
           </div>
+          <span className="text-[11px] font-mono text-[#7A756C] tracking-wider">EDITION 2026</span>
+        </div>
 
-          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">
+        {/* Main Form Container */}
+        <div className="mx-auto w-full max-w-md my-12">
+          {eyebrow && (
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9E7B42] mb-2">
+              {eyebrow}
+            </div>
+          )}
+          <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-[#181715] dark:text-[#F2EFE9]">
             {title}
-          </h2>
+          </h1>
           {subtitle && (
-            <p className="text-slate-500 font-medium text-base mb-8">
+            <p className="mt-2 text-sm text-[#7A756C] leading-relaxed">
               {subtitle}
             </p>
           )}
 
-          <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+          <div className="mt-8 rounded-2xl bg-[#FCFBF8] dark:bg-[#151513] p-6 sm:p-8 border border-[#181715]/10 dark:border-[#F2EFE9]/10 shadow-[0_20px_50px_-24px_rgba(24,23,21,0.12)]">
             {children}
           </div>
-          
-          <div className="mt-8 text-center">
-            <p className="text-xs font-semibold text-slate-400">
-              Made with ❤️ for {new Date().getFullYear()}
-            </p>
-          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between text-[11px] text-[#7A756C] border-t border-[#181715]/8 dark:border-[#F2EFE9]/8 pt-5">
+          <span>FAZET Studio</span>
+          <span>Fathur &amp; Mazet Workspace</span>
         </div>
       </div>
-      
-      {/* Right Decorative Panel */}
-      <div className="hidden lg:block relative w-0 flex-1 bg-indigo-50 overflow-hidden">
-        {/* Soft casual shapes */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
-        
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-20 z-10 text-center">
-          <div className="bg-white/40 backdrop-blur-xl border border-white/60 p-12 rounded-[3rem] shadow-2xl max-w-lg">
-            <h3 className="text-3xl font-black text-slate-800 mb-4 leading-tight">Mulai atur harimu <br/> lebih terstruktur.</h3>
-            <p className="text-slate-600 font-medium text-lg">Platform belajar dan manajemen waktu yang dibuat khusus untuk membuat rutinitasmu lebih menyenangkan.</p>
+
+      {/* Right Editorial Showcase Column */}
+      <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 relative overflow-hidden bg-[#141311] text-[#F2EFE9] p-14 xl:p-20 flex-col justify-between border-l border-[#181715]/10">
+        {/* Subtle luxury ambient glow */}
+        <div
+          className="pointer-events-none absolute -top-32 -right-32 h-[480px] w-[480px] rounded-full opacity-25 blur-3xl"
+          style={{ background: 'radial-gradient(circle, #C8A96E 0%, transparent 70%)' }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-40 -left-24 h-[420px] w-[420px] rounded-full opacity-15 blur-3xl"
+          style={{ background: 'radial-gradient(circle, #8C734B 0%, transparent 70%)' }}
+        />
+
+        <div className="relative z-10 flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-[#A39E93]">
+          <span>Quiet Luxury Workspace</span>
+          <span>Academic &amp; Personal Rhythm</span>
+        </div>
+
+        <div className="relative z-10 max-w-xl my-auto space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#C8A96E]/30 bg-[#C8A96E]/10 px-3.5 py-1 text-[11px] tracking-[0.16em] uppercase text-[#D8BE8B]">
+            Terstruktur &bull; Tenang &bull; Personal
           </div>
+          <h2 className="font-serif text-4xl xl:text-5xl font-normal leading-[1.12] tracking-tight text-[#F7F4EE]">
+            Ruang produktivitas dan catatan perjalanan dalam satu kanvas yang tenang.
+          </h2>
+          <p className="text-sm xl:text-base text-[#A39E93] leading-relaxed font-normal">
+            Dirancang dengan estetika minimalis untuk mengelola jadwal akademik, prioritas tugas, keuangan harian, dan momen kebersamaan tanpa distorsi visual.
+          </p>
+
+          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10">
+            <div>
+              <div className="font-serif text-2xl text-[#D8BE8B]">Fokus</div>
+              <div className="text-xs text-[#8F8A80] mt-0.5">Agenda &amp; prioritas harian</div>
+            </div>
+            <div>
+              <div className="font-serif text-2xl text-[#D8BE8B]">Finansial</div>
+              <div className="text-xs text-[#8F8A80] mt-0.5">Catatan &amp; analisis rapi</div>
+            </div>
+            <div>
+              <div className="font-serif text-2xl text-[#D8BE8B]">Bersama</div>
+              <div className="text-xs text-[#8F8A80] mt-0.5">Galeri &amp; ruang terhubung</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-center justify-between text-xs text-[#7A756C]">
+          <span>Dirancang eksklusif untuk Fathur &amp; Mazet</span>
+          <span className="font-mono">{new Date().getFullYear()}</span>
         </div>
       </div>
     </div>
@@ -79,9 +127,9 @@ export function FazetLoginPage({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  
-  const [workspace, setWorkspace] = useState<'fathur'|'mazet'>(
-    (activeWorkspace === 'fathur' || activeWorkspace === 'mazet') ? activeWorkspace : 'fathur'
+
+  const [workspace, setWorkspace] = useState<'fathur' | 'mazet'>(
+    activeWorkspace === 'fathur' || activeWorkspace === 'mazet' ? activeWorkspace : 'fathur'
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,81 +146,85 @@ export function FazetLoginPage({
       if (workspace !== activeWorkspace) {
         await switchWorkspace(workspace);
       }
-      
+
       if (view === 'login') {
         await login(email, password, rememberMe, workspace);
-        const from = (location.state as any)?.from || '/';
+        const from = (location.state as { from?: string } | null)?.from || '/';
         navigate(from, { replace: true });
       } else {
         await resetPassword(email, workspace);
         setMessage('Instruksi pemulihan telah dikirim ke email Anda.');
       }
-    } catch (err: any) {
-      setError(friendlyError(err) || err.message || 'Ups, login gagal! Cek lagi email atau password kamu ya.');
+    } catch (err: unknown) {
+      const fallback = err instanceof Error ? err.message : 'Login gagal. Periksa kembali email dan kata sandi Anda.';
+      setError(friendlyError(err) || fallback);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthLayout 
-      title={view === 'login' ? 'Hai, Selamat Datang! 👋' : 'Lupa Password?'}
-      subtitle={view === 'login' ? 'Pilih profil kamu dan masukkan kredensial untuk masuk.' : 'Tenang, kami akan mengirimkan tautan reset ke emailmu.'}
+    <AuthLayout
+      eyebrow={view === 'login' ? 'Autentikasi Workspace' : 'Pemulihan Akun'}
+      title={view === 'login' ? 'Selamat Datang Kembali' : 'Atur Ulang Kata Sandi'}
+      subtitle={
+        view === 'login'
+          ? 'Pilih profil ruang kerja Anda dan masuk untuk melanjutkan.'
+          : 'Masukkan alamat email Anda untuk menerima tautan pemulihan.'
+      }
     >
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-5" onSubmit={handleSubmit}>
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm font-semibold p-4 rounded-2xl flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="bg-rose-500/8 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-medium p-3.5 rounded-xl flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <p>{error}</p>
           </div>
         )}
         {message && (
-          <div className="bg-emerald-50 text-emerald-600 text-sm font-semibold p-4 rounded-2xl flex items-center gap-3">
-            <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 text-emerald-600 font-black">✓</div>
+          <div className="bg-emerald-500/8 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium p-3.5 rounded-xl flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <p>{message}</p>
           </div>
         )}
-        
-        <div className="space-y-3">
-          <label className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
-            Siapa yang sedang login?
+
+        <div className="space-y-2">
+          <label className="block text-[11px] font-semibold text-[#7A756C] uppercase tracking-[0.14em]">
+            Pilih Ruang Kerja
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5 p-1 rounded-xl bg-[#EFECE5] dark:bg-[#1E1E1C] border border-[#181715]/8 dark:border-white/8">
             <button
               type="button"
               onClick={() => setWorkspace('fathur')}
-              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-bold transition-all duration-300 border-2 ${
-                workspace === 'fathur' 
-                  ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-md' 
-                  : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100'
+              className={`py-2.5 px-4 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                workspace === 'fathur'
+                  ? 'bg-[#FCFBF8] dark:bg-[#282825] text-[#181715] dark:text-[#F2EFE9] shadow-2xs border border-[#181715]/10 dark:border-white/10'
+                  : 'text-[#7A756C] hover:text-[#181715] dark:hover:text-[#F2EFE9]'
               }`}
             >
-              <Briefcase className={`w-4 h-4 ${workspace === 'fathur' ? 'text-indigo-600' : 'text-slate-400'}`} />
               Fathur
             </button>
             <button
               type="button"
               onClick={() => setWorkspace('mazet')}
-              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-bold transition-all duration-300 border-2 ${
-                workspace === 'mazet' 
-                  ? 'bg-pink-50 border-pink-500 text-pink-600 shadow-md' 
-                  : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100'
+              className={`py-2.5 px-4 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                workspace === 'mazet'
+                  ? 'bg-[#FCFBF8] dark:bg-[#282825] text-[#181715] dark:text-[#F2EFE9] shadow-2xs border border-[#181715]/10 dark:border-white/10'
+                  : 'text-[#7A756C] hover:text-[#181715] dark:hover:text-[#F2EFE9]'
               }`}
             >
-              <Building2 className={`w-4 h-4 ${workspace === 'mazet' ? 'text-pink-500' : 'text-slate-400'}`} />
               Mazet
             </button>
           </div>
         </div>
 
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <label htmlFor="email" className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
-              Email Kamu
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="email" className="block text-[11px] font-semibold text-[#7A756C] uppercase tracking-[0.14em]">
+              Alamat Email
             </label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Mail className="h-4 w-4 text-[#7A756C]" />
               </div>
               <input
                 id="email"
@@ -182,30 +234,30 @@ export function FazetLoginPage({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all text-sm font-semibold"
-                placeholder="halo@fazet.com"
+                className="block w-full pl-10 pr-4 py-3 bg-[#F6F4EF]/70 dark:bg-[#1E1E1C] border border-[#181715]/12 dark:border-white/10 rounded-xl text-[#181715] dark:text-[#F2EFE9] placeholder-[#7A756C]/60 focus:bg-[#FCFBF8] dark:focus:bg-[#232321] focus:border-[#9E7B42] focus:outline-none transition-colors text-sm"
+                placeholder="nama@email.com"
               />
             </div>
           </div>
 
           {view === 'login' && (
-            <div className="space-y-4">
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="block text-[13px] font-bold text-slate-800 uppercase tracking-wider">
-                    Password
+                  <label htmlFor="password" className="block text-[11px] font-semibold text-[#7A756C] uppercase tracking-[0.14em]">
+                    Kata Sandi
                   </label>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setView('forgot')}
-                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                    className="text-xs font-medium text-[#9E7B42] hover:underline cursor-pointer"
                   >
-                    Lupa Password?
+                    Lupa kata sandi?
                   </button>
                 </div>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-[#7A756C]" />
                   </div>
                   <input
                     id="password"
@@ -215,35 +267,31 @@ export function FazetLoginPage({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all text-sm font-semibold"
-                    placeholder="••••••••"
+                    className="block w-full pl-10 pr-11 py-3 bg-[#F6F4EF]/70 dark:bg-[#1E1E1C] border border-[#181715]/12 dark:border-white/10 rounded-xl text-[#181715] dark:text-[#F2EFE9] placeholder-[#7A756C]/60 focus:bg-[#FCFBF8] dark:focus:bg-[#232321] focus:border-[#9E7B42] focus:outline-none transition-colors text-sm"
+                    placeholder="Masukkan kata sandi"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none"
-                    title={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#7A756C] hover:text-[#181715] dark:hover:text-[#F2EFE9] transition-colors cursor-pointer"
+                    title={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   >
-                    {showPassword ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    )}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
-              
-              <div className="flex items-center">
+
+              <div className="flex items-center pt-1">
                 <input
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600/30 transition-colors"
+                  className="h-4 w-4 rounded border-[#181715]/20 accent-[#181715] dark:accent-[#C8A96E]"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm font-medium text-slate-600">
-                  Ingat sesi saya
+                <label htmlFor="remember-me" className="ml-2 block text-xs text-[#7A756C]">
+                  Pertahankan sesi masuk di perangkat ini
                 </label>
               </div>
             </div>
@@ -253,26 +301,26 @@ export function FazetLoginPage({
         <button
           type="submit"
           disabled={loading}
-          className="group relative w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-600/30 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] hover:-translate-y-0.5 active:translate-y-0"
+          className="group w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-[0.14em] text-[#FCFBF8] dark:text-[#141311] bg-[#181715] dark:bg-[#E5DEC9] hover:bg-[#2C2A26] dark:hover:bg-[#F2EFE9] disabled:opacity-60 transition-all cursor-pointer"
         >
           {loading ? (
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
           ) : (
             <>
-              {view === 'login' ? 'Gas Masuk!' : 'Kirim Link Reset'}
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span>{view === 'login' ? 'Masuk ke Studio' : 'Kirim Tautan Pemulihan'}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </>
           )}
         </button>
 
         {view === 'forgot' && (
-          <div className="text-center pt-2">
-            <button 
-              type="button" 
+          <div className="text-center pt-1">
+            <button
+              type="button"
               onClick={() => setView('login')}
-              className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#7A756C] hover:text-[#181715] dark:hover:text-[#F2EFE9] transition-colors cursor-pointer"
             >
-              &larr; Balik ke Login
+              <ArrowLeft size={13} /> Kembali ke halaman masuk
             </button>
           </div>
         )}

@@ -242,7 +242,7 @@ export default function TransactionFormModal({
                 : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            💸 Pengeluaran (Expense)
+            Pengeluaran (Expense)
           </button>
           <button
             type="button"
@@ -253,7 +253,7 @@ export default function TransactionFormModal({
                 : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            💰 Pemasukan (Income)
+            Pemasukan (Income)
           </button>
         </div>
 
@@ -409,7 +409,7 @@ export default function TransactionFormModal({
                       : 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] text-[var(--tf-text-muted)] hover:bg-[var(--tf-border)]'
                   }`}
                 >
-                  {ws === 'joint' ? 'Bersama ❤️' : ws}
+                  {ws === 'joint' ? 'Bersama ' : ws}
                 </button>
               ))}
             </div>
@@ -546,7 +546,7 @@ export default function TransactionFormModal({
             disabled={submitting || uploadingReceipt}
             className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6"
           >
-            {submitting ? 'Menyimpan...' : initialData ? 'Simpan Perubahan' : 'Catat Transaksi ✨'}
+            {submitting ? 'Menyimpan...' : initialData ? 'Simpan Perubahan' : 'Catat Transaksi '}
           </Button>
         </div>
       </form>

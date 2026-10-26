@@ -88,7 +88,7 @@ export default function BudgetProgressBar({ summary, onOpenBudgetModal }: Props)
         </div>
       ) : (
         <div className="mt-3 p-3 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/40 dark:border-indigo-900/30 flex items-center justify-between text-xs text-indigo-700 dark:text-indigo-300">
-          <span>💡 Pasang batas pengeluaran untuk menerima notifikasi otomatis saat jajan/bensinmu mendekati limit!</span>
+          <span>Pasang batas pengeluaran untuk menerima notifikasi otomatis saat jajan/bensinmu mendekati limit!</span>
         </div>
       )}
     </Card>

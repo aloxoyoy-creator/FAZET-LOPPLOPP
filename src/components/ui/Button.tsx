@@ -14,18 +14,18 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants: Record<NonNullable<Props['variant']>, string> = {
-  primary: 'bg-[var(--tf-primary)] text-white hover:bg-[var(--tf-primary-hover)] shadow-[0_4px_10px_rgba(82,102,235,0.25)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-6px_rgba(82,102,235,0.6)]',
-  secondary: 'bg-[var(--tf-bg-subtle)] text-[var(--tf-text-primary)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-surface)] hover:-translate-y-0.5 hover:shadow-[0_5px_15px_-5px_rgba(0,0,0,0.1)]',
-  soft: 'bg-[var(--tf-primary-subtle)] text-[var(--tf-primary)] hover:opacity-90 hover:-translate-y-0.5 hover:shadow-[0_5px_15px_-5px_rgba(82,102,235,0.2)]',
-  ghost: 'bg-transparent text-[var(--tf-text-secondary)] border border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:text-[var(--tf-text-primary)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]',
-  danger: 'bg-[var(--tf-danger)] text-white hover:opacity-90 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-6px_rgba(239,68,68,0.5)]',
-  outline: 'bg-[var(--tf-bg-surface)] text-[var(--tf-primary)] border border-[var(--tf-primary)] hover:bg-[var(--tf-primary-subtle)] hover:-translate-y-0.5 hover:shadow-[0_5px_15px_-5px_rgba(82,102,235,0.25)]',
+  primary: 'bg-[var(--tf-primary)] text-[var(--tf-bg-surface)] hover:bg-[var(--tf-primary-hover)] shadow-xs',
+  secondary: 'bg-[var(--tf-bg-subtle)] text-[var(--tf-text-primary)] border border-[var(--tf-border)] hover:border-[var(--tf-accent)]/40 hover:bg-[var(--tf-bg-surface)]',
+  soft: 'bg-[var(--tf-accent-soft)] text-[var(--tf-accent)] border border-[var(--tf-accent)]/20 hover:bg-[var(--tf-accent)]/18',
+  ghost: 'bg-transparent text-[var(--tf-text-secondary)] border border-transparent hover:border-[var(--tf-border)] hover:bg-[var(--tf-bg-subtle)] hover:text-[var(--tf-text-primary)]',
+  danger: 'bg-[var(--tf-danger)] text-white hover:opacity-90 shadow-xs',
+  outline: 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] border border-[var(--tf-border)] hover:border-[var(--tf-accent)]/50 hover:bg-[var(--tf-bg-subtle)]',
 };
 
 const sizes: Record<NonNullable<Props['size']>, string> = {
-  sm: 'min-h-[36px] px-3 py-1.5 text-xs gap-1.5 rounded-[var(--tf-radius-sm)]',
-  md: 'min-h-[44px] px-4 py-2 text-sm gap-2 rounded-[var(--tf-radius-md)]',
-  lg: 'min-h-[48px] px-6 py-3 text-base gap-2.5 rounded-[var(--tf-radius-lg)]',
+  sm: 'min-h-[34px] px-3.5 py-1.5 text-xs gap-1.5 rounded-[var(--tf-radius-control)]',
+  md: 'min-h-[40px] px-4 py-2 text-xs sm:text-sm gap-2 rounded-[var(--tf-radius-control)]',
+  lg: 'min-h-[46px] px-5 py-2.5 text-sm gap-2.5 rounded-[var(--tf-radius-card)]',
 };
 
 export default function Button({
@@ -47,14 +47,14 @@ export default function Button({
       {...props}
       disabled={busy || props.disabled}
       className={cn(
-        'inline-flex items-center justify-center font-semibold transition-all duration-[var(--tf-dur-fast)] ease-[var(--tf-ease)] select-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-ring',
+        'inline-flex items-center justify-center font-medium tracking-[-0.01em] transition-all duration-200 ease-[var(--tf-ease)] select-none cursor-pointer disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-ring active:scale-[0.99]',
         variants[variant],
         sizes[size],
         fullWidth && 'w-full',
         className,
       )}
     >
-      {busy ? <LoaderCircle className="animate-spin shrink-0" size={16} /> : (iconLeft ?? icon)}
+      {busy ? <LoaderCircle className="animate-spin shrink-0" size={15} /> : (iconLeft ?? icon)}
       <span className="truncate">{children}</span>
       {!busy && iconRight}
     </button>

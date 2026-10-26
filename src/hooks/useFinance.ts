@@ -128,7 +128,7 @@ export function useFinance() {
       setTransactions((prev) => [created, ...prev]);
       toast.push({
         tone: 'success',
-        title: 'Transaksi Berhasil Dicatat! 💸',
+        title: 'Transaksi Berhasil Dicatat! ',
         message: `${created.categoryLabel}: Rp ${Math.round(created.amount).toLocaleString('id-ID')}`
       });
       return created;
@@ -191,7 +191,7 @@ export function useFinance() {
       setBudget(newBudget);
       toast.push({
         tone: 'success',
-        title: 'Batas Anggaran Disimpan! 🎯',
+        title: 'Batas Anggaran Disimpan! ',
         message: `Limit bulanan diatur ke Rp ${Math.round(newBudget.monthlyLimit).toLocaleString('id-ID')}`
       });
     } catch (err) {
@@ -210,7 +210,7 @@ export function useFinance() {
     exportFinanceToCsv(filteredTransactions, filename);
     toast.push({
       tone: 'success',
-      title: 'Laporan Diunduh 📄',
+      title: 'Laporan Diunduh ',
       message: `File ${filename} berhasil dibuat.`
     });
   };

@@ -87,7 +87,6 @@ export const MediaBox: React.FC<MediaBoxProps> = ({ upcomingItems = [] }) => {
 
   return (
     <Card
-      chamfer="bottom-left"
       onMouseMove={currentVideoUrl ? resetHideTimer : undefined}
       onMouseEnter={currentVideoUrl ? resetHideTimer : undefined}
       onClick={handleContainerClick}

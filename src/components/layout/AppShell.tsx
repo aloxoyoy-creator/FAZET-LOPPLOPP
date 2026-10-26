@@ -387,179 +387,190 @@ export default function AppShell({ children }: AppShellProps) {
     >
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 
-      <div className="min-w-0 flex-1">
-        <header className="tf-header sticky top-0 z-40 bg-white/40 backdrop-blur-2xl border-b border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.03)] dark:bg-[#070b14]/50 dark:border-white/5">
-          <div className="flex min-h-16 items-center gap-2 px-3 sm:px-4 md:gap-3 md:px-6">
+      <div className="min-w-0 flex-1 flex flex-col">
+        <header
+          className="tf-header sticky top-0 z-40 border-b border-[var(--tf-border)] transition-colors"
+          style={{
+            background: "color-mix(in srgb, var(--tf-bg-surface) 86%, transparent)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          <div className="mx-auto flex min-h-16 max-w-[1480px] items-center gap-3 px-4 sm:px-6 lg:px-10">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="tf-icon-btn grid h-10 w-10 place-items-center lg:hidden"
+              className="tf-icon-btn grid h-9 w-9 place-items-center rounded-xl border border-[var(--tf-border)] text-[var(--tf-text-secondary)] hover:text-[var(--tf-text-primary)] lg:hidden"
               aria-label="Buka navigasi"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
 
             <div className="min-w-0 flex-1">
-              <div
-                className="text-[10px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: "var(--tf-ink-muted)" }}
-              >
-                {branding.appName || "FAZET"} • {workspace.name}
+              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--tf-text-muted)]">
+                <span>{branding.appName || "FAZET"}</span>
+                <span className="opacity-40">/</span>
+                <span className="text-[var(--tf-accent)]">{workspace.name}</span>
               </div>
-              <h1 className="tf-display truncate text-base">{pageTitle}</h1>
+              <h1 className="font-serif truncate text-lg sm:text-xl font-medium tracking-tight text-[var(--tf-text-primary)]">
+                {pageTitle}
+              </h1>
             </div>
 
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              className="tf-btn-ghost hidden min-w-[260px] items-center gap-3 px-3 py-2.5 text-xs font-medium md:flex"
-              style={{ color: "var(--tf-ink-muted)" }}
+              className="hidden min-w-[240px] lg:min-w-[280px] items-center gap-3 rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/60 hover:bg-[var(--tf-bg-subtle)] hover:border-[var(--tf-accent)]/40 px-3.5 py-2 text-xs font-medium text-[var(--tf-text-muted)] transition-all md:flex cursor-pointer"
             >
-              <Search size={15} />
-              <span className="flex-1 text-left">
-                Cari halaman atau fitur...
-              </span>
-              <kbd className="tf-kbd px-1.5 py-0.5 text-[10px]">Ctrl K</kbd>
+              <Search size={14} />
+              <span className="flex-1 text-left">Cari halaman atau perintah...</span>
+              <kbd className="rounded-md border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--tf-text-secondary)]">
+                Ctrl K
+              </kbd>
             </button>
 
-            <button
-              type="button"
-              onClick={() => void toggleTheme()}
-              className="tf-icon-btn grid h-10 w-10 shrink-0 place-items-center"
-              aria-label={
-                darkMode ? "Gunakan mode terang" : "Gunakan mode gelap"
-              }
-            >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            <button
-              type="button"
-              onClick={triggerSystemUpdatePopup}
-              className="tf-btn-ghost hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-mono font-bold rounded-xl border border-slate-200/60 dark:border-slate-800/80"
-              title="Lihat Info Update & Sistem Baru"
-            >
-              <Sparkles size={13} className="text-emerald-500" />
-              <span>{SYSTEM_RELEASE_VERSION}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => go("/notifications")}
-              className="tf-icon-btn relative grid h-10 w-10 shrink-0 place-items-center"
-              aria-label="Notifikasi"
-            >
-              <Bell size={19} />
-              {unreadCount > 0 && (
-                <span className="tf-badge-count absolute right-1 top-1 grid h-4 min-w-4 place-items-center px-1 text-[9px] font-bold">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </button>
-
-            <AutoUpdateButton variant="header" />
-
-            <div className="relative">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
-                onClick={() => setProfileOpen((open) => !open)}
-                className="tf-btn-ghost flex h-10 items-center gap-2 px-1.5 pr-2.5"
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
+                onClick={() => void toggleTheme()}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] hover:border-[var(--tf-accent)]/40 hover:text-[var(--tf-text-primary)] transition-all cursor-pointer"
+                aria-label={darkMode ? "Gunakan mode terang" : "Gunakan mode gelap"}
               >
-                <span className="tf-avatar grid h-8 w-8 place-items-center overflow-hidden text-xs font-bold">
-                  {profile?.photoURL ? (
-                    <img
-                      src={profile.photoURL}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    profileInitials
-                  )}
-                </span>
-                <span className="hidden max-w-32 truncate text-xs font-medium sm:block">
-                  {profile?.name || "Pengguna"}
-                </span>
+                {darkMode ? <Sun size={16} /> : <Moon size={16} />}
               </button>
 
-              {profileOpen && (
-                <div className="tf-card absolute right-0 top-12 z-50 w-60 p-2">
-                  <div
-                    className="mb-1 rounded-[10px] p-3"
-                    style={{ background: "var(--tf-sunken)" }}
-                  >
-                    <div className="flex items-center gap-2 text-xs font-semibold">
-                      {showAdmin ? (
-                        <span className="tf-stamp">
-                          <ShieldCheck size={13} /> Admin
-                        </span>
-                      ) : (
-                        <>
-                          <Sparkles
-                            size={14}
-                            style={{ color: "var(--tf-accent)" }}
-                          />
-                          Workspace siswa
-                        </>
-                      )}
-                    </div>
-                    <div
-                      className="mt-1 truncate text-[11px]"
-                      style={{ color: "var(--tf-ink-muted)" }}
-                    >
-                      {profile?.email || "Email tidak tersedia"}
-                    </div>
-                  </div>
+              <button
+                type="button"
+                onClick={triggerSystemUpdatePopup}
+                className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 text-[11px] font-mono font-medium rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] hover:border-[var(--tf-accent)]/40 hover:text-[var(--tf-text-primary)] transition-all cursor-pointer"
+                title="Informasi rilis sistem"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--tf-accent)]" />
+                <span>{SYSTEM_RELEASE_VERSION}</span>
+              </button>
 
-                  <button
-                    type="button"
-                    onClick={() => go("/profile")}
-                    className="tf-nav-item w-full px-3 py-2.5 text-left text-sm font-medium"
-                  >
-                    Profil
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => go("/settings")}
-                    className="tf-nav-item w-full px-3 py-2.5 text-left text-sm font-medium"
-                  >
-                    Pengaturan
-                  </button>
-                  {showAdmin && (
+              <button
+                type="button"
+                onClick={() => go("/notifications")}
+                className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] hover:border-[var(--tf-accent)]/40 hover:text-[var(--tf-text-primary)] transition-all cursor-pointer"
+                aria-label="Notifikasi"
+              >
+                <Bell size={16} />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--tf-accent)] text-[var(--tf-on-accent)] px-1 text-[9px] font-bold">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              <AutoUpdateButton variant="header" />
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((open) => !open)}
+                  className="flex h-9 items-center gap-2 rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] hover:border-[var(--tf-accent)]/40 pl-1.5 pr-3 transition-all cursor-pointer"
+                  aria-expanded={profileOpen}
+                  aria-haspopup="menu"
+                >
+                  <span className="grid h-6 w-6 place-items-center overflow-hidden rounded-lg bg-[var(--tf-bg-subtle)] text-[11px] font-semibold text-[var(--tf-text-primary)]">
+                    {profile?.photoURL ? (
+                      <img
+                        src={profile.photoURL}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      profileInitials
+                    )}
+                  </span>
+                  <span className="hidden max-w-28 truncate text-xs font-medium text-[var(--tf-text-primary)] sm:block">
+                    {profile?.name || "Pengguna"}
+                  </span>
+                </button>
+
+                {profileOpen && (
+                  <div className="tf-card absolute right-0 top-11 z-50 w-60 p-2 shadow-xl">
+                    <div
+                      className="mb-1.5 rounded-xl p-3 border border-[var(--tf-border)]"
+                      style={{ background: "var(--tf-bg-subtle)" }}
+                    >
+                      <div className="flex items-center gap-2 text-xs font-semibold text-[var(--tf-text-primary)]">
+                        {showAdmin ? (
+                          <span className="inline-flex items-center gap-1.5 text-[var(--tf-accent)]">
+                            <ShieldCheck size={13} /> Administrator
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--tf-accent)]" />
+                            Workspace {workspace.name}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 truncate text-[11px] text-[var(--tf-text-muted)]">
+                        {profile?.email || "Email tidak tersedia"}
+                      </div>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => go("/admin")}
-                      className="tf-nav-item flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-medium"
+                      onClick={() => go("/profile")}
+                      className="tf-nav-item w-full rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-[var(--tf-bg-subtle)]"
                     >
-                      <span>Admin Center</span>
-                      <ChevronRight size={15} />
+                      Profil Saya
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => void logout()}
-                    className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2.5 text-left text-sm font-medium text-rose-600 hover:bg-rose-500/10"
-                  >
-                    <LogOut size={15} />
-                    Keluar
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => go("/settings")}
+                      className="tf-nav-item w-full rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-[var(--tf-bg-subtle)]"
+                    >
+                      Pengaturan Studio
+                    </button>
+                    {showAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => go("/admin")}
+                        className="tf-nav-item flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-[var(--tf-bg-subtle)]"
+                      >
+                        <span>Admin Center</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    )}
+                    <div className="my-1 border-t border-[var(--tf-border)]" />
+                    <button
+                      type="button"
+                      onClick={() => void logout()}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-500/10"
+                    >
+                      <LogOut size={14} />
+                      Keluar
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
 
         {branding.announcementVisible && branding.announcement && dismissed !== branding.announcement && (
-          <div className="mx-auto w-full max-w-[1600px] px-3 pt-4 sm:px-5 lg:px-7">
-            <div className={`flex items-center gap-2 rounded-xl border p-3 text-sm font-semibold ${({ info: "border-sky-400/30 bg-sky-500/10 text-sky-700 dark:text-sky-200", success: "border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200", warning: "border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200", danger: "border-rose-400/30 bg-rose-500/10 text-rose-700 dark:text-rose-200" } as const)[branding.bannerTone ?? "info"]}`}>
-              <Megaphone size={16} className="shrink-0" />
-              <span className="flex-1 text-center">{branding.announcement}</span>
-              <button type="button" aria-label="Tutup pengumuman" onClick={() => { localStorage.setItem("fazet.banner.dismissed", branding.announcement); setDismissed(branding.announcement); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg opacity-70 hover:opacity-100"><X size={14} /></button>
+          <div className="mx-auto w-full max-w-[1480px] px-4 pt-4 sm:px-6 lg:px-10">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] px-4 py-3 text-xs font-medium text-[var(--tf-text-primary)]">
+              <Megaphone size={15} className="shrink-0 text-[var(--tf-accent)]" />
+              <span className="flex-1">{branding.announcement}</span>
+              <button
+                type="button"
+                aria-label="Tutup pengumuman"
+                onClick={() => {
+                  localStorage.setItem("fazet.banner.dismissed", branding.announcement);
+                  setDismissed(branding.announcement);
+                }}
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]"
+              >
+                <X size={14} />
+              </button>
             </div>
           </div>
         )}
-        <main className="mx-auto w-full max-w-[1600px] min-w-0 overflow-x-clip px-3 py-4 pb-6 sm:px-5 md:py-6 lg:px-7 lg:pb-8">
+        <main className="mx-auto w-full max-w-[1480px] flex-1 min-w-0 overflow-x-clip px-4 py-6 pb-10 sm:px-6 md:py-8 lg:px-10 lg:pb-12">
           {children}
         </main>
 
@@ -698,7 +709,7 @@ export default function AppShell({ children }: AppShellProps) {
                         idx === paletteIndex && "is-active",
                       )}
                     >
-                      <span className="flex-1">⚡ {item.label}</span>
+                      <span className="flex-1">{item.label}</span>
                     </button>
                   ))}
                 </div>

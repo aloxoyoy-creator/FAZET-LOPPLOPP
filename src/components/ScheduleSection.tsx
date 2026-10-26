@@ -60,7 +60,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     <div className="grid grid-cols-2 gap-3 lg:gap-4 flex-shrink-0">
       {/* Current Schedule Card */}
       <Card
-        chamfer="top-right"
         className="p-3 sm:p-4 flex flex-col justify-center items-center text-center transition-colors duration-300 shadow-md relative overflow-hidden"
       >
         <div className="flex items-center justify-center gap-2 mb-1">
@@ -86,7 +85,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
       {/* Next Schedule Card (Dynamic Carousel during Playback) */}
       <Card
-        chamfer="top-right"
         className="p-3 sm:p-4 flex flex-col justify-center items-center text-center transition-colors duration-300 shadow-md relative overflow-hidden"
       >
         <div className="flex items-center justify-center gap-2 mb-1">

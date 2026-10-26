@@ -113,7 +113,7 @@ export default function FinanceOverviewCards({ summary, monthLabel }: Props) {
         }`}>
           {summary.monthlyLimit > 0
             ? `${summary.budgetUsedPercent.toFixed(1)}% terpakai dari target`
-            : summary.netSavings >= 0 ? 'Cashflow surplus bulan ini ✨' : 'Cashflow defisit bulan ini ⚠️'}
+            : summary.netSavings >= 0 ? 'Cashflow surplus bulan ini ' : 'Cashflow defisit bulan ini '}
         </p>
       </Card>
     </div>

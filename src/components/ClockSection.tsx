@@ -12,7 +12,6 @@ export const ClockSection: React.FC<ClockSectionProps> = ({ time }) => {
     <div className="flex flex-col gap-3 lg:gap-4 h-full">
       {/* Clock & Date Display Card */}
       <Card
-        chamfer="top-right"
         className="p-4 flex flex-col justify-center items-center flex-1 text-center transition-colors duration-300 shadow-lg"
       >
         <div
@@ -33,7 +32,6 @@ export const ClockSection: React.FC<ClockSectionProps> = ({ time }) => {
 
       {/* MediaBox Watch Together Controls Card */}
       <Card
-        chamfer="dual"
         className="px-3 py-2 sm:px-4 sm:py-3 flex flex-col justify-center items-center flex-shrink-0 text-center transition-colors duration-300 shadow-md"
       >
         <WatchPartyControls />

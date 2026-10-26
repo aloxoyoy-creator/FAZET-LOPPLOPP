@@ -133,54 +133,54 @@ export default function TKADashboard({ className = '' }: Props) {
 
   return (
     <div className={`space-y-4 mb-6 ${className}`}>
-      {/* 1. HERO COUNTDOWN — Sleek, Minimalist, High-Tech Command Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-lg text-white">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/25 via-indigo-600/15 to-rose-600/10 pointer-events-none" />
+      {/* 1. HERO COUNTDOWN — Quiet Luxury Editorial Command Banner */}
+      <div className="relative overflow-hidden rounded-[var(--tf-radius-card)] bg-[#141311] border border-[var(--tf-border)] shadow-[0_18px_42px_rgba(12,11,10,0.2)] text-[#F5F3EE]">
+        <div className="absolute right-[-80px] top-[-80px] h-64 w-64 rounded-full bg-[#C8A96E]/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-5 sm:p-6 gap-5">
           {/* Left Info */}
           <div className="flex-1 text-center md:text-left">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                <Flame size={12} className="text-amber-400" />
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] bg-[#C8A96E]/15 text-[#E5CFA0] border border-[#C8A96E]/30">
+                <Flame size={12} className="text-[#C8A96E]" />
                 {isMazet
-                  ? 'Event Terbesar 2026'
+                  ? 'Agenda Utama 2026'
                   : activeExamState.state === 'in_session'
                   ? `LIVE • Sedang Berlangsung (Hari Ke-${activeExamState.exam.hariKe})`
                   : `Target Ujian TKA SMA 2026 • Hari Ke-${activeExamState.exam.hariKe}`}
               </span>
               {!isMazet && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/25">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-[#A39E95] border border-white/10">
                   Gelombang 1 • Sesi 1 (WIB)
                 </span>
               )}
               {!isMazet && syncStatus && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/25">
                   <CheckCircle2 size={11} /> Notifikasi Aktif
                 </span>
               )}
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+            <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#F5F3EE]" style={{ fontFamily: 'var(--tf-font-display)' }}>
               {isMazet
                 ? 'BAZAR EDSA 2026'
                 : activeExamState.state === 'completed_all'
-                ? 'Rangkaian Ujian TKA SMA 2026 Selesai!'
+                ? 'Rangkaian Ujian TKA SMA 2026 Selesai'
                 : `TKA Hari Ke-${activeExamState.exam.hariKe}: ${activeExamState.exam.shortTitle}`}
             </h2>
 
-            <div className="mt-1.5 flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-slate-300">
+            <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-[#A39E95]">
               <span className="flex items-center gap-1.5">
-                <Calendar size={13} className="text-blue-400" />
+                <Calendar size={13} className="text-[#C8A96E]" />
                 {isMazet
                   ? '26 Oktober 2026'
                   : `${activeExamState.exam.tanggalFormatted}`}
               </span>
               {!isMazet && (
                 <>
-                  <span className="text-slate-600">•</span>
-                  <span className="flex items-center gap-1.5 font-mono font-semibold text-emerald-300">
-                    <Clock size={13} className="text-emerald-400" />
+                  <span className="text-white/20">/</span>
+                  <span className="flex items-center gap-1.5 font-mono text-[11px] text-[#E5CFA0]">
+                    <Clock size={13} className="text-[#C8A96E]" />
                     {activeExamState.exam.mulaiWib} – {activeExamState.exam.perkiraanSelesaiWib} WIB ({activeExamState.exam.totalMenit} Menit)
                   </span>
                 </>
@@ -189,7 +189,7 @@ export default function TKADashboard({ className = '' }: Props) {
           </div>
 
           {/* Right Countdown Boxes & Sync Button */}
-          <div className="flex flex-col items-center md:items-end gap-2.5 shrink-0">
+          <div className="flex flex-col items-center md:items-end gap-3 shrink-0">
             <div className="flex gap-2 font-mono">
               {timeLeft ? (
                 [
@@ -200,19 +200,19 @@ export default function TKADashboard({ className = '' }: Props) {
                 ].map((item) => (
                   <div 
                     key={item.label} 
-                    className="flex flex-col items-center justify-center bg-white/10 rounded-2xl p-2 sm:p-2.5 min-w-[54px] sm:min-w-[60px] border border-white/10 backdrop-blur-sm"
+                    className="flex flex-col items-center justify-center bg-white/[0.04] rounded-xl p-2.5 min-w-[56px] sm:min-w-[62px] border border-white/10"
                   >
-                    <div className="text-lg sm:text-xl font-black text-white tracking-tight">
+                    <div className="text-lg sm:text-xl font-semibold text-[#F5F3EE] tracking-tight">
                       {item.val}
                     </div>
-                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                    <div className="text-[9px] font-medium text-[#A39E95] uppercase tracking-[0.16em]">
                       {item.label}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="px-5 py-2.5 bg-emerald-500 rounded-2xl text-white font-bold text-xs animate-pulse">
-                  Sedang Berlangsung!
+                <div className="px-5 py-2.5 bg-[#C8A96E] rounded-xl text-[#141311] font-semibold text-xs">
+                  Sedang Berlangsung
                 </div>
               )}
             </div>
@@ -223,20 +223,20 @@ export default function TKADashboard({ className = '' }: Props) {
                   type="button"
                   onClick={() => void handleSyncAllToNotif()}
                   disabled={syncing}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm transition-all cursor-pointer disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[11px] font-semibold bg-[#C8A96E] hover:bg-[#D6B980] text-[#141311] transition-all cursor-pointer disabled:opacity-60"
                 >
                   {syncing ? (
                     <RefreshCw size={12} className="animate-spin" />
                   ) : (
                     <BellRing size={12} />
                   )}
-                  <span>{syncStatus ? 'Sinkronkan Ulang ke Notif' : 'Sinkronkan TKA ke Notif'}</span>
+                  <span>{syncStatus ? 'Sinkronkan Ulang' : 'Sinkronkan Alarm'}</span>
                 </button>
                 <Link
                   to="/tka"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[11px] font-medium bg-white/5 hover:bg-white/10 text-[#F5F3EE] border border-white/10 transition-all"
                 >
-                  <Target size={12} className="text-rose-400" />
+                  <Target size={12} className="text-[#C8A96E]" />
                   <span>Hub TKA</span>
                 </Link>
               </div>
@@ -245,38 +245,38 @@ export default function TKADashboard({ className = '' }: Props) {
         </div>
       </div>
 
-      {/* 2. JADWAL TKA SMA 2026 (Terintegrasi Penuh dengan Sistem Notifikasi) */}
+      {/* 2. JADWAL TKA SMA 2026 */}
       {!isMazet && (
-        <Card className="p-4 sm:p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] backdrop-blur-md shadow-xs space-y-4 rounded-3xl">
+        <Card className="p-4 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] space-y-4">
           {/* Header & Minimalist Segment Tabs */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--tf-border)] pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--tf-border)] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[var(--tf-primary-subtle)] text-[var(--tf-primary)]">
                 <CalendarDays size={18} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm sm:text-base text-[var(--tf-text-primary)]">
+                  <h3 className="font-semibold text-base sm:text-lg text-[var(--tf-text-primary)]" style={{ fontFamily: 'var(--tf-font-display)' }}>
                     Jadwal Ujian TKA SMA 2026
                   </h3>
-                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[var(--tf-primary-subtle)] text-[var(--tf-primary)] border border-[var(--tf-border)]">
                     <CheckCircle2 size={11} /> Auto-Notif Terhubung
                   </span>
                 </div>
                 <p className="text-[11px] text-[var(--tf-text-muted)]">
-                  Gelombang 1 • Sesi 1 (WIB) • 26 – 29 Okt 2026 • Klik ikon lonceng untuk tes/setel alarm per hari
+                  Gelombang 1 • Sesi 1 (WIB) • 26 – 29 Okt 2026 • Klik ikon lonceng untuk setel alarm per hari
                 </p>
               </div>
             </div>
 
             {/* Segment Tab Pills */}
-            <div className="inline-flex rounded-2xl bg-slate-100 dark:bg-slate-800/80 p-1 text-xs font-semibold shrink-0">
+            <div className="inline-flex rounded-xl bg-[var(--tf-bg-subtle)] p-1 text-xs font-medium shrink-0 border border-[var(--tf-border)]">
               <button
                 type="button"
                 onClick={() => setActiveTab('jadwal')}
-                className={`px-3 py-1.5 rounded-xl transition-all ${
+                className={`px-3 py-1.5 rounded-lg transition-all ${
                   activeTab === 'jadwal'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold shadow-xs'
+                    ? 'bg-[var(--tf-bg-surface)] text-[var(--tf-primary)] font-semibold shadow-xs'
                     : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
@@ -285,9 +285,9 @@ export default function TKADashboard({ className = '' }: Props) {
               <button
                 type="button"
                 onClick={() => setActiveTab('tahapan')}
-                className={`px-3 py-1.5 rounded-xl transition-all ${
+                className={`px-3 py-1.5 rounded-lg transition-all ${
                   activeTab === 'tahapan'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold shadow-xs'
+                    ? 'bg-[var(--tf-bg-surface)] text-[var(--tf-primary)] font-semibold shadow-xs'
                     : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
@@ -296,9 +296,9 @@ export default function TKADashboard({ className = '' }: Props) {
               <button
                 type="button"
                 onClick={() => setActiveTab('rincian')}
-                className={`px-3 py-1.5 rounded-xl transition-all ${
+                className={`px-3 py-1.5 rounded-lg transition-all ${
                   activeTab === 'rincian'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold shadow-xs'
+                    ? 'bg-[var(--tf-bg-surface)] text-[var(--tf-primary)] font-semibold shadow-xs'
                     : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                 }`}
               >
@@ -416,7 +416,7 @@ export default function TKADashboard({ className = '' }: Props) {
                             </div>
                           ))}
                           <div className="mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed">
-                            <strong>💡 Tips Hari Ke-{item.hariKe}:</strong> {item.persiapanTips}
+                            <strong>Tips Hari Ke-{item.hariKe}:</strong> {item.persiapanTips}
                           </div>
                         </div>
                       )}
@@ -532,7 +532,7 @@ export default function TKADashboard({ className = '' }: Props) {
                       {item.rincian}
                     </p>
                     <div className="pt-1.5 border-t border-[var(--tf-border)]/60 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                      ✓ Strategi: {item.persiapanTips}
+                      Strategi: {item.persiapanTips}
                     </div>
                   </div>
                 ))}

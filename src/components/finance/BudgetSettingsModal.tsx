@@ -55,14 +55,14 @@ export default function BudgetSettingsModal({
   const handleTestNotification = () => {
     playNotificationSound('alert');
     void showSystemNotification(
-      '⚠️ Uji Coba: Peringatan Budget FAZET',
+      'Uji Coba: Peringatan Budget FAZET',
       `Ini adalah contoh simulasi notifikasi otomatis saat pengeluaran bulananmu mencapai ${alertThreshold}% dari target.`,
       '/finance',
       { soundType: 'alert' }
     );
     toast.push({
       tone: 'info',
-      title: 'Notifikasi Otomatis Diuji! 🔔',
+      title: 'Notifikasi Otomatis Diuji! ',
       message: 'Bunyi alarm dan notifikasi sistem telah dikirimkan.'
     });
   };

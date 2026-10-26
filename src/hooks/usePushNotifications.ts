@@ -29,10 +29,10 @@ function generateStringId(str: string): number {
 }
 
 const PRIORITY_LABELS: Record<string, string> = {
-  urgent: 'Mendesak 🔥',
-  high: 'Tinggi ⚡',
-  medium: 'Sedang 📌',
-  low: 'Santai 🍃'
+  urgent: 'Mendesak ',
+  high: 'Tinggi ',
+  medium: 'Sedang ',
+  low: 'Santai '
 };
 
 interface TaskRow {
@@ -83,23 +83,23 @@ function truncateText(str?: string | null, maxLen = 85): string {
 }
 
 function buildDetailedTaskBody(task: TaskRow, phaseContext: string): string {
-  const priority = PRIORITY_LABELS[task.priority || ''] || 'Sedang 📌';
+  const priority = PRIORITY_LABELS[task.priority || ''] || 'Sedang ';
   const deadlineStr = formatIndonesianDeadline(task.due_date, task.due_time);
   const teacher = task.teacher_name ? ` (${task.teacher_name})` : '';
   const desc = truncateText(task.description, 90);
   const notes = truncateText(task.notes, 75);
 
-  let body = `📚 Mapel: ${task.subject_name || 'Umum'}${teacher}\n⚡ Prioritas: ${priority}\n⏰ Batas Waktu: ${deadlineStr}`;
+  let body = `Mapel: ${task.subject_name || 'Umum'}${teacher}\nPrioritas: ${priority}\nBatas Waktu: ${deadlineStr}`;
 
   if (desc) {
-    body += `\n📝 Detail: "${desc}"`;
+    body += `\nDetail: "${desc}"`;
   }
   if (notes) {
-    body += `\n💡 Catatan: "${notes}"`;
+    body += `\nCatatan: "${notes}"`;
   }
 
-  body += `\n⏳ Status: ${phaseContext}`;
-  body += `\n👉 Sudah selesai? Buka aplikasi dan tandai selesai agar pengingat berhenti! ✅`;
+  body += `\nStatus: ${phaseContext}`;
+  body += `\nSudah selesai? Buka aplikasi dan tandai selesai agar pengingat berhenti! `;
   return body;
 }
 
@@ -119,7 +119,7 @@ function scheduleTaskReminders(task: TaskRow) {
   const d2 = new Date(deadline.getTime() - 48 * 60 * 60 * 1000);
   if (d2 > now) {
     void scheduleSystemNotification(
-      `⚠️ H-2 Deadline: ${subjectTag}${task.title}`,
+      `H-2 Deadline: ${subjectTag}${task.title}`,
       buildDetailedTaskBody(task, 'Tersisa 2 Hari Lagi. Segera cicil pengerjaannya ya!'),
       d2,
       actionUrl,
@@ -135,7 +135,7 @@ function scheduleTaskReminders(task: TaskRow) {
   const d1 = getWIBDateForDay(0, 18, 0, dMinus1);
   if (d1 > now) {
     void scheduleSystemNotification(
-      `⏳ H-1 Deadline: ${subjectTag}${task.title}`,
+      `H-1 Deadline: ${subjectTag}${task.title}`,
       buildDetailedTaskBody(task, 'Jatuh Tempo BESOK! Pastikan sudah rapi & siap dikumpulkan.'),
       d1,
       actionUrl,
@@ -149,7 +149,7 @@ function scheduleTaskReminders(task: TaskRow) {
   const dayMorning = getWIBDateForDay(0, 6, 30, deadline);
   if (dayMorning > now) {
     void scheduleSystemNotification(
-      `🚨 DEADLINE HARI INI: ${subjectTag}${task.title}`,
+      `DEADLINE HARI INI: ${subjectTag}${task.title}`,
       buildDetailedTaskBody(task, 'Batas Waktu HARI INI! Cek kembali kelengkapan tugasmu sebelum berangkat!'),
       dayMorning,
       actionUrl,
@@ -163,7 +163,7 @@ function scheduleTaskReminders(task: TaskRow) {
   const h3 = new Date(deadline.getTime() - 3 * 60 * 60 * 1000);
   if (h3 > now) {
     void scheduleSystemNotification(
-      `🔥 3 Jam Menuju Deadline: ${task.title}`,
+      `3 Jam Menuju Deadline: ${task.title}`,
       buildDetailedTaskBody(task, `Tersisa 3 Jam (Batas pk ${timeOnly} WIB)! Selesaikan sentuhan akhir & submit sekarang!`),
       h3,
       actionUrl,
@@ -177,7 +177,7 @@ function scheduleTaskReminders(task: TaskRow) {
   const h1 = new Date(deadline.getTime() - 60 * 60 * 1000);
   if (h1 > now) {
     void scheduleSystemNotification(
-      `⚡ 1 Jam Terakhir: ${task.title}`,
+      `1 Jam Terakhir: ${task.title}`,
       buildDetailedTaskBody(task, `Kurang 1 Jam (Batas pk ${timeOnly} WIB)! Segera serahkan tugasmu sekarang!`),
       h1,
       actionUrl,
@@ -191,7 +191,7 @@ function scheduleTaskReminders(task: TaskRow) {
   const m30 = new Date(deadline.getTime() - 30 * 60 * 1000);
   if (m30 > now) {
     void scheduleSystemNotification(
-      `🚨 PERINGATAN TERAKHIR (30 Menit): ${task.title}`,
+      `PERINGATAN TERAKHIR (30 Menit): ${task.title}`,
       buildDetailedTaskBody(task, `Tenggat Waktu Kurang 30 Menit (pk ${timeOnly} WIB)! Segera kumpulkan sekarang!`),
       m30,
       actionUrl,
@@ -231,21 +231,21 @@ export function usePushNotifications() {
           const isMazetTask = (newTask.tags || []).some((tag) => tag === 'workspace:mazet');
           if ((workspaceId === 'mazet') !== isMazetTask) return;
 
-          const priorityText = PRIORITY_LABELS[newTask.priority || ''] || 'Sedang 📌';
+          const priorityText = PRIORITY_LABELS[newTask.priority || ''] || 'Sedang ';
           const subject = newTask.subject_name ? `[${newTask.subject_name}] ` : '';
           const dueFormatted = formatIndonesianDeadline(newTask.due_date, newTask.due_time);
           const teacher = newTask.teacher_name ? ` • Pengajar: ${newTask.teacher_name}` : '';
           const desc = truncateText(newTask.description, 95);
           const notes = truncateText(newTask.notes, 75);
 
-          let body = `📚 Mapel: ${newTask.subject_name || 'Umum'}${teacher}\n⚡ Prioritas: ${priorityText}\n⏰ Batas Waktu: ${dueFormatted}`;
-          if (desc) body += `\n📝 Detail: "${desc}"`;
-          if (notes) body += `\n💡 Catatan: "${notes}"`;
-          body += `\n👉 Buka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
+          let body = `Mapel: ${newTask.subject_name || 'Umum'}${teacher}\nPrioritas: ${priorityText}\nBatas Waktu: ${dueFormatted}`;
+          if (desc) body += `\nDetail: "${desc}"`;
+          if (notes) body += `\nCatatan: "${notes}"`;
+          body += `\nBuka aplikasi untuk cek materi & tandai selesai bila sudah tuntas!`;
 
           // Immediate Detailed Notification
           void showSystemNotification(
-            `📝 Tugas Baru: ${subject}${newTask.title}`,
+            `Tugas Baru: ${subject}${newTask.title}`,
             body,
             `/tasks/${newTask.id}`,
             {
@@ -274,8 +274,8 @@ export function usePushNotifications() {
 
             // Immediate celebratory confirmation notification!
             void showSystemNotification(
-              `🎉 Tugas Terkonfirmasi Selesai!`,
-              `Alhamdulillah! Tugas "${updatedTask.title}" (${updatedTask.subject_name || 'Umum'}) telah terkonfirmasi selesai. Semua alarm deadline telah dimatikan. Kerja hebat sayang! ⭐`,
+              `Tugas Terkonfirmasi Selesai!`,
+              `Alhamdulillah! Tugas "${updatedTask.title}" (${updatedTask.subject_name || 'Umum'}) telah terkonfirmasi selesai. Semua alarm deadline telah dimatikan. Kerja hebat sayang! `,
               `/tasks/${updatedTask.id}`,
               {
                 channelId: 'fazet_task_channel',
@@ -452,30 +452,30 @@ export function usePushNotifications() {
               let morningBody = '';
 
               if (workspaceId === 'mazet') {
-                morningTitle = `🎓 Jadwal Kuliah Hari Ini (${dayNameIndo})`;
+                morningTitle = `Jadwal Kuliah Hari Ini (${dayNameIndo})`;
                 if (todayClasses.length > 0) {
                   const listText = todayClasses
                     .map(c => `• ${c.subject}${c.location ? ` (${c.location})` : ''}`)
                     .join('\n');
-                  morningBody = `${listText}\n\nSemangat kuliahnya hari ini cintaku tersayang! 🌟`;
+                  morningBody = `${listText}\n\nSemangat kuliahnya hari ini cintaku tersayang! `;
                 } else {
-                  morningBody = `Hari ini tidak ada perkuliahan. Selamat beristirahat atau belajar santai ya manis! 🍃`;
+                  morningBody = `Hari ini tidak ada perkuliahan. Selamat beristirahat atau belajar santai ya manis! `;
                 }
               } else {
                 const todayTka = getExamDayByDate(todayStr);
                 morningTitle = todayTka
-                  ? `🎯 HARI UJIAN TKA Ke-${todayTka.hariKe} & Jadwal (${dayNameIndo})`
-                  : `📚 Jadwal Pelajaran Hari Ini (${dayNameIndo})`;
+                  ? `HARI UJIAN TKA Ke-${todayTka.hariKe} & Jadwal (${dayNameIndo})`
+                  : `Jadwal Pelajaran Hari Ini (${dayNameIndo})`;
                 const tkaPrefix = todayTka
-                  ? `🔥 UJIAN TKA (${todayTka.mulaiWib}-${todayTka.perkiraanSelesaiWib} WIB): ${todayTka.shortTitle} (${todayTka.totalMenit} Menit)\n\n`
+                  ? `UJIAN TKA (${todayTka.mulaiWib}-${todayTka.perkiraanSelesaiWib} WIB): ${todayTka.shortTitle} (${todayTka.totalMenit} Menit)\n\n`
                   : '';
                 if (todayClasses.length > 0) {
                   const listText = todayClasses
                     .map(c => `• ${c.subject}`)
                     .join('\n');
-                  morningBody = `${tkaPrefix}${listText}\n\nFokus dan semangat belajarnya hari ini sayang! 🌟`;
+                  morningBody = `${tkaPrefix}${listText}\n\nFokus dan semangat belajarnya hari ini sayang! `;
                 } else {
-                  morningBody = `${tkaPrefix}Hari ini tidak ada jadwal kelas reguler. Fokus penuh dan semangat ya sayang! 🌟`;
+                  morningBody = `${tkaPrefix}Hari ini tidak ada jadwal kelas reguler. Fokus penuh dan semangat ya sayang! `;
                 }
               }
 
@@ -503,30 +503,30 @@ export function usePushNotifications() {
               let eveningBody = '';
 
               if (workspaceId === 'mazet') {
-                eveningTitle = `🎓 Jadwal Kuliah Besok (${tomorrowDayName})`;
+                eveningTitle = `Jadwal Kuliah Besok (${tomorrowDayName})`;
                 if (tomorrowClasses.length > 0) {
                   const listText = tomorrowClasses
                     .map(c => `• ${c.subject}${c.location ? ` (${c.location})` : ''}`)
                     .join('\n');
-                  eveningBody = `${listText}\n\nSiapkan materi & laptop malam ini ya manisku! ✨`;
+                  eveningBody = `${listText}\n\nSiapkan materi & laptop malam ini ya manisku! `;
                 } else {
-                  eveningBody = `Besok tidak ada jadwal perkuliahan (libur). Selamat beristirahat ya cintaku! 🍃`;
+                  eveningBody = `Besok tidak ada jadwal perkuliahan (libur). Selamat beristirahat ya cintaku! `;
                 }
               } else {
                 const tomorrowTka = getExamDayByDate(tomorrowDateStr);
                 eveningTitle = tomorrowTka
-                  ? `🎯 Besok Ujian TKA Hari Ke-${tomorrowTka.hariKe} & Jadwal (${tomorrowDayName})`
-                  : `📚 Jadwal Pelajaran Besok (${tomorrowDayName})`;
+                  ? `Besok Ujian TKA Hari Ke-${tomorrowTka.hariKe} & Jadwal (${tomorrowDayName})`
+                  : `Jadwal Pelajaran Besok (${tomorrowDayName})`;
                 const tkaPrefix = tomorrowTka
-                  ? `⚡ UJIAN TKA BESOK (${tomorrowTka.mulaiWib}-${tomorrowTka.perkiraanSelesaiWib} WIB):\n• ${tomorrowTka.mapel} (${tomorrowTka.totalMenit} Menit)\n\n`
+                  ? `UJIAN TKA BESOK (${tomorrowTka.mulaiWib}-${tomorrowTka.perkiraanSelesaiWib} WIB):\n• ${tomorrowTka.mapel} (${tomorrowTka.totalMenit} Menit)\n\n`
                   : '';
                 if (tomorrowClasses.length > 0) {
                   const listText = tomorrowClasses
                     .map(c => `• ${c.subject}`)
                     .join('\n');
-                  eveningBody = `${tkaPrefix}Jadwal Sekolah:\n${listText}\n\nSiapkan kartu peserta, buku & perlengkapan malam ini ya sayang! ✨`;
+                  eveningBody = `${tkaPrefix}Jadwal Sekolah:\n${listText}\n\nSiapkan kartu peserta, buku & perlengkapan malam ini ya sayang! `;
                 } else {
-                  eveningBody = `${tkaPrefix}Besok tidak ada jadwal pelajaran reguler. Istirahat lebih awal malam ini ya sayang! ✨`;
+                  eveningBody = `${tkaPrefix}Besok tidak ada jadwal pelajaran reguler. Istirahat lebih awal malam ini ya sayang! `;
                 }
               }
 
@@ -649,7 +649,7 @@ export function usePushNotifications() {
 
               if (prepTime > now) {
                 void scheduleSystemNotification(
-                  `⏳ 10 Menit Menuju ${label} (${timeStr} WIB)`,
+                  `10 Menit Menuju ${label} (${timeStr} WIB)`,
                   `${wisdom.prepAdvice}\nWilayah: ${city} • Selesaikan aktivitas belajar/tugasmu dan bersiap wudhu.`,
                   prepTime,
                   '/',
@@ -662,7 +662,7 @@ export function usePushNotifications() {
               // Exact Prayer Time
               if (prayerTime > now) {
                 void scheduleSystemNotification(
-                  `🕌 Adzan ${label} Berkumandang (${timeStr} WIB) • ${city}`,
+                  `Adzan ${label} Berkumandang (${timeStr} WIB) • ${city}`,
                   `${wisdom.exactAdvice}\n${wisdom.hadith}`,
                   prayerTime,
                   '/',

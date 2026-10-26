@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Sparkles, Navigation, Clock, Sunrise, Sun, Sunset, Moon, CalendarDays, BellRing, BookOpen } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ContinuousMotion from '../ui/ContinuousMotion';
+import { MapPin, Navigation, Clock, Sunrise, Sun, Sunset, Moon, BellRing, BookOpen } from 'lucide-react';
 import { calculateOfflinePrayerTimes, PRAYER_WISDOM } from '../../utils/jadwalSholat';
 import { showSystemNotification } from '../../services/systemNotificationService';
 
 const WIDGETS = [
   { id: 'tasikmalaya', name: 'Tasikmalaya', apiId: '1227', cityName: 'Tasikmalaya' },
   { id: 'ciamis', name: 'Kawali, Ciamis', apiId: '1205', cityName: 'Ciamis' },
-  { id: 'tuban', name: 'Tuban', apiId: '1628', cityName: 'Tuban' }
+  { id: 'tuban', name: 'Tuban', apiId: '1628', cityName: 'Tuban' },
 ];
 
 type JadwalData = {
@@ -45,7 +43,7 @@ export default function JadwalSholat() {
   const [activeJadwal, setActiveJadwal] = useState<JadwalData | null>(null);
   const [isBesokUI, setIsBesokUI] = useState(false);
 
-  const activeWidget = WIDGETS.find(w => w.id === activeTab) || WIDGETS[0];
+  const activeWidget = WIDGETS.find((w) => w.id === activeTab) || WIDGETS[0];
 
   useEffect(() => {
     async function loadJadwal() {
@@ -67,35 +65,29 @@ export default function JadwalSholat() {
         const mYear = tomorrow.getFullYear();
         const mMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
         const mDay = String(tomorrow.getDate()).padStart(2, '0');
-        
+
         const [resToday, resTomorrow] = await Promise.all([
           fetch(`https://api.myquran.com/v2/sholat/jadwal/${activeWidget.apiId}/${tYear}/${tMonth}/${tDay}`),
-          fetch(`https://api.myquran.com/v2/sholat/jadwal/${activeWidget.apiId}/${mYear}/${mMonth}/${mDay}`)
+          fetch(`https://api.myquran.com/v2/sholat/jadwal/${activeWidget.apiId}/${mYear}/${mMonth}/${mDay}`),
         ]);
 
         const jsonToday = await resToday.json();
         const jsonTomorrow = await resTomorrow.json();
-        
-        let tData: JadwalData;
-        let mData: JadwalData;
 
-        if (jsonToday.status && jsonToday.data?.jadwal) {
-          tData = jsonToday.data.jadwal;
-        } else {
-          tData = calculateOfflinePrayerTimes(activeWidget.cityName, today);
-        }
+        const tData: JadwalData =
+          jsonToday.status && jsonToday.data?.jadwal
+            ? jsonToday.data.jadwal
+            : calculateOfflinePrayerTimes(activeWidget.cityName, today);
 
-        if (jsonTomorrow.status && jsonTomorrow.data?.jadwal) {
-          mData = jsonTomorrow.data.jadwal;
-        } else {
-          mData = calculateOfflinePrayerTimes(activeWidget.cityName, tomorrow);
-        }
+        const mData: JadwalData =
+          jsonTomorrow.status && jsonTomorrow.data?.jadwal
+            ? jsonTomorrow.data.jadwal
+            : calculateOfflinePrayerTimes(activeWidget.cityName, tomorrow);
 
         cacheRef.current[activeWidget.id] = { today: tData, tomorrow: mData };
         setJadwalToday(tData);
         setJadwalTomorrow(mData);
-      } catch (err) {
-        console.warn('API error, using offline prayer calculation fallback:', err);
+      } catch {
         const tData = calculateOfflinePrayerTimes(activeWidget.cityName, new Date());
         const mData = calculateOfflinePrayerTimes(activeWidget.cityName, new Date(Date.now() + 86400000));
         setJadwalToday(tData);
@@ -110,7 +102,7 @@ export default function JadwalSholat() {
 
   useEffect(() => {
     if (!jadwalToday || !jadwalTomorrow) return;
-    
+
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const [isyaH, isyaM] = jadwalToday.isya.split(':').map(Number);
     const isyaMins = isyaH * 60 + isyaM;
@@ -138,14 +130,14 @@ export default function JadwalSholat() {
 
     if (isBesok) {
       const [h, m] = times[0].time.split(':').map(Number);
-      next = { name: 'Imsak', time: times[0].time, diff: (24 * 60 - currentMinutes) + (h * 60 + m) };
-      current = 'Isya'; 
+      next = { name: 'Imsak', time: times[0].time, diff: 24 * 60 - currentMinutes + (h * 60 + m) };
+      current = 'Isya';
     } else {
       for (let i = 0; i < times.length; i++) {
         const t = times[i];
         const [h, m] = t.time.split(':').map(Number);
         const tMins = h * 60 + m;
-        
+
         if (tMins > currentMinutes) {
           next = { name: t.name, time: t.time, diff: tMins - currentMinutes };
           break;
@@ -159,7 +151,7 @@ export default function JadwalSholat() {
         next = null;
       }
     }
-    
+
     setActiveJadwal(active);
     setNextPrayer(next);
     setCurrentPrayer(current);
@@ -180,12 +172,12 @@ export default function JadwalSholat() {
     const time = (activeJadwal as Record<string, string>)[targetName.toLowerCase()] || activeJadwal.subuh;
 
     await showSystemNotification(
-      `🕌 Adzan ${targetName} (${time} WIB) • ${activeWidget.name}`,
+      `Waktu ${targetName} (${time} WIB) • ${activeWidget.name}`,
       `${wisdom.exactAdvice}\n${wisdom.hadith}`,
       '/schedule',
       {
         channelId: 'fazet_prayer_channel',
-        soundType: 'prayer'
+        soundType: 'prayer',
       }
     );
 
@@ -197,7 +189,7 @@ export default function JadwalSholat() {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
   }).format(now);
 
   const tomorrowDate = new Date(now.getTime() + 86400000);
@@ -205,213 +197,179 @@ export default function JadwalSholat() {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
   }).format(tomorrowDate);
 
   const realTimeClock = now.toLocaleTimeString('id-ID', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
+    second: '2-digit',
   });
 
   const currentWisdom = PRAYER_WISDOM[currentPrayer] || PRAYER_WISDOM[nextPrayer?.name || 'Subuh'];
 
   return (
-    <div className="w-full my-4">
-      <div className="bg-white dark:bg-[#0f1219] rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute -top-32 -right-32 w-64 h-64 bg-amber-400/10 blur-3xl rounded-full pointer-events-none"></div>
-        <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-emerald-400/10 blur-3xl rounded-full pointer-events-none"></div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div className="w-full">
+      <div className="bg-[var(--tf-bg-surface)] rounded-[var(--tf-radius-card)] p-5 sm:p-7 border border-[var(--tf-border)] shadow-[var(--tf-shadow-raised)]">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 mb-5 border-b border-[var(--tf-border)]">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-xl text-amber-600 dark:text-amber-400">
-                <Sparkles size={18} />
-              </div>
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">Jadwal Sholat & Ibadah</h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 font-bold font-mono">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                {realTimeDateString} • {realTimeClock} WIB
-              </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
-                • Data astronomis Kemenag RI
-              </span>
-            </div>
+            <div className="studio-eyebrow mb-1">Spiritual &amp; Waktu Ibadah</div>
+            <h2 className="font-serif text-xl sm:text-2xl font-medium text-[var(--tf-text-primary)]">
+              Jadwal Sholat Wilayah {activeWidget.name}
+            </h2>
+            <p className="text-xs text-[var(--tf-text-muted)] mt-0.5">
+              {isBesokUI ? `Menampilkan jadwal besok (${realTimeTomorrowDateString})` : realTimeDateString} &bull; Perhitungan Astronomis Kemenag RI
+            </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Location Tabs */}
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl overflow-x-auto hide-scrollbar">
+            {/* Location Switcher */}
+            <div className="flex bg-[var(--tf-bg-subtle)] p-1 rounded-xl border border-[var(--tf-border)]">
               {WIDGETS.map((widget) => (
                 <button
                   key={widget.id}
+                  type="button"
                   onClick={() => setActiveTab(widget.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap ${
-                    activeTab === widget.id 
-                      ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-sm' 
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs transition-all whitespace-nowrap cursor-pointer ${
+                    activeTab === widget.id
+                      ? 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] shadow-2xs border border-[var(--tf-border)]'
+                      : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                   }`}
                 >
-                  <MapPin size={14} className={activeTab === widget.id ? "animate-bounce" : ""} />
-                  {widget.name}
+                  <MapPin size={12} className={activeTab === widget.id ? 'text-[var(--tf-accent)]' : ''} />
+                  <span>{widget.name}</span>
                 </button>
               ))}
             </div>
 
-            {/* Quick Test Audio Button */}
             <button
+              type="button"
               onClick={handleTestTrigger}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${
-                notifSent
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                  : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300 hover:bg-amber-100'
-              }`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] hover:border-[var(--tf-accent)]/40 hover:text-[var(--tf-text-primary)] transition-all cursor-pointer"
             >
-              <BellRing size={14} className={notifSent ? "animate-spin" : ""} />
-              <span>{notifSent ? 'Notifikasi Terkirim!' : 'Tes Notif Sholat'}</span>
+              <BellRing size={13} className="text-[var(--tf-accent)]" />
+              <span>{notifSent ? 'Pengingat Terkirim' : 'Uji Pengingat'}</span>
             </button>
           </div>
         </div>
 
-        {/* Native UI Container */}
-        <div className={`relative w-full rounded-3xl border p-6 min-h-[200px] transition-colors duration-500 ${
-          isBesokUI 
-            ? 'bg-indigo-50/50 border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/30' 
-            : 'bg-slate-50/60 border-slate-100 dark:bg-slate-900/40 dark:border-slate-800'
-        }`}>
-          {loading ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <Navigation className="w-8 h-8 animate-spin text-amber-400/50" />
-              <span className="font-semibold text-xs animate-pulse">Menyiapkan jadwal wilayah {activeWidget.name}...</span>
-            </div>
-          ) : activeJadwal ? (
-            <div className="fade-in space-y-5">
-              <div className="text-center space-y-2.5">
-                <div className={`inline-flex flex-wrap items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-xs font-bold transition-colors shadow-xs ${
-                  isBesokUI 
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
-                    : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
-                }`}>
-                  <CalendarDays size={15} className={isBesokUI ? "text-indigo-500 shrink-0" : "text-amber-500 shrink-0"} />
-                  <span>
-                    {isBesokUI ? (
-                      <>
-                        <span className="opacity-75">Jadwal Aktif Besok:</span> <strong>{realTimeTomorrowDateString}</strong>
-                      </>
-                    ) : (
-                      <>
-                        <span className="opacity-75">Jadwal Hari Ini:</span> <strong>{realTimeDateString}</strong>
-                      </>
-                    )}
-                  </span>
-                  <span className="opacity-40 hidden sm:inline">•</span>
-                  <span className="font-mono flex items-center gap-1 bg-white/80 dark:bg-slate-900/60 px-2 py-0.5 rounded-lg border border-black/5 dark:border-white/10">
-                    <Clock size={12} className="text-amber-600 dark:text-amber-400" />
+        {/* Body */}
+        {loading ? (
+          <div className="py-12 flex flex-col items-center justify-center text-[var(--tf-text-muted)] gap-2.5">
+            <Navigation className="w-5 h-5 animate-spin text-[var(--tf-accent)]" />
+            <span className="text-xs">Menyelaraskan jadwal wilayah {activeWidget.name}...</span>
+          </div>
+        ) : activeJadwal ? (
+          <div className="space-y-5">
+            {/* Status Bar & Wisdom */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              <div className="lg:col-span-5 rounded-xl bg-[var(--tf-bg-subtle)] border border-[var(--tf-border)] p-4 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs text-[var(--tf-text-muted)]">
+                  <span>Waktu Saat Ini ({ currentPrayer || 'Menunggu' })</span>
+                  <span className="font-mono font-medium text-[var(--tf-text-primary)] inline-flex items-center gap-1">
+                    <Clock size={12} className="text-[var(--tf-accent)]" />
                     {realTimeClock} WIB
                   </span>
                 </div>
-                
+
                 {nextPrayer ? (
-                  <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Sekarang waktu <span className="text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider">{currentPrayer || 'Belum masuk waktu'}</span>. 
-                    <br />
-                    <span className="text-amber-600 dark:text-amber-400 font-black text-xl">{formatCountdown(nextPrayer.diff)}</span> menuju {nextPrayer.name}.
+                  <div className="mt-3 flex items-baseline justify-between gap-2">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--tf-text-muted)]">
+                        Menuju Waktu {nextPrayer.name}
+                      </div>
+                      <div className="font-serif text-2xl font-semibold text-[var(--tf-text-primary)] mt-0.5">
+                        {nextPrayer.time} WIB
+                      </div>
+                    </div>
+                    <div className="font-mono text-sm font-semibold px-3 py-1 rounded-lg bg-[var(--tf-accent-soft)] text-[var(--tf-accent)] border border-[var(--tf-accent)]/20">
+                      -{formatCountdown(nextPrayer.diff)}
+                    </div>
                   </div>
                 ) : (
-                  <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Sekarang waktu <span className="text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider">{currentPrayer}</span>. 
-                    <br />
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">Selamat menunaikan ibadah sholat Isya.</span>
+                  <div className="mt-3 text-xs font-medium text-[var(--tf-text-secondary)]">
+                    Seluruh rangkaian waktu sholat hari ini telah masuk. Selamat beristirahat.
                   </div>
                 )}
               </div>
 
-              {/* Hadith / Wisdom Advice Pill */}
               {currentWisdom && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2.5 max-w-2xl mx-auto">
-                  <BookOpen size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5">
-                    <span className="font-black text-amber-800 dark:text-amber-400 block uppercase tracking-wider text-[10px]">
-                      Keutamaan Waktu {currentPrayer || nextPrayer?.name}
-                    </span>
-                    <p className="italic text-slate-600 dark:text-slate-300">
+                <div className="lg:col-span-7 rounded-xl bg-[var(--tf-bg-subtle)] border border-[var(--tf-border)] p-4 flex items-start gap-3">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] text-[var(--tf-accent)] mt-0.5">
+                    <BookOpen size={14} />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--tf-accent)]">
+                      Catatan Keutamaan &bull; {currentPrayer || nextPrayer?.name}
+                    </div>
+                    <p className="font-serif text-sm italic text-[var(--tf-text-primary)] leading-relaxed">
                       {currentWisdom.hadith}
                     </p>
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Prayer Time Cards Grid */}
-              <motion.div 
-                className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5"
-                initial="hidden"
-                animate="show"
-                variants={{
-                  hidden: { opacity: 0 },
-                  show: {
-                    opacity: 1,
-                    transition: { staggerChildren: 0.05 }
-                  }
-                }}
-              >
-                <TimeCard title="Imsak" time={activeJadwal.imsak} icon={<Moon size={18} />} isActive={currentPrayer === 'Imsak' && !isBesokUI} />
-                <TimeCard title="Subuh" time={activeJadwal.subuh} icon={<Sunrise size={18} />} isActive={currentPrayer === 'Subuh' && !isBesokUI} />
-                <TimeCard title="Dhuha" time={activeJadwal.dhuha} icon={<Sun size={18} />} isActive={currentPrayer === 'Dhuha' && !isBesokUI} />
-                <TimeCard title="Dzuhur" time={activeJadwal.dzuhur} icon={<Sun size={18} />} isActive={currentPrayer === 'Dzuhur' && !isBesokUI} />
-                <TimeCard title="Ashar" time={activeJadwal.ashar} icon={<Sun size={18} />} isActive={currentPrayer === 'Ashar' && !isBesokUI} />
-                <TimeCard title="Maghrib" time={activeJadwal.maghrib} icon={<Sunset size={18} />} isActive={currentPrayer === 'Maghrib' && !isBesokUI} />
-                <TimeCard title="Isya" time={activeJadwal.isya} icon={<Moon size={18} />} isActive={currentPrayer === 'Isya' && !isBesokUI} />
-              </motion.div>
+            {/* 7 Prayer Time Pillars */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+              <TimeCard title="Imsak" time={activeJadwal.imsak} icon={<Moon size={15} />} isActive={currentPrayer === 'Imsak' && !isBesokUI} />
+              <TimeCard title="Subuh" time={activeJadwal.subuh} icon={<Sunrise size={15} />} isActive={currentPrayer === 'Subuh' && !isBesokUI} />
+              <TimeCard title="Dhuha" time={activeJadwal.dhuha} icon={<Sun size={15} />} isActive={currentPrayer === 'Dhuha' && !isBesokUI} />
+              <TimeCard title="Dzuhur" time={activeJadwal.dzuhur} icon={<Sun size={15} />} isActive={currentPrayer === 'Dzuhur' && !isBesokUI} />
+              <TimeCard title="Ashar" time={activeJadwal.ashar} icon={<Sun size={15} />} isActive={currentPrayer === 'Ashar' && !isBesokUI} />
+              <TimeCard title="Maghrib" time={activeJadwal.maghrib} icon={<Sunset size={15} />} isActive={currentPrayer === 'Maghrib' && !isBesokUI} />
+              <TimeCard title="Isya" time={activeJadwal.isya} icon={<Moon size={15} />} isActive={currentPrayer === 'Isya' && !isBesokUI} />
             </div>
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <span className="font-semibold text-xs">Gagal memuat jadwal sholat.</span>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="py-10 text-center text-xs text-[var(--tf-text-muted)]">
+            Jadwal sholat belum dapat dimuat saat ini.
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function TimeCard({ title, time, icon, isActive = false }: { title: string, time: string, icon: React.ReactNode, isActive?: boolean }) {
-  const itemVariants: any = {
-    hidden: { opacity: 0, y: 15, scale: 0.95 },
-    show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 350, damping: 25 } }
-  };
-
+function TimeCard({
+  title,
+  time,
+  icon,
+  isActive = false,
+}: {
+  title: string;
+  time: string;
+  icon: React.ReactNode;
+  isActive?: boolean;
+}) {
   return (
-    <motion.div 
-      variants={itemVariants}
-      whileHover={{ scale: 1.04, y: -3 }}
-      className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3.5 transition-all ${
+    <div
+      className={`flex flex-col items-center justify-center gap-1.5 rounded-xl p-3.5 transition-all border ${
         isActive
-          ? 'bg-amber-100 border-2 border-amber-500 shadow-[0_0_18px_rgba(245,158,11,0.35)] dark:bg-amber-900/40 dark:border-amber-400 scale-105'
-          : 'bg-white border border-slate-100 dark:bg-slate-800/60 dark:border-slate-800 hover:border-amber-200'
+          ? 'bg-[var(--tf-accent-soft)] border-[var(--tf-accent)] text-[var(--tf-text-primary)]'
+          : 'bg-[var(--tf-bg-subtle)]/50 border-[var(--tf-border)] text-[var(--tf-text-secondary)] hover:border-[var(--tf-accent)]/40'
       }`}
     >
-      <ContinuousMotion intensity={isActive ? 'medium' : 'low'}>
-        <div className={`grid h-9 w-9 place-items-center rounded-xl ${
-          isActive 
-            ? 'bg-amber-500 text-white shadow-sm' 
-            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-        }`}>
-          {icon}
-        </div>
-      </ContinuousMotion>
-      <div className={`text-[10px] font-black uppercase tracking-wider ${
-        isActive ? 'text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'
-      }`}>
+      <div
+        className={`grid h-8 w-8 place-items-center rounded-lg border ${
+          isActive
+            ? 'bg-[var(--tf-accent)] text-[var(--tf-on-accent)] border-transparent'
+            : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-muted)] border-[var(--tf-border)]'
+        }`}
+      >
+        {icon}
+      </div>
+      <div
+        className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${
+          isActive ? 'text-[var(--tf-accent)]' : 'text-[var(--tf-text-muted)]'
+        }`}
+      >
         {title}
       </div>
-      <div className={`text-lg font-black tracking-tight ${
-        isActive ? 'text-amber-950 dark:text-amber-200' : 'text-slate-900 dark:text-white'
-      }`}>
+      <div className="font-mono text-base font-semibold tracking-tight text-[var(--tf-text-primary)]">
         {time}
       </div>
-    </motion.div>
+    </div>
   );
 }

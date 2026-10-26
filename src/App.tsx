@@ -74,7 +74,7 @@ function Page({ children }: { children: ReactNode }) {
   const { isPathEnabled, branding } = useAppConfig();
   const { isAdmin } = useAuth();
   if (branding.maintenance && !isAdmin) return (
-    <AppShell><div className="grid min-h-[60vh] place-items-center p-6 text-center"><div className="max-w-md"><div className="text-5xl">🛠️</div><div className="mt-3 text-xl font-black">Sedang perawatan</div><p className="mt-2 text-sm opacity-70">{branding.maintenanceMessage}</p></div></div></AppShell>
+    <AppShell><div className="grid min-h-[60vh] place-items-center p-6 text-center"><div className="max-w-md"><div className="text-5xl"></div><div className="mt-3 text-xl font-black">Sedang perawatan</div><p className="mt-2 text-sm opacity-70">{branding.maintenanceMessage}</p></div></div></AppShell>
   );
   if (!isPathEnabled(pathname)) return (
     <AppShell><div className="grid min-h-[60vh] place-items-center p-6 text-center"><div><div className="text-lg font-bold">Fitur sedang dinonaktifkan</div><p className="mt-2 text-sm opacity-70">Admin menonaktifkan halaman ini untuk sementara.</p><a href="/" className="mt-4 inline-block font-bold text-blue-600">Kembali ke beranda</a></div></div></AppShell>

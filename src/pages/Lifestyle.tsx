@@ -46,8 +46,8 @@ export default function Lifestyle() {
     void showSystemNotification(title, message, '/lifestyle', { soundType });
   };
 
-  const testNotifSahur = () => handleTest('Waktunya Sahur! ☕', `Waktu imsak pukul ${jadwal.imsak} WIB. Jangan lupa santap sahur dan niat berpuasa ya!`, 'prayer');
-  const testNotifBuka = () => handleTest('Alhamdulillah Waktunya Berbuka! 🍽️', `Adzan Maghrib telah berkumandang (${jadwal.maghrib} WIB). Selamat berbuka puasa!`, 'success');
+  const testNotifSahur = () => handleTest('Waktunya Sahur! ', `Waktu imsak pukul ${jadwal.imsak} WIB. Jangan lupa santap sahur dan niat berpuasa ya!`, 'prayer');
+  const testNotifBuka = () => handleTest('Alhamdulillah Waktunya Berbuka! ', `Adzan Maghrib telah berkumandang (${jadwal.maghrib} WIB). Selamat berbuka puasa!`, 'success');
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-24">

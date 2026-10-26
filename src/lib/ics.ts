@@ -28,7 +28,7 @@ export function exportCalendarIcs(taskList: Task[], schedule: ScheduleItem[], mo
         `UID:tka-2026-day-${exam.hariKe}@taskflow.school`,
         `DTSTART:${stamp(exam.tanggal, exam.mulaiWib)}`,
         `DTEND:${stamp(exam.tanggal, exam.perkiraanSelesaiWib)}`,
-        `SUMMARY:${escape(`🎯 Ujian TKA SMA 2026 Hari Ke-${exam.hariKe}: ${exam.shortTitle}`)}`,
+        `SUMMARY:${escape(`Ujian TKA SMA 2026 Hari Ke-${exam.hariKe}: ${exam.shortTitle}`)}`,
         `DESCRIPTION:${escape(`${exam.mapel} (${exam.subtitle}) • Durasi ${exam.totalMenit} Menit • ${exam.totalSoal} Soal`)}`,
         'STATUS:CONFIRMED',
         'END:VEVENT',

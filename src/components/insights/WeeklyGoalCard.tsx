@@ -43,7 +43,7 @@ export default function WeeklyGoalCard({ completedThisWeek }: { completedThisWee
 
   const percent = target > 0 ? Math.round(Math.min(1, completedThisWeek / target) * 100) : 0;
   const message = percent >= 100
-    ? 'Target minggu ini tercapai! 🎉'
+    ? 'Target minggu ini tercapai! '
     : percent >= 60
       ? 'Hampir sampai target minggu ini.'
       : 'Terus kerjakan tugas untuk mencapai target.';

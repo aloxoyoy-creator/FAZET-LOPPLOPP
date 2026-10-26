@@ -24,33 +24,34 @@ export default function DigitalIdCardBanner() {
   if (loading || !card) return null;
 
   return (
-    <section className="group relative overflow-hidden rounded-[var(--tf-radius-card)] border border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 sm:p-5 fade-up shadow-[0_16px_36px_rgba(0,0,0,0.4)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(37,99,235,0.2)]">
-      <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
-      <div className="pointer-events-none absolute right-[-60px] top-[-60px] h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
+    <section className="group relative overflow-hidden rounded-[var(--tf-radius-card)] border border-[var(--tf-border)] bg-[#141311] p-5 sm:p-6 fade-up shadow-[0_18px_40px_rgba(12,11,10,0.22)] transition-all duration-300 hover:border-[#C8A96E]/40">
+      <div className="pointer-events-none absolute right-[-60px] top-[-60px] h-56 w-56 rounded-full bg-[#C8A96E]/10 blur-3xl" />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/15 bg-white/5">
+          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-[#C8A96E]/30 bg-white/5">
             {card.photoUrl ? (
               <img src={card.photoUrl} alt={card.fullName} className="h-full w-full object-cover" />
             ) : (
-              <UserRound size={26} className="text-white/70" />
+              <UserRound size={24} className="text-[#C8A96E]" />
             )}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.2em] text-indigo-300">
-              <IdCard size={13} /> Kartu Digital
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#C8A96E]">
+              <IdCard size={13} /> Identity Pass
             </div>
-            <div className="mt-1 truncate text-lg font-extrabold text-white">{card.fullName}</div>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-300">
-              <span>No. {card.cardNumber}</span>
-              {card.idNumber && <span>• {card.idNumber}</span>}
-              <span>• {card.roleLabel}</span>
-              {card.classLabel && <span>• {card.classLabel}</span>}
+            <div className="mt-1 truncate text-xl font-medium tracking-tight text-[#F5F3EE]" style={{ fontFamily: 'var(--tf-font-display)' }}>
+              {card.fullName}
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#A39E95]">
+              <span className="font-mono text-[11px] text-[#E5E0D5]">No. {card.cardNumber}</span>
+              {card.idNumber && <span>/ {card.idNumber}</span>}
+              <span>/ {card.roleLabel}</span>
+              {card.classLabel && <span>/ {card.classLabel}</span>}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 self-start rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-bold text-emerald-300 sm:self-center">
-          <ShieldCheck size={15} /> Diterbitkan Admin • Permanen
+        <div className="flex items-center gap-2 self-start rounded-full border border-[#C8A96E]/30 bg-[#C8A96E]/10 px-3.5 py-1.5 text-[11px] font-medium tracking-wide text-[#E5CFA0] sm:self-center">
+          <ShieldCheck size={14} /> Verified Member
         </div>
       </div>
     </section>

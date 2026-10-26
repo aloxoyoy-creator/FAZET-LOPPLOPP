@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { cn } from '../../lib/utils';
-import ContinuousMotion from './ContinuousMotion';
 
 type Props = {
   children: ReactNode;
@@ -12,34 +11,70 @@ type Props = {
 
 export default function Badge({ children, tone, variant, size = 'md', className }: Props) {
   const styles = {
-    neutral: 'bg-[var(--tf-bg-subtle)] text-[var(--tf-text-secondary)]',
-    primary: 'bg-[var(--tf-primary-subtle)] text-[var(--tf-primary)]',
-    success: 'bg-[var(--tf-success-bg)] text-[var(--tf-success)]',
-    warning: 'bg-[var(--tf-warning-bg)] text-[var(--tf-warning)]',
-    danger: 'bg-[var(--tf-danger-bg)] text-[var(--tf-danger)]',
-    fathur: 'bg-[var(--tf-fathur-subtle)] text-[var(--tf-fathur)]',
-    mazet: 'bg-[var(--tf-mazet-subtle)] text-[var(--tf-mazet)]',
+    neutral: 'bg-[var(--tf-bg-subtle)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)]',
+    primary: 'bg-[var(--tf-accent-soft)] text-[var(--tf-accent)] border border-[var(--tf-accent)]/20',
+    success: 'bg-[var(--tf-success-bg)] text-[var(--tf-success)] border border-[var(--tf-success)]/20',
+    warning: 'bg-[var(--tf-warning-bg)] text-[var(--tf-warning)] border border-[var(--tf-warning)]/20',
+    danger: 'bg-[var(--tf-danger-bg)] text-[var(--tf-danger)] border border-[var(--tf-danger)]/20',
+    fathur: 'bg-[var(--tf-fathur-subtle)] text-[var(--tf-fathur)] border border-[var(--tf-fathur)]/20',
+    mazet: 'bg-[var(--tf-mazet-subtle)] text-[var(--tf-mazet)] border border-[var(--tf-mazet)]/20',
   } as const;
   const toneMap = { blue: 'primary', green: 'success', amber: 'warning', red: 'danger', purple: 'mazet', slate: 'neutral' } as const;
   const mapped: keyof typeof styles = variant ?? toneMap[tone ?? 'slate'];
-  
+
   return (
-    <ContinuousMotion intensity="low" className="inline-block">
-      <span className={cn('inline-flex items-center gap-1.5 rounded-full whitespace-nowrap font-semibold', size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs', styles[mapped], className)}>
-        {children}
-      </span>
-    </ContinuousMotion>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full whitespace-nowrap font-medium tracking-wide',
+        size === 'sm' ? 'px-2.5 py-0.5 text-[10px]' : 'px-3 py-1 text-[11px]',
+        styles[mapped],
+        className
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
-export function Chip({ label, active = false, count, icon, onClick, className }: { label: string; active?: boolean; count?: number; icon?: ReactNode; onClick?: () => void; className?: string }) {
+export function Chip({
+  label,
+  active = false,
+  count,
+  icon,
+  onClick,
+  className,
+}: {
+  label: string;
+  active?: boolean;
+  count?: number;
+  icon?: ReactNode;
+  onClick?: () => void;
+  className?: string;
+}) {
   return (
-    <ContinuousMotion intensity={active ? 'medium' : 'low'} className="inline-block">
-      <button type="button" onClick={onClick} className={cn('inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-xs font-semibold rounded-full transition-all select-none whitespace-nowrap', active ? 'bg-[var(--tf-primary)] text-white shadow-sm' : 'bg-[var(--tf-bg-subtle)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)] hover:text-[var(--tf-text-primary)]', className)}>
-        {icon}
-        <span>{label}</span>
-        {count !== undefined && <span className={cn('ml-1 rounded-full px-1.5 text-[10px]', active ? 'bg-white/20' : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-muted)]')}>{count}</span>}
-      </button>
-    </ContinuousMotion>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 min-h-[34px] px-3.5 py-1.5 text-xs font-medium rounded-full transition-all select-none whitespace-nowrap cursor-pointer',
+        active
+          ? 'bg-[var(--tf-primary)] text-[var(--tf-bg-surface)] shadow-2xs'
+          : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)] hover:border-[var(--tf-accent)]/40 hover:text-[var(--tf-text-primary)]',
+        className
+      )}
+    >
+      {icon}
+      <span>{label}</span>
+      {count !== undefined && (
+        <span
+          className={cn(
+            'ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-mono',
+            active ? 'bg-white/20 text-current' : 'bg-[var(--tf-bg-subtle)] text-[var(--tf-text-muted)]'
+          )}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   );
 }

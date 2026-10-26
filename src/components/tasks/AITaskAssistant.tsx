@@ -47,7 +47,7 @@ export default function AITaskAssistant({
           </span>
           <span>
             <span className="block text-sm font-black text-violet-950 dark:text-violet-100">
-              ✨ Tambah Tugas dengan AI
+              Tambah Tugas dengan AI
             </span>
             <span className="mt-1 block text-[11px] text-violet-700/70 dark:text-violet-200/70">
               Tulis tugas dengan bahasa biasa. AI membantu mengisi mapel, deadline, dan prioritas.

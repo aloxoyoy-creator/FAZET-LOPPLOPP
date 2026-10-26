@@ -126,7 +126,7 @@ export default function Tasks() {
   async function handleAskAiPrioritizer() {
     const activeTasks = tasks.filter((t) => t.status !== 'completed');
     if (activeTasks.length === 0) {
-      setAiAdvice('🎉 Semua tugas sudah selesai! Tidak ada tanggungan tugas aktif saat ini.');
+      setAiAdvice('Semua tugas sudah selesai! Tidak ada tanggungan tugas aktif saat ini.');
       return;
     }
     setAiLoading(true);
@@ -303,8 +303,8 @@ export default function Tasks() {
       <div className="flex flex-wrap items-center gap-2">
         {[
           { id: 'all', label: 'Semua Tugas', icon: ListTodo },
-          { id: 'urgent', label: 'Prioritas Tinggi & Mendesak 🔥', icon: Flame },
-          { id: 'today', label: 'Deadline Hari Ini ⏰', icon: CalendarClock },
+          { id: 'urgent', label: 'Prioritas Tinggi & Mendesak ', icon: Flame },
+          { id: 'today', label: 'Deadline Hari Ini ', icon: CalendarClock },
           { id: 'overdue', label: `Terlambat (${stats.overdue})`, icon: AlertTriangle },
           { id: 'completed', label: `Selesai (${stats.completed})`, icon: CheckCircle2 },
         ].map((chip) => {
@@ -426,10 +426,10 @@ export default function Tasks() {
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Prioritas</label>
                 <select className="input bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800" value={priority} onChange={(e) => setPriority(e.target.value)}>
                   <option value="all">Semua prioritas</option>
-                  <option value="urgent">Mendesak 🔥</option>
-                  <option value="high">Tinggi ⚡</option>
-                  <option value="medium">Sedang 📌</option>
-                  <option value="low">Santai 🍃</option>
+                  <option value="urgent">Mendesak </option>
+                  <option value="high">Tinggi </option>
+                  <option value="medium">Sedang </option>
+                  <option value="low">Santai </option>
                 </select>
               </div>
 
@@ -550,7 +550,7 @@ export default function Tasks() {
       />
 
       <div className={cn('text-center text-[11px] text-slate-400 pt-4', filtered.length ? 'opacity-100' : 'opacity-0')}>
-        💡 Tip: Klik dua kali kartu tugas untuk mengedit • Tekan tombol <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border font-mono">N</kbd> untuk membuat tugas baru.
+        Tip: Klik dua kali kartu tugas untuk mengedit • Tekan tombol <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border font-mono">N</kbd> untuk membuat tugas baru.
       </div>
     </div>
   );

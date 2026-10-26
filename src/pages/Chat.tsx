@@ -11,7 +11,7 @@ import { cn, errorMessage } from '../lib/utils';
 function formatTime(value: string) { return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
 function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase(); }
 
-const EMOJIS = ['😂','❤️','😍','🤣','😊','🙏','😭','😘','👍','😅','👏','😁','🔥','🥰','🤔','✅','🎉','🥲','✨','👍🏻','🤔'];
+const EMOJIS = ['','','','','','','','','','','','','','','','','','','','',''];
 
 export default function Chat() {
   const { user } = useAuth();
@@ -180,7 +180,7 @@ export default function Chat() {
 
   function openConversation(c: ChatConversation) {
     if (c.is_locked && !unlockedChats.has(c.id)) {
-      const pass = prompt('🔐 Chat ini dikunci (Chat Lock). Masukkan PIN (1234):');
+      const pass = prompt('Chat ini dikunci (Chat Lock). Masukkan PIN (1234):');
       if (pass === '1234' || pass) { setUnlockedChats(prev => new Set(prev).add(c.id)); } else return;
     }
     setConversation(c);
@@ -284,7 +284,7 @@ export default function Chat() {
       mr.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const file = new File([blob], 'voicenote.webm', { type: 'audio/webm' });
-        try { if (conversation && user) await sendMessage(conversation.id, user.id, '🎤 Voice Note', file); } catch(e) { setError(errorMessage(e)); }
+        try { if (conversation && user) await sendMessage(conversation.id, user.id, 'Voice Note', file); } catch(e) { setError(errorMessage(e)); }
         stream.getTracks().forEach(t => t.stop());
       };
       mediaRecorderRef.current = mr;
@@ -440,7 +440,7 @@ export default function Chat() {
         {/* Other Tabs */}
         {activeTab === 'channels' && <div className="p-5 flex flex-col gap-4"><h2 className="text-xl font-bold dark:text-white mb-4">Channels</h2><Button onClick={() => alert('Channel creation simulated!')}>Create Channel</Button><Button variant="secondary" onClick={() => alert('Found 0 new channels in directory')}>Find Channels</Button></div>}
         {activeTab === 'communities' && <div className="p-5 flex flex-col gap-4"><h2 className="text-xl font-bold dark:text-white mb-4">Communities</h2><Button onClick={() => alert('Community created!')}>Start your community</Button></div>}
-        {activeTab === 'business' && <div className="p-5"><h2 className="text-xl font-bold dark:text-white mb-4">WA Business</h2><ul className="space-y-3 dark:text-slate-300"><li>✓ Catalog Manager</li><li>✓ Auto-Replies</li><li>✓ Labels</li></ul></div>}
+        {activeTab === 'business' && <div className="p-5"><h2 className="text-xl font-bold dark:text-white mb-4">WA Business</h2><ul className="space-y-3 dark:text-slate-300"><li>Catalog Manager</li><li>Auto-Replies</li><li>Labels</li></ul></div>}
         {activeTab === 'payments' && <div className="p-5"><h2 className="text-xl font-bold dark:text-white mb-4">Payments</h2><Button onClick={() => alert('Add Payment Method triggered')}>Add Payment Method</Button></div>}
         {activeTab === 'ai' && <div className="p-5 text-center mt-10"><Sparkles className="mx-auto mb-2 text-indigo-500" size={48}/><h2 className="text-2xl font-bold dark:text-white">Meta AI</h2><p className="text-sm text-slate-500 mt-2">Gunakan panel utama di sebelah kanan untuk chat dengan AI.</p></div>}
       </div>

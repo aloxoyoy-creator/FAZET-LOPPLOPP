@@ -143,89 +143,90 @@ export default function Profile() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 fade-up">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="relative overflow-hidden rounded-[var(--tf-radius-card)] border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] p-6 sm:p-8 shadow-[var(--tf-shadow-card)]">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-[var(--tf-primary)]/10 blur-3xl" />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <div className="relative">
-              <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-[28px] bg-gradient-to-br from-blue-600 via-indigo-500 to-violet-600 text-2xl font-black text-white shadow-xl shadow-blue-600/20">
-                {photoURL ? <img src={photoURL} alt="Foto profil" className="h-full w-full object-cover" /> : initials || <UserCircle2 size={42} />}
+              <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-[24px] border border-[var(--tf-border)] bg-[#141311] text-2xl font-medium text-[#E5CFA0] shadow-md" style={{ fontFamily: 'var(--tf-font-display)' }}>
+                {photoURL ? <img src={photoURL} alt="Foto profil" className="h-full w-full object-cover" /> : initials || <UserCircle2 size={40} />}
               </div>
-              <button type="button" onClick={() => inputRef.current?.click()} className="focus-ring absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-xl border-2 border-white bg-slate-900 text-white shadow-lg dark:border-slate-900" aria-label="Ganti foto profil">
-                <Camera size={16} />
+              <button type="button" onClick={() => inputRef.current?.click()} className="focus-ring absolute -bottom-1.5 -right-1.5 grid h-9 w-9 place-items-center rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] shadow-sm hover:border-[var(--tf-primary)]" aria-label="Ganti foto profil">
+                <Camera size={15} />
               </button>
               <input ref={inputRef} className="hidden" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => void handleAvatar(e.target.files?.[0])} />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white">{profile?.name || 'Pengguna'}</h1>
-                <Badge tone={profile?.role === 'admin' ? 'purple' : 'blue'}>{profile?.role === 'admin' ? 'Administrator' : 'Siswa'}</Badge>
+              <div className="studio-eyebrow mb-1">Personal Identity</div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--tf-text-primary)]" style={{ fontFamily: 'var(--tf-font-display)' }}>{profile?.name || 'Pengguna'}</h1>
+                <Badge tone={profile?.role === 'admin' ? 'purple' : 'blue'}>{profile?.role === 'admin' ? 'Administrator' : 'Member'}</Badge>
               </div>
-              <p className="mt-1 flex items-center gap-2 text-sm text-slate-500"><Mail size={14} /> {profile?.email}</p>
-              <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600"><Sparkles size={13} /> Profil cloud aktif</p>
+              <p className="mt-1 flex items-center gap-2 text-xs text-[var(--tf-text-muted)]"><Mail size={13} /> {profile?.email}</p>
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--tf-primary)]"><Sparkles size={12} /> Sinkronisasi Cloud Aktif</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 md:w-64">
-            <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Akun dibuat</div><div className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-200">{accountAge}</div></div>
-            <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</div><div className="mt-1 flex items-center gap-1.5 text-xs font-bold text-emerald-600"><CheckCircle2 size={13}/> {profile?.status === 'disabled' ? 'Disabled' : 'Active'}</div></div>
+          <div className="grid grid-cols-2 gap-2.5 md:w-64">
+            <div className="rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] p-3.5"><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-muted)]">Terdaftar</div><div className="mt-1 text-xs font-semibold text-[var(--tf-text-primary)]">{accountAge}</div></div>
+            <div className="rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] p-3.5"><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-muted)]">Status</div><div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--tf-success)]"><CheckCircle2 size={13}/> {profile?.status === 'disabled' ? 'Disabled' : 'Active'}</div></div>
           </div>
         </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {([
-          [ClipboardList, 'Total tugas', taskStats.total, 'text-blue-600 bg-blue-50 dark:bg-blue-950/30'],
-          [CircleCheck, 'Selesai', taskStats.completed, 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/25'],
-          [TimerReset, 'Dikerjakan', taskStats.inProgress, 'text-violet-600 bg-violet-50 dark:bg-violet-950/25'],
-          [AlertTriangle, 'Terlambat', taskStats.overdue, 'text-rose-600 bg-rose-50 dark:bg-rose-950/25'],
-        ] as [LucideIcon, string, number, string][]).map(([Icon, label, value, tone]) => <Card key={label} className="p-4"><div className="flex items-center gap-3"><div className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><Icon size={17}/></div><div><div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</div><div className="text-xl font-black text-slate-900 dark:text-white">{value}</div></div></div></Card>)}
+          [ClipboardList, 'Total tugas', taskStats.total, 'text-[var(--tf-primary)] bg-[var(--tf-primary-subtle)]'],
+          [CircleCheck, 'Selesai', taskStats.completed, 'text-[var(--tf-success)] bg-[var(--tf-success-bg)]'],
+          [TimerReset, 'Dikerjakan', taskStats.inProgress, 'text-[var(--tf-info)] bg-[var(--tf-info-bg)]'],
+          [AlertTriangle, 'Terlambat', taskStats.overdue, 'text-[var(--tf-danger)] bg-[var(--tf-danger-bg)]'],
+        ] as [LucideIcon, string, number, string][]).map(([Icon, label, value, tone]) => <Card key={label} className="p-4"><div className="flex items-center gap-3.5"><div className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><Icon size={17}/></div><div><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-muted)]">{label}</div><div className="text-xl font-semibold font-mono text-[var(--tf-text-primary)]">{value}</div></div></div></Card>)}
       </div>
       <Card className="p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Produktivitas</p><h2 className="mt-1 text-lg font-extrabold">Completion rate {taskStats.rate}%</h2><p className="mt-1 text-sm text-slate-500">Ringkasan tugas yang tersimpan di Supabase untuk akun ini.</p></div><div className="h-3 w-full max-w-sm overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 transition-all duration-700" style={{ width: `${taskStats.rate}%` }} /></div></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-muted)]">Produktivitas</p><h2 className="mt-1 text-xl font-medium" style={{ fontFamily: 'var(--tf-font-display)' }}>Completion Rate {taskStats.rate}%</h2><p className="mt-0.5 text-xs text-[var(--tf-text-muted)]">Ringkasan penyelesaian tugas yang tersimpan pada akun ini.</p></div><div className="h-2 w-full max-w-sm overflow-hidden rounded-full bg-[var(--tf-bg-subtle)]"><div className="h-full rounded-full bg-[var(--tf-primary)] transition-all duration-700" style={{ width: `${taskStats.rate}%` }} /></div></div>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_.6fr]">
         <Card className="p-6">
-          <div className="mb-5"><h2 className="text-lg font-extrabold">Identitas & profil</h2><p className="mt-1 text-sm text-slate-500">Perbarui informasi yang terlihat di workspace Taskflow.</p></div>
+          <div className="mb-5"><h2 className="text-xl font-medium" style={{ fontFamily: 'var(--tf-font-display)' }}>Identitas & Profil</h2><p className="mt-1 text-xs text-[var(--tf-text-muted)]">Perbarui informasi yang ditampilkan di seluruh ruang kerja FAZET.</p></div>
           <div className="grid gap-4">
-            <label><span className="label">Nama lengkap</span><input className="input h-12" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} /></label>
+            <label><span className="label">Nama lengkap</span><input className="input h-11" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} /></label>
             <div>
               <span className="label">Workspace akun</span>
               {isAdmin ? (
-                <select className="input h-12" value={profileWorkspace} onChange={(e) => setProfileWorkspace(e.target.value === 'mazet' ? 'mazet' : 'fathur')}>
+                <select className="input h-11" value={profileWorkspace} onChange={(e) => setProfileWorkspace(e.target.value === 'mazet' ? 'mazet' : 'fathur')}>
                   <option value="fathur">Fathur</option>
                   <option value="mazet">Mazet</option>
                 </select>
               ) : (
-                <div className="flex h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200">{WORKSPACES[workspaceId].name} <span className="ml-2 text-xs font-medium text-slate-400">(ditetapkan saat daftar)</span></div>
+                <div className="flex h-11 items-center rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] px-3.5 text-sm font-medium text-[var(--tf-text-primary)]">{WORKSPACES[workspaceId].name} <span className="ml-2 text-xs text-[var(--tf-text-muted)]">(ditetapkan saat daftar)</span></div>
               )}
             </div>
-            <label><span className="label">Email akun</span><input className="input h-12 bg-slate-50 dark:bg-slate-800" value={profile?.email || ''} disabled /></label>
+            <label><span className="label">Email akun</span><input className="input h-11 bg-[var(--tf-bg-subtle)] opacity-75" value={profile?.email || ''} disabled /></label>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div><div className="label">Login terakhir</div><div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><Clock3 size={15} className="text-blue-500"/>{formatDateTime(profile?.lastLoginAt)}</div></div>
-              <div><div className="label">Status akses</div><div className="text-sm font-semibold text-emerald-600">{profile?.status === 'disabled' ? 'Akses dinonaktifkan' : 'Akses aktif'}</div></div>
+              <div><div className="label">Login terakhir</div><div className="flex items-center gap-2 text-xs font-medium text-[var(--tf-text-secondary)]"><Clock3 size={14} className="text-[var(--tf-primary)]"/>{formatDateTime(profile?.lastLoginAt)}</div></div>
+              <div><div className="label">Status akses</div><div className="text-xs font-semibold text-[var(--tf-success)]">{profile?.status === 'disabled' ? 'Akses dinonaktifkan' : 'Akses aktif'}</div></div>
             </div>
-            {error && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div>}
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button loading={avatarUploading} variant="outline" onClick={() => inputRef.current?.click()} icon={<Camera size={16}/>}>Ganti foto</Button><Button loading={saving} onClick={save} icon={<Save size={16}/>}>Simpan perubahan</Button></div>
+            {error && <div role="alert" className="rounded-xl border border-[var(--tf-danger)]/30 bg-[var(--tf-danger-bg)] px-4 py-3 text-xs font-medium text-[var(--tf-danger)]">{error}</div>}
+            <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end"><Button loading={avatarUploading} variant="outline" onClick={() => inputRef.current?.click()} icon={<Camera size={15}/>}>Ganti foto</Button><Button loading={saving} onClick={save} icon={<Save size={15}/>}>Simpan perubahan</Button></div>
           </div>
         </Card>
 
         <div className="space-y-4">
-            <Card className="p-5"><div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 text-emerald-500" size={20}/><div><h3 className="font-bold">Keamanan akun</h3><p className="mt-1 text-sm leading-6 text-slate-500">Role, data, dan akses admin divalidasi melalui policy Supabase, bukan sekadar UI.</p></div></div></Card>
+            <Card className="p-5"><div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 text-[var(--tf-primary)]" size={18}/><div><h3 className="text-sm font-semibold">Keamanan Akun</h3><p className="mt-1 text-xs leading-5 text-[var(--tf-text-muted)]">Role, data, dan akses admin divalidasi melalui policy Supabase secara langsung.</p></div></div></Card>
             
-            <Card className="p-5 border border-orange-200 bg-orange-50/50">
+            <Card className="p-5 border border-[var(--tf-primary)]/30 bg-[var(--tf-primary-subtle)]/40">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-orange-600">Token Chat (Ganti tiap 5 mnt)</div>
-                <button type="button" onClick={() => { if (chatToken) { navigator.clipboard.writeText(chatToken); push({tone:'success', title:'Token Disalin', message:'Berikan ini pada teman yang ingin chat dengan Anda'}); } }} className="rounded-lg p-2 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900" aria-label="Salin Token">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--tf-primary)]">Token Chat (Rotasi 5 Menit)</div>
+                <button type="button" onClick={() => { if (chatToken) { navigator.clipboard.writeText(chatToken); push({tone:'success', title:'Token Disalin', message:'Berikan ini pada rekan yang ingin chat dengan Anda'}); } }} className="rounded-lg p-1.5 text-[var(--tf-primary)] hover:bg-[var(--tf-primary-subtle)]" aria-label="Salin Token">
                   <Copy size={14}/>
                 </button>
               </div>
-              <div className="mt-2 text-center text-3xl font-mono font-black tracking-[0.2em] text-orange-700">
+              <div className="mt-2 text-center text-2xl font-mono font-semibold tracking-[0.22em] text-[var(--tf-text-primary)]">
                 {chatToken || '------'}
               </div>
             </Card>
 
-            <Card className="p-5"><div className="flex items-center justify-between gap-3"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">User ID (Cari chat)</div><button type="button" onClick={() => void copyUserId()} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800" aria-label="Salin User ID"><Copy size={14}/></button></div><div className="mt-2 break-all font-mono text-xs text-slate-600 dark:text-slate-300">{user?.id}</div></Card>
+            <Card className="p-5"><div className="flex items-center justify-between gap-3"><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-muted)]">User ID</div><button type="button" onClick={() => void copyUserId()} className="rounded-lg p-1.5 text-[var(--tf-text-muted)] hover:bg-[var(--tf-bg-subtle)] hover:text-[var(--tf-primary)]" aria-label="Salin User ID"><Copy size={14}/></button></div><div className="mt-2 break-all font-mono text-[11px] text-[var(--tf-text-secondary)]">{user?.id}</div></Card>
           </div>
       </div>
 

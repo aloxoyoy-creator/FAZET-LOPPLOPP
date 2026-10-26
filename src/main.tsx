@@ -5,6 +5,7 @@ import './styles/theme.css';
 import './styles/theme-legacy-overrides.css';
 import './styles/fazet-themes.css';
 import './styles/theme-no-white.css';
+import './styles/luxe.css';
 import { applyThemePrefs } from './lib/themePrefs';
 import App from './App';
 import RuntimeErrorBoundary from './components/ui/RuntimeErrorBoundary';

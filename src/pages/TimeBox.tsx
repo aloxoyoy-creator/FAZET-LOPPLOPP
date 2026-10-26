@@ -135,12 +135,26 @@ const DashboardContent: React.FC<{
 };
 
 export const TimeBoxPage: React.FC<{
-  theme: 'dark' | 'light';
-  toggleTheme: () => void;
+  theme?: 'dark' | 'light';
+  toggleTheme?: () => void;
 }> = ({ theme, toggleTheme }) => {
+  const [localTheme, setLocalTheme] = React.useState<'dark' | 'light'>(() =>
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  );
+  const resolvedTheme = theme ?? localTheme;
+  const resolvedToggle =
+    toggleTheme ??
+    (() => {
+      const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+      setLocalTheme(next);
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.toggle('dark', next === 'dark');
+      }
+    });
+
   return (
     <WatchPartyProvider>
-      <DashboardContent theme={theme} toggleTheme={toggleTheme} />
+      <DashboardContent theme={resolvedTheme} toggleTheme={resolvedToggle} />
     </WatchPartyProvider>
   );
 };

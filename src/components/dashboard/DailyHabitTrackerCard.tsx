@@ -4,7 +4,6 @@ import {
   Circle,
   Plus,
   RotateCcw,
-  Sparkles,
   Play,
   Pause,
   Timer,
@@ -64,7 +63,6 @@ export default function DailyHabitTrackerCard() {
   const [newHabitText, setNewHabitText] = useState('');
   const [showAddInput, setShowAddInput] = useState(false);
 
-  // Mini Quick Pomodoro Timer (25m / 15m / 5m)
   const [timerMode, setTimerMode] = useState<number>(25);
   const [secondsLeft, setSecondsLeft] = useState<number>(25 * 60);
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
@@ -137,43 +135,42 @@ export default function DailyHabitTrackerCard() {
   const secsStr = String(secondsLeft % 60).padStart(2, '0');
 
   return (
-    <Card className="p-5 sm:p-6 rounded-3xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] shadow-sm">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-        {/* Left 8 Cols: Minimalist Daily Habit & Target Checklist */}
-        <div className="lg:col-span-8 space-y-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-950">
-                <Target size={17} />
+    <Card className="p-5 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* Left 8 Cols: Daily Habit Checklist */}
+        <div className="lg:col-span-8 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--tf-accent-soft)] text-[var(--tf-accent)] border border-[var(--tf-accent)]/20">
+                <Target size={16} strokeWidth={1.75} />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm sm:text-base font-extrabold text-[var(--tf-text-primary)]">
-                    Target & Kebiasaan Harian Minimalis
-                  </h3>
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="studio-eyebrow">Ritme Harian</span>
+                  <span className="rounded-full bg-[var(--tf-bg-subtle)] border border-[var(--tf-border)] px-2.5 py-0.5 font-mono text-[10px] font-medium text-[var(--tf-text-secondary)]">
                     {completedIds.length}/{habits.length} Selesai ({progressPct}%)
                   </span>
                 </div>
-                <p className="text-xs text-[var(--tf-text-muted)]">
-                  Konsistensi langkah kecil setiap hari menuju produktivitas tingkat tinggi
-                </p>
+                <h3 className="font-serif text-lg font-medium text-[var(--tf-text-primary)] mt-0.5">
+                  Target &amp; Kebiasaan Produktif
+                </h3>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => setShowAddInput((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] px-2.5 py-1.5 text-xs font-bold text-[var(--tf-text-primary)] hover:border-slate-400 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--tf-text-primary)] hover:border-[var(--tf-accent)]/40 transition-colors cursor-pointer"
             >
-              <Plus size={13} /> Target Baru
+              <Plus size={13} />
+              <span>Target Baru</span>
             </button>
           </div>
 
-          {/* Progress Bar */}
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--tf-bg-subtle)]">
+          {/* Progress Hairline */}
+          <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--tf-bg-subtle)]">
             <div
-              className="h-full rounded-full bg-slate-900 dark:bg-white transition-all duration-500"
+              className="h-full rounded-full bg-[var(--tf-accent)] transition-all duration-500"
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -185,43 +182,43 @@ export default function DailyHabitTrackerCard() {
                 value={newHabitText}
                 onChange={(e) => setNewHabitText(e.target.value)}
                 placeholder="Tulis kebiasaan atau target harian baru..."
-                className="flex-1 rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] px-3 py-1.5 text-xs outline-none focus:border-slate-500"
+                className="flex-1 rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)] px-3.5 py-2 text-xs outline-none focus:border-[var(--tf-accent)]"
               />
               <button
                 type="submit"
-                className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white dark:bg-white dark:text-slate-950 cursor-pointer"
+                className="rounded-xl bg-[var(--tf-primary)] px-4 py-2 text-xs font-medium text-[var(--tf-bg-surface)] cursor-pointer"
               >
                 Simpan
               </button>
             </form>
           )}
 
-          {/* Habit Pills Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Habit Items Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {habits.map((habit) => {
               const isDone = completedIds.includes(habit.id);
               return (
                 <div
                   key={habit.id}
                   onClick={() => toggleHabit(habit.id)}
-                  className={`group flex cursor-pointer items-center justify-between gap-2.5 rounded-2xl border px-3.5 py-2.5 text-xs transition-all ${
+                  className={`group flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs transition-all ${
                     isDone
-                      ? 'border-emerald-500/30 bg-emerald-500/5 text-slate-500 dark:text-slate-400 line-through'
-                      : 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/40 text-[var(--tf-text-primary)] hover:border-slate-400 dark:hover:border-slate-600'
+                      ? 'border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/60 text-[var(--tf-text-muted)] line-through'
+                      : 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] hover:border-[var(--tf-accent)]/40'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {isDone ? (
-                      <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+                      <CheckCircle2 size={15} className="shrink-0 text-[var(--tf-accent)]" />
                     ) : (
-                      <Circle size={16} className="shrink-0 text-slate-400" />
+                      <Circle size={15} className="shrink-0 text-[var(--tf-text-muted)]" />
                     )}
-                    <span className="font-semibold truncate">{habit.label}</span>
+                    <span className="font-medium truncate">{habit.label}</span>
                   </div>
                   <button
                     type="button"
                     onClick={(e) => handleDeleteHabit(habit.id, e)}
-                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 p-0.5 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 text-[var(--tf-text-muted)] hover:text-[var(--tf-danger)] p-0.5 transition-opacity"
                     title="Hapus target"
                   >
                     <Trash2 size={13} />
@@ -232,11 +229,11 @@ export default function DailyHabitTrackerCard() {
           </div>
         </div>
 
-        {/* Right 4 Cols: Minimalist Instant Focus Sprint Timer */}
-        <div className="lg:col-span-4 flex flex-col justify-between rounded-2xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/50 p-4">
+        {/* Right 4 Cols: Minimalist Focus Timer */}
+        <div className="lg:col-span-4 flex flex-col justify-between rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-subtle)]/50 p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--tf-text-muted)]">
-              <Timer size={13} /> Quick Focus Sprint
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-muted)]">
+              <Timer size={12} className="text-[var(--tf-accent)]" /> Focus Sprint
             </span>
             <div className="flex items-center gap-1">
               {[15, 25, 45].map((m) => (
@@ -244,10 +241,10 @@ export default function DailyHabitTrackerCard() {
                   key={m}
                   type="button"
                   onClick={() => selectTimerPreset(m)}
-                  className={`rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold transition cursor-pointer ${
+                  className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-medium transition cursor-pointer ${
                     timerMode === m
-                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
-                      : 'text-[var(--tf-text-muted)] hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                      ? 'bg-[var(--tf-primary)] text-[var(--tf-bg-surface)]'
+                      : 'text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)]'
                   }`}
                 >
                   {m}m
@@ -256,41 +253,31 @@ export default function DailyHabitTrackerCard() {
             </div>
           </div>
 
-          <div className="my-3 text-center">
-            <div className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-[var(--tf-text-primary)]">
+          <div className="my-4 text-center">
+            <div className="font-mono text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--tf-text-primary)]">
               {minsStr}:{secsStr}
             </div>
-            <p className="mt-0.5 text-[11px] text-[var(--tf-text-muted)]">
-              {timerRunning ? 'Sesi fokus sedang berjalan...' : 'Siap mulai sprint fokus instan'}
-            </p>
+            <div className="text-[11px] text-[var(--tf-text-muted)] mt-1">
+              {timerRunning ? 'Sesi fokus sedang berjalan' : 'Siap memulai sesi konsentrasi'}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setTimerRunning((r) => !r)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 cursor-pointer"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--tf-primary)] py-2 text-xs font-medium text-[var(--tf-bg-surface)] hover:opacity-90 transition cursor-pointer"
             >
-              {timerRunning ? (
-                <>
-                  <Pause size={14} /> Jeda
-                </>
-              ) : (
-                <>
-                  <Play size={14} /> Mulai Fokus
-                </>
-              )}
+              {timerRunning ? <Pause size={13} /> : <Play size={13} />}
+              <span>{timerRunning ? 'Jeda' : 'Mulai'}</span>
             </button>
             <button
               type="button"
-              onClick={() => {
-                setTimerRunning(false);
-                setSecondsLeft(timerMode * 60);
-              }}
-              className="rounded-xl border border-[var(--tf-border)] p-2 text-[var(--tf-text-muted)] hover:text-[var(--tf-text-primary)] transition cursor-pointer"
-              title="Reset Timer"
+              onClick={() => selectTimerPreset(timerMode)}
+              className="grid h-8 w-8 place-items-center rounded-xl border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] hover:text-[var(--tf-text-primary)] transition cursor-pointer"
+              title="Ulangi waktu"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={13} />
             </button>
           </div>
         </div>

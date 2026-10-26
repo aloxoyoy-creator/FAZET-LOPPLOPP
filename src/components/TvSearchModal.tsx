@@ -96,7 +96,6 @@ export const TvSearchModal: React.FC = () => {
   return (
     <Dialog open={showSearchModal} onOpenChange={setShowSearchModal}>
       <DialogContent
-        chamfer="detached"
         className="max-w-2xl bg-card border-border text-foreground max-h-[85vh] overflow-y-auto"
       >
         <DialogHeader>

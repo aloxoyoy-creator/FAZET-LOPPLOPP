@@ -35,10 +35,10 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../src/data/financeCat
 import type { FinanceTransaction, TransactionType } from '../types/finance';
 
 const QUICK_EXPENSE_PRESETS = [
-  { id: 'bensin', label: '⛽ Isi Bensin', amount: 20000, category: 'bensin', categoryLabel: 'Bensin & BBM', desc: 'Isi Bensin Pertalite/Pertamax', icon: Fuel },
-  { id: 'makan', label: '🍜 Makan Siang/Malam', amount: 15000, category: 'makan', categoryLabel: 'Makan Utama', desc: 'Makan Harian', icon: Utensils },
-  { id: 'jajan', label: '☕ Kopi / Jajan', amount: 10000, category: 'jajan', categoryLabel: 'Jajan & Ngemil', desc: 'Beli Minuman / Ngemil', icon: Coffee },
-  { id: 'print', label: '📚 Print / Alat Tulis', amount: 10000, category: 'kuliah', categoryLabel: 'Kuliah & Pendidikan', desc: 'Print Tugas / Fotokopi', icon: GraduationCap },
+  { id: 'bensin', label: 'Isi Bensin', amount: 20000, category: 'bensin', categoryLabel: 'Bensin & BBM', desc: 'Isi Bensin Pertalite/Pertamax', icon: Fuel },
+  { id: 'makan', label: 'Makan Siang/Malam', amount: 15000, category: 'makan', categoryLabel: 'Makan Utama', desc: 'Makan Harian', icon: Utensils },
+  { id: 'jajan', label: 'Kopi / Jajan', amount: 10000, category: 'jajan', categoryLabel: 'Jajan & Ngemil', desc: 'Beli Minuman / Ngemil', icon: Coffee },
+  { id: 'print', label: 'Print / Alat Tulis', amount: 10000, category: 'kuliah', categoryLabel: 'Kuliah & Pendidikan', desc: 'Print Tugas / Fotokopi', icon: GraduationCap },
 ];
 
 export default function Finance() {
@@ -345,7 +345,7 @@ Berikan 3 saran penghematan dan pengelolaan uang saku/bulanan yang sangat prakti
                 <option value="all">Semua Akun</option>
                 <option value="fathur">Fathur</option>
                 <option value="mazet">Mazet</option>
-                <option value="joint">Bersama ❤️</option>
+                <option value="joint">Bersama </option>
               </select>
             </div>
 

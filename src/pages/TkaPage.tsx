@@ -466,7 +466,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
             className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 text-sm px-6"
             icon={<Eye size={16} />}
           >
-            {reviewMode ? 'Sembunyikan Pembahasan' : 'Lihat Pembahasan Lengkap & AI Tutor 📖'}
+            {reviewMode ? 'Sembunyikan Pembahasan' : 'Lihat Pembahasan Lengkap & AI Tutor '}
           </Button>
 
           <button
@@ -499,7 +499,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
                       Soal No. {idx + 1} ({q.subject})
                     </span>
                     <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${isCorrect ? 'bg-emerald-100 text-emerald-700' : isSkipped ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>
-                      {isCorrect ? '✓ Jawabanmu Benar' : isSkipped ? '⚪ Tidak Dijawab' : '✗ Jawabanmu Salah'}
+                      {isCorrect ? 'Jawaban Benar' : isSkipped ? 'Tidak Dijawab' : 'Jawaban Salah'}
                     </span>
                   </div>
 
@@ -546,7 +546,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
 
                   {q.explanation && (
                     <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 text-xs text-indigo-950 dark:text-indigo-200 whitespace-pre-line leading-relaxed">
-                      <strong>💡 Pembahasan Resmi:</strong> {q.explanation}
+                      <strong>Pembahasan Resmi:</strong> {q.explanation}
                     </div>
                   )}
 
@@ -976,7 +976,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
                 </div>
 
                 <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-xs text-amber-950 dark:text-amber-200">
-                  <strong>💡 Tips & Trik Pengerjaan:</strong> {selectedSubtest.tips}
+                  <strong>Tips & Trik Pengerjaan:</strong> {selectedSubtest.tips}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
@@ -992,7 +992,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
                       handleStartExam(filterName);
                     }}
                   >
-                    Latihan Subtes Ini Sekarang 🚀
+                    Latihan Subtes Ini Sekarang 
                   </Button>
                 </div>
               </div>
@@ -1020,7 +1020,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
                 onClick={() => handleStartExam('Semua')}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:scale-102"
               >
-                Mulai TryOut Lengkap Sekarang ({tkaQuestions.length} Soal • 45 Menit) 🚀
+                Mulai TryOut Lengkap Sekarang ({tkaQuestions.length} Soal • 45 Menit) 
               </Button>
             </div>
           </Card>

@@ -93,11 +93,11 @@ export default function CouplePrayersAndRoutines() {
         </div>
         <div className="grid grid-cols-5 gap-2 text-center text-xs">
           {[
-            { name: 'Subuh', time: prayerTimes.fajr },
-            { name: 'Dzuhur', time: prayerTimes.dhuhr },
-            { name: 'Ashar', time: prayerTimes.asr },
+            { name: 'Subuh', time: prayerTimes.subuh },
+            { name: 'Dzuhur', time: prayerTimes.dzuhur },
+            { name: 'Ashar', time: prayerTimes.ashar },
             { name: 'Maghrib', time: prayerTimes.maghrib },
-            { name: 'Isya', time: prayerTimes.isha },
+            { name: 'Isya', time: prayerTimes.isya },
           ].map(p => (
             <div key={p.name} className="p-2.5 rounded-xl bg-white/90 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/30 shadow-xs">
               <div className="text-[10px] font-bold text-slate-400 uppercase">{p.name}</div>
@@ -147,7 +147,7 @@ export default function CouplePrayersAndRoutines() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-emerald-100 dark:border-emerald-900/30 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-              💡 {prayer.note}
+              {prayer.note}
             </div>
           </div>
         ))}

@@ -2,8 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import { CheckCircle2, CircleAlert, Info, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-type ToastTone = 'success' | 'error' | 'info';
-type ToastItem = { id: number; tone: ToastTone; title: string; message?: string };
+type ToastTone = 'success' | 'error' | 'info' | 'danger' | 'warning';
+type ToastItem = { id: number; tone: ToastTone; title: string; message?: string; description?: string };
 type ToastContextValue = { push: (toast: Omit<ToastItem, 'id'>) => void };
 const ToastContext = createContext<ToastContextValue | null>(null);
 let toastId = 0;
@@ -26,15 +26,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 function ToastView({ item, onClose }: { item: ToastItem; onClose: () => void }) {
   const meta = {
-    success: { Icon: CheckCircle2, wrap: 'border-emerald-200 bg-white', icon: 'bg-emerald-50 text-emerald-600' },
-    error: { Icon: CircleAlert, wrap: 'border-rose-200 bg-white', icon: 'bg-rose-50 text-rose-600' },
-    info: { Icon: Info, wrap: 'border-blue-200 bg-white', icon: 'bg-blue-50 text-blue-600' },
+    success: { Icon: CheckCircle2, wrap: 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)]', icon: 'bg-[var(--tf-success-bg)] text-[var(--tf-success)]' },
+    error: { Icon: CircleAlert, wrap: 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)]', icon: 'bg-[var(--tf-danger-bg)] text-[var(--tf-danger)]' },
+    danger: { Icon: CircleAlert, wrap: 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)]', icon: 'bg-[var(--tf-danger-bg)] text-[var(--tf-danger)]' },
+    warning: { Icon: CircleAlert, wrap: 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)]', icon: 'bg-[var(--tf-warning-bg)] text-[var(--tf-warning)]' },
+    info: { Icon: Info, wrap: 'border-[var(--tf-border)] bg-[var(--tf-bg-surface)]', icon: 'bg-[var(--tf-accent-soft)] text-[var(--tf-accent)]' },
   }[item.tone];
   const Icon = meta.Icon;
-  return <div className={cn('pointer-events-auto flex items-start gap-3 rounded-2xl border p-3 shadow-xl shadow-slate-900/10 backdrop-blur animate-in', meta.wrap)}>
-    <div className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl', meta.icon)}><Icon size={17} /></div>
-    <div className="min-w-0 flex-1"><p className="text-sm font-bold text-slate-900">{item.title}</p>{item.message && <p className="mt-0.5 text-xs leading-5 text-slate-500">{item.message}</p>}</div>
-    <button type="button" onClick={onClose} className="focus-ring rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Tutup notifikasi"><X size={15} /></button>
+  const body = item.message || item.description;
+  return <div className={cn('pointer-events-auto flex items-start gap-3 rounded-2xl border p-3.5 shadow-[var(--tf-shadow-floating)] backdrop-blur animate-in', meta.wrap)}>
+    <div className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl', meta.icon)}><Icon size={16} /></div>
+    <div className="min-w-0 flex-1"><p className="text-xs font-semibold text-[var(--tf-text-primary)]">{item.title}</p>{body && <p className="mt-0.5 text-[11px] leading-4 text-[var(--tf-text-muted)]">{body}</p>}</div>
+    <button type="button" onClick={onClose} className="focus-ring rounded-lg p-1 text-[var(--tf-text-muted)] hover:bg-[var(--tf-bg-subtle)]" aria-label="Tutup notifikasi"><X size={14} /></button>
   </div>;
 }
 

@@ -40,7 +40,7 @@ export default function AiPulseCard({ tomorrowSubjects, tomorrowDay, academicTim
 
     if (tkaActive) {
       base.unshift({
-        label: `🎯 Strategi TKA H${activeTka.exam.hariKe}`,
+        label: `Strategi TKA H${activeTka.exam.hariKe}`,
         prompt: `Susun strategi belajar kilat dan daftar persiapan terakhir untuk Ujian TKA SMA 2026 Hari Ke-${activeTka.exam.hariKe} (${activeTka.exam.tanggalFormatted}, pukul ${activeTka.exam.mulaiWib}-${activeTka.exam.perkiraanSelesaiWib} WIB) mata pelajaran: ${activeTka.exam.mapel} (${activeTka.exam.rincian}). Berikan 3 poin taktis yang langsung bisa dipraktikkan.`,
       });
     }

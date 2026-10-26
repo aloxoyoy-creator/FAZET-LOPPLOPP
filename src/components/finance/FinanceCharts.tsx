@@ -112,7 +112,7 @@ export default function FinanceCharts({ categoryStats, transactions, totalExpens
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(val: number) => [formatRupiah(Number(val)), 'Pengeluaran']}
+                    formatter={(val: unknown) => [formatRupiah(Number(val ?? 0)), 'Pengeluaran']}
                     contentStyle={{
                       backgroundColor: 'rgba(15, 23, 42, 0.9)',
                       border: 'none',
@@ -196,8 +196,8 @@ export default function FinanceCharts({ categoryStats, transactions, totalExpens
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                formatter={(val: number, name: string) => [
-                  formatRupiah(Number(val)),
+                formatter={(val: unknown, name: unknown) => [
+                  formatRupiah(Number(val ?? 0)),
                   name === 'expense' ? 'Pengeluaran' : 'Pemasukan'
                 ]}
                 contentStyle={{
