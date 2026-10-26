@@ -1,14 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  Target, CheckCircle2, ChevronRight, Lock, Play, 
-  Clock, AlertCircle, RotateCcw, 
+import {
+  Target, CheckCircle2, ChevronRight, Lock, Play,
+  Clock, AlertCircle, RotateCcw,
   Eye, X, Award, Filter, BookMarked, BellRing, RefreshCw, CalendarDays, Timer, Info,
-  Sparkles, BarChart3, Keyboard, Brain, Loader2
+  Sparkles, BarChart3, Keyboard, Brain, Loader2, ZoomIn, Type, FileText, Image as ImageIcon, ShieldCheck
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
-import { tkaQuestions, type Question } from '../data/tkaQuestions';
+import {
+  tkaQuestions,
+  TKA_SUBTEST_CONFIGS,
+  type Question,
+  type SubjectType
+} from '../data/tkaQuestions';
 import { EXAM_DAYS_2026, TKA_STAGES_2026 } from '../data/tkaSchedule2026';
 import {
   syncTkaToNotifications,
@@ -25,7 +30,9 @@ import confetti from 'canvas-confetti';
 interface SubtestInfo {
   id: string;
   name: string;
-  subjectFilter: string;
+  subjectFilter: SubjectType;
+  durationMinutes: number;
+  category: 'Wajib' | 'Pilihan';
   progress: number;
   total: number;
   completed: number;
@@ -35,50 +42,95 @@ interface SubtestInfo {
 }
 
 const SUBTESTS: SubtestInfo[] = [
-  { 
-    id: 'pu', 
-    name: 'Penalaran Umum (PU)', 
-    subjectFilter: 'Penalaran Umum (PU)',
-    progress: 78, total: 30, completed: 23,
-    description: 'Mengukur kemampuan berpikir logis, induktif, deduktif, serta penalaran analitik dan kuantitatif.',
-    keyTopics: ['Silogisme & Modus Ponens/Tollens', 'Pola Barisan & Deret Bilangan', 'Analogi Hubungan Kata', 'Penarikan Simpulan & Argumen'],
-    tips: 'Perhatikan kata kunci absolut seperti "semua", "sebagian", atau "tidak satupun". Jangan gunakan asumsi di luar teks.'
+  {
+    id: 'lit_id',
+    name: 'Bahasa Indonesia Wajib (Literasi Membaca)',
+    subjectFilter: 'Bahasa Indonesia',
+    durationMinutes: 75,
+    category: 'Wajib',
+    progress: 86,
+    total: 30,
+    completed: 26,
+    description: 'Mengukur kemampuan memahami, menginterpretasi, dan mengevaluasi teks informasi maupun sastra serta kaidah EYD Edisi V sesuai standar Pusmendik Kemendikdasmen.',
+    keyTopics: [
+      'Wacana Sosial Budaya (Tradisi Buwuhan, Tari Hudoq, Tradisi Belis)',
+      'Apresiasi Sastra & Konflik Batin (Layur Teruslah Berlayar, Roh Meratus)',
+      'Sains, Ekologi & Ekonomi Global (Riset LIPI/KLHK, Prospek IMF)',
+      'Ketepatan Ejaan, Tanda Baca & Kalimat Efektif (EYD Edisi V)'
+    ],
+    tips: 'Pada sistem CBT ini, wacana lengkap dan gambar selalu ditampilkan di panel kiri pada setiap nomor soal—kamu tidak perlu bolak-balik ke nomor sebelumnya.'
   },
-  { 
-    id: 'pk', 
-    name: 'Pengetahuan Kuantitatif (PK)', 
-    subjectFilter: 'Pengetahuan Kuantitatif (PK)',
-    progress: 60, total: 40, completed: 24,
-    description: 'Mengukur penguasaan dasar matematika, aljabar, fungsi komposisi, statistika, peluang, dan geometri.',
-    keyTopics: ['Persamaan Aljabar & Eksponen', 'Geometri Segitiga & Lingkaran', 'Statistika & Peluang Kombinatorika', 'Fungsi Komposisi & Invers'],
-    tips: 'Kuasai rumus identitas aljabar cepat seperti (a+b)², selisih kuadrat, dan triple Pythagoras.'
-  },
-  { 
-    id: 'lit_en', 
-    name: 'Literasi Bahasa Inggris', 
-    subjectFilter: 'Bahasa Inggris',
-    progress: 85, total: 30, completed: 25,
-    description: 'Mengukur kompetensi memahami teks narasi, eksposisi, pesan moral, dan simpulan bacaan bahasa Inggris.',
-    keyTopics: ['Main Idea & Paragraph Summary', 'Author Purpose & Tone', 'Vocabulary in Context', 'Detail & Negative Fact Questions'],
-    tips: 'Skim pertanyaan terlebih dahulu sebelum membaca teks lengkap untuk menemukan kata kunci efisien.'
-  },
-  { 
-    id: 'lit_id', 
-    name: 'Literasi Bahasa Indonesia', 
-    subjectFilter: 'Literasi Bahasa Indonesia',
-    progress: 82, total: 30, completed: 25,
-    description: 'Mengukur kemampuan menyerap esensi teks ilmiah, opini, dan kalimat efektif bahasa Indonesia (EYD V).',
-    keyTopics: ['Ide Pokok & Kalimat Utama', 'Sikap & Keberpihakan Penulis', 'Verifikasi Pernyataan Sesuai Teks', 'Kalimat Efektif & EYD V'],
-    tips: 'Ide pokok biasanya terletak pada kalimat pertama (deduktif) atau kalimat akhir (induktif).'
-  },
-  { 
-    id: 'pm', 
-    name: 'Penalaran Matematika (PM)', 
+  {
+    id: 'pm',
+    name: 'Matematika Wajib (Penalaran Numerasi)',
     subjectFilter: 'Penalaran Matematika',
-    progress: 65, total: 20, completed: 13,
-    description: 'Menguji kemampuan menggunakan konsep matematika dalam memecahkan masalah kontekstual kehidupan nyata.',
-    keyTopics: ['Aritmetika Sosial & Diskon Bertingkat', 'Debit & Laju Aliran Bersih', 'Perbandingan Berbalik Nilai (Proyek)', 'Sistem Persamaan Linear Kontekstual'],
-    tips: 'Terjemahkan narasi soal ke dalam model persamaan matematika sebelum menghitung angka akhir.'
+    durationMinutes: 75,
+    category: 'Wajib',
+    progress: 78,
+    total: 25,
+    completed: 20,
+    description: 'Menguji kemampuan pemodelan matematika kontekstual, fungsi komposisi, SPLTV, barisan aritmetika/geometri, dimensi tiga, dan peluang bersyarat.',
+    keyTopics: [
+      'Fungsi Komposisi Diskon Kursus & Tabel Rapor Siswa',
+      'SPLTV Kontekstual (Buket Bunga) & Pertidaksamaan Linear Grafik',
+      'Geometri Ruang (Kubus Kamar Tidur & Selimut Kap Lampu Tabung)',
+      'Permutasi Stan Bazar Sekolah & Peluang Bersyarat Kotak Undian'
+    ],
+    tips: 'Perhatikan detail angka pada tabel dan gambar ilustrasi Pusmendik. Klik gambar untuk memperbesar (zoom) jika ingin melihat koordinat grafik secara presisi.'
+  },
+  {
+    id: 'lit_en',
+    name: 'Bahasa Inggris Wajib & Tingkat Lanjut',
+    subjectFilter: 'Bahasa Inggris',
+    durationMinutes: 75,
+    category: 'Wajib',
+    progress: 88,
+    total: 25,
+    completed: 22,
+    description: 'Mengukur kompetensi membaca komprehensif teks naratif, eksposisi ilmiah, argumentatif finansial, serta analisis infografik berstandar CEFR B1–B2.',
+    keyTopics: [
+      'Narrative & Fable Analysis (The Lion and the Mouse, The False Lion King)',
+      'Visual Infographic Interpretation (Effective Study Techniques)',
+      'Ecological Expository Reading (The Great Barrier Reef & Bleaching)',
+      'Argumentative Financial Literacy (Why Teenagers Should Manage Money)'
+    ],
+    tips: 'Seluruh teks bacaan (passage) dan multi-panel infografik tersemat penuh di setiap nomor soal agar kamu dapat langsung memverifikasi bukti kalimat.'
+  },
+  {
+    id: 'pk',
+    name: 'Matematika Tingkat Lanjut (Mapel Pilihan)',
+    subjectFilter: 'Pengetahuan Kuantitatif',
+    durationMinutes: 60,
+    category: 'Pilihan',
+    progress: 72,
+    total: 20,
+    completed: 14,
+    description: 'Mengukur penguasaan matematika tingkat lanjut meliputi matriks terapan, pemodelan fungsi eksponensial, persamaan lingkaran, geometri tembereng, dan kalkulus.',
+    keyTopics: [
+      'Pemodelan Matriks Pakan Ternak & Kapasitas Kamar Hotel',
+      'Grafik Eksponensial Pertumbuhan Eceng Gondok & Kinematika Kereta',
+      'Persamaan Lingkaran Cartesius & Geometri Ornamen Kaca Patri',
+      'Limit Aljabar, Garis Singgung Turunan, Integral Luas & Polinomial'
+    ],
+    tips: 'Gunakan sifat determinan matriks det(A·B) = det(A)·det(B) dan rumus cepat luas persegi di dalam lingkaran L = 2r² untuk menghemat waktu.'
+  },
+  {
+    id: 'pu',
+    name: 'Penalaran Umum & Analitik (PU)',
+    subjectFilter: 'Penalaran Umum',
+    durationMinutes: 60,
+    category: 'Pilihan',
+    progress: 80,
+    total: 15,
+    completed: 12,
+    description: 'Mengukur kemampuan berpikir logis formal (silogisme, kontraposisi, kuantor), evaluasi argumen kritis, serta penalaran analitik penjadwalan dan posisi.',
+    keyTopics: [
+      'Silogisme Hipotetis, Modus Tollens & Kontraposisi De Morgan',
+      'Penalaran Analitik Penjadwalan & Tempat Duduk Meja Bundar',
+      'Evaluasi Argumen Kritis (Memperlemah / Memperkuat Klaim)',
+      'Pola Barisan Bilangan & Efisiensi Energi Kuantitatif'
+    ],
+    tips: 'Ingat bahwa kontraposisi dari P -> (Q ∧ R) adalah (~Q ∨ ~R) -> ~P. Jangan terjebak memilih konvers atau invers.'
   },
 ];
 
@@ -92,35 +144,63 @@ interface TryoutHistory {
   durationMinutes: number;
 }
 
-const STORAGE_HISTORY = 'fazet_tka_history';
+interface SavedCbtSession {
+  activeFilterSubject: SubjectType | 'Semua';
+  currentQuestionIndex: number;
+  answers: Record<string, number>;
+  doubtful: Record<string, boolean>;
+  timeLeft: number;
+  initialDuration: number;
+  updatedAt: number;
+}
+
+const STORAGE_HISTORY = 'fazet_tka_history_v2';
+const STORAGE_ACTIVE_CBT = 'fazet_tka_active_cbt_session_v2';
 
 export default function TkaPage() {
   const { user } = useAuth();
   const { workspaceId } = useWorkspace();
   const { push } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'materi' | 'tryout' | 'jadwal'>('materi');
+  const [activeTab, setActiveTab] = useState<'tryout' | 'materi' | 'jadwal'>('tryout');
   const [selectedSubtest, setSelectedSubtest] = useState<SubtestInfo | null>(null);
   const [syncStatus, setSyncStatus] = useState<TkaSyncStatus | null>(() => getSavedTkaSyncStatus());
   const [syncing, setSyncing] = useState(false);
   const [syncingDay, setSyncingDay] = useState<number | null>(null);
-  
-  // Quiz State
+
+  // CBT Exam State
   const [quizStarted, setQuizStarted] = useState(false);
-  const [activeFilterSubject, setActiveFilterSubject] = useState<string>('Semua');
+  const [activeFilterSubject, setActiveFilterSubject] = useState<SubjectType | 'Semua'>('Semua');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>({});
   const [doubtful, setDoubtful] = useState<Record<string, boolean>>({});
   const [isFinished, setIsFinished] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
+
+  // Real Pusmendik Timer State (in seconds)
+  const [timeLeft, setTimeLeft] = useState<number>(7200);
+  const [initialDuration, setInitialDuration] = useState<number>(7200);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // CBT Comfort Features: Font Size & Image Lightbox
+  const [fontScale, setFontScale] = useState<'sm' | 'md' | 'lg'>('md');
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; caption?: string } | null>(null);
 
   // AI Tutor Deep Explanation State in Review Mode
   const [aiExplanations, setAiExplanations] = useState<Record<string, string>>({});
   const [aiLoadingId, setAiLoadingId] = useState<string | null>(null);
 
-  // Timer State (30 Menit default)
-  const [timeLeft, setTimeLeft] = useState<number>(1800);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  // Saved Session Recovery State
+  const [savedSession, setSavedSession] = useState<SavedCbtSession | null>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_ACTIVE_CBT);
+      if (raw) {
+        const parsed = JSON.parse(raw) as SavedCbtSession;
+        if (parsed && parsed.timeLeft > 0) return parsed;
+      }
+    } catch {}
+    return null;
+  });
 
   // History State
   const [history, setHistory] = useState<TryoutHistory[]>(() => {
@@ -129,8 +209,8 @@ export default function TkaPage() {
       if (stored) return JSON.parse(stored);
     } catch {}
     return [
-      { id: 'h_1', name: 'Simulasi Mandiri #1 (Bahasa Inggris)', date: '2026-10-20', score: 720, correct: 18, total: 25, durationMinutes: 28 },
-      { id: 'h_2', name: 'Tryout Akbar Nasional #3', date: '2026-10-24', score: 760, correct: 19, total: 25, durationMinutes: 30 },
+      { id: 'h_1', name: 'TKA Bahasa Indonesia Wajib (Real CBT Pusmendik)', date: '2026-10-22', score: 833, correct: 25, total: 30, durationMinutes: 64 },
+      { id: 'h_2', name: 'TKA Matematika Wajib & Numerasi (Real CBT Pusmendik)', date: '2026-10-24', score: 850, correct: 17, total: 20, durationMinutes: 68 },
     ];
   });
 
@@ -143,26 +223,94 @@ export default function TkaPage() {
     return () => window.removeEventListener('fazet:tka-synced', onSynced);
   }, []);
 
+  // Filter questions by selected subtest
   const activeQuestions: Question[] = useMemo(() => {
     if (activeFilterSubject === 'Semua') return tkaQuestions;
-    const filtered = tkaQuestions.filter(q => q.subject.toLowerCase().includes(activeFilterSubject.toLowerCase()));
+    const filtered = tkaQuestions.filter(q => q.subject === activeFilterSubject);
     return filtered.length > 0 ? filtered : tkaQuestions;
   }, [activeFilterSubject]);
 
   const currentQ = activeQuestions[currentQuestionIndex] || activeQuestions[0];
 
-  const subtestCounts = useMemo(() => {
-    const countFor = (sub: string) => tkaQuestions.filter(q => q.subject.toLowerCase().includes(sub.toLowerCase())).length;
-    return [
-      { name: 'Bahasa Inggris', count: countFor('Bahasa Inggris') },
-      { name: 'Penalaran Umum (PU)', count: countFor('Penalaran Umum') },
-      { name: 'Pengetahuan Kuantitatif (PK)', count: countFor('Pengetahuan Kuantitatif') },
-      { name: 'Literasi Bahasa Indonesia', count: countFor('Literasi Bahasa Indonesia') },
-      { name: 'Penalaran Matematika', count: countFor('Penalaran Matematika') },
+  // Safety passage & image resolver: Guarantees that even if a question shares a passageGroupId,
+  // the full passage and images are ALWAYS resolved and displayed directly on the current question!
+  const resolvedStimulus = useMemo(() => {
+    if (!currentQ) return { passage: undefined, passageTitle: undefined, images: [] as string[], imageCaption: undefined };
+
+    let passage = currentQ.passage;
+    let passageTitle = currentQ.passageTitle;
+    let imageCaption = currentQ.imageCaption;
+    const imageSet = new Set<string>();
+
+    if (currentQ.imageUrl) imageSet.add(currentQ.imageUrl);
+    if (currentQ.images) currentQ.images.forEach(img => imageSet.add(img));
+
+    if (currentQ.passageGroupId) {
+      const groupMembers = tkaQuestions.filter(q => q.passageGroupId === currentQ.passageGroupId);
+      for (const member of groupMembers) {
+        if ((!passage || passage.includes('See previous passage')) && member.passage && !member.passage.includes('See previous passage')) {
+          passage = member.passage;
+        }
+        if (!passageTitle && member.passageTitle) {
+          passageTitle = member.passageTitle;
+        }
+        if (!imageCaption && member.imageCaption) {
+          imageCaption = member.imageCaption;
+        }
+        if (imageSet.size === 0) {
+          if (member.imageUrl) imageSet.add(member.imageUrl);
+          if (member.images) member.images.forEach(img => imageSet.add(img));
+        }
+      }
+    }
+
+    return {
+      passage,
+      passageTitle,
+      images: Array.from(imageSet),
+      imageCaption,
+    };
+  }, [currentQ]);
+
+  const subtestCards = useMemo(() => {
+    const subjects: SubjectType[] = [
+      'Bahasa Indonesia',
+      'Penalaran Matematika',
+      'Bahasa Inggris',
+      'Pengetahuan Kuantitatif',
+      'Penalaran Umum',
     ];
+    return subjects.map(sub => {
+      const cfg = TKA_SUBTEST_CONFIGS[sub];
+      const count = tkaQuestions.filter(q => q.subject === sub).length;
+      const withImageCount = tkaQuestions.filter(q => q.subject === sub && (q.imageUrl || (q.images && q.images.length > 0))).length;
+      return {
+        ...cfg,
+        actualCount: count,
+        withImageCount,
+      };
+    });
   }, []);
 
-  // Active Timer Effect
+  // Persist active CBT session to localStorage every second / answer change
+  useEffect(() => {
+    if (!quizStarted || isFinished) return;
+    const sessionData: SavedCbtSession = {
+      activeFilterSubject,
+      currentQuestionIndex,
+      answers,
+      doubtful,
+      timeLeft,
+      initialDuration,
+      updatedAt: Date.now(),
+    };
+    try {
+      localStorage.setItem(STORAGE_ACTIVE_CBT, JSON.stringify(sessionData));
+      setSavedSession(sessionData);
+    } catch {}
+  }, [quizStarted, isFinished, activeFilterSubject, currentQuestionIndex, answers, doubtful, timeLeft, initialDuration]);
+
+  // Active Real-Time Countdown Timer Effect
   useEffect(() => {
     if (!quizStarted || isFinished) return;
     const timer = setInterval(() => {
@@ -179,20 +327,32 @@ export default function TkaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizStarted, isFinished]);
 
-  // Pro CBT Keyboard Shortcuts (A-E to select option, Left/Right arrows to navigate, R to toggle doubtful)
+  // Pro CBT Keyboard Shortcuts (A-E to select option, Left/Right arrows to navigate, R to toggle doubtful, Esc to close modal)
   useEffect(() => {
-    if (!quizStarted || isFinished || showConfirmModal) return;
+    if (!quizStarted || isFinished) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      const key = e.key.toLowerCase();
 
+      if (e.key === 'Escape') {
+        if (lightboxImage) {
+          setLightboxImage(null);
+          return;
+        }
+        if (showConfirmModal) {
+          setShowConfirmModal(false);
+          return;
+        }
+      }
+
+      if (showConfirmModal || lightboxImage) return;
+
+      const key = e.key.toLowerCase();
       if (['a', 'b', 'c', 'd', 'e'].includes(key)) {
         const idx = key.charCodeAt(0) - 97;
-        const opt = currentQ?.options[idx];
-        if (opt) {
+        if (currentQ && idx >= 0 && idx < currentQ.options.length) {
           e.preventDefault();
-          setAnswers(prev => ({ ...prev, [currentQ.id]: opt.id }));
+          setAnswers(prev => ({ ...prev, [currentQ.id]: idx }));
         }
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
@@ -210,38 +370,65 @@ export default function TkaPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [quizStarted, isFinished, showConfirmModal, currentQ, activeQuestions.length]);
+  }, [quizStarted, isFinished, showConfirmModal, lightboxImage, currentQ, activeQuestions.length]);
 
   const formatTimer = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    if (h > 0) {
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    return `00:${pad(m)}:${pad(s)}`;
   };
 
-  const handleStartExam = (subjectFilter = 'Semua') => {
+  const handleStartExam = (subjectFilter: SubjectType | 'Semua' = 'Semua', customSeconds?: number) => {
+    const config = TKA_SUBTEST_CONFIGS[subjectFilter] || TKA_SUBTEST_CONFIGS['Semua'];
+    const durationSec = customSeconds ?? config.durationSeconds;
+
     setActiveFilterSubject(subjectFilter);
     setCurrentQuestionIndex(0);
     setAnswers({});
     setDoubtful({});
     setIsFinished(false);
     setReviewMode(false);
-    setTimeLeft(subjectFilter === 'Semua' ? 2700 : 900); // 45m untuk paket lengkap (47 soal) atau 15m untuk subtes
+    setInitialDuration(durationSec);
+    setTimeLeft(durationSec);
     setQuizStarted(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleResumeSavedSession = () => {
+    if (!savedSession) return;
+    setActiveFilterSubject(savedSession.activeFilterSubject);
+    setCurrentQuestionIndex(savedSession.currentQuestionIndex);
+    setAnswers(savedSession.answers);
+    setDoubtful(savedSession.doubtful);
+    setInitialDuration(savedSession.initialDuration);
+    setTimeLeft(savedSession.timeLeft);
+    setIsFinished(false);
+    setReviewMode(false);
+    setQuizStarted(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDiscardSavedSession = () => {
+    localStorage.removeItem(STORAGE_ACTIVE_CBT);
+    setSavedSession(null);
   };
 
   const handleFinishExam = async () => {
     let correctCount = 0;
     activeQuestions.forEach(q => {
-      if (answers[q.id] === q.correctAnswerId) correctCount += 1;
+      if (answers[q.id] === q.correctAnswer) correctCount += 1;
     });
 
     const finalScore = Math.round((correctCount / activeQuestions.length) * 1000);
     const accuracy = Math.round((correctCount / activeQuestions.length) * 100);
-    const initialDuration = activeFilterSubject === 'Semua' ? 2700 : 900;
     const timeSpentMinutes = Math.max(1, Math.round((initialDuration - timeLeft) / 60));
-    const tryoutName = activeFilterSubject === 'Semua'
-      ? `TryOut Simulasi Lengkap (${activeQuestions.length} Soal)`
-      : `Latihan Subtes ${activeFilterSubject}`;
+    const currentConfig = TKA_SUBTEST_CONFIGS[activeFilterSubject] || TKA_SUBTEST_CONFIGS['Semua'];
+    const tryoutName = `${currentConfig.officialName} (${activeQuestions.length} Soal)`;
 
     const newHistory: TryoutHistory = {
       id: `to_${Date.now()}`,
@@ -257,13 +444,15 @@ export default function TkaPage() {
     setHistory(updated);
     try {
       localStorage.setItem(STORAGE_HISTORY, JSON.stringify(updated));
+      localStorage.removeItem(STORAGE_ACTIVE_CBT);
+      setSavedSession(null);
       confetti({ particleCount: 90, spread: 85, origin: { y: 0.6 } });
     } catch {}
 
     setIsFinished(true);
     setShowConfirmModal(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Sync TryOut result to Notification Center & OS Notification
     await notifyTkaTryoutCompleted({
       userId: user?.id,
       tryoutName,
@@ -275,23 +464,23 @@ export default function TkaPage() {
     });
   };
 
-  const handleAskAiTutor = async (q: Question, userAnsId?: string) => {
+  const handleAskAiTutor = async (q: Question, userAnsIdx?: number) => {
     if (aiLoadingId) return;
     setAiLoadingId(q.id);
     try {
-      const correctOpt = q.options.find(o => o.id === q.correctAnswerId)?.text || q.correctAnswerId;
-      const userOpt = userAnsId ? (q.options.find(o => o.id === userAnsId)?.text || userAnsId) : 'Tidak dijawab';
-      const prompt = `Kamu adalah Tutor Ahli TKA & UTBK SNBT 2026. Jelaskan secara ringkas, langkah demi langkah, dan mudah dipahami mengapa jawaban yang benar untuk soal subtes ${q.subject} berikut adalah "${correctOpt}".
-Soal: ${q.text}
+      const correctOpt = q.options[q.correctAnswer] || '';
+      const userOpt = userAnsIdx !== undefined ? (q.options[userAnsIdx] || 'Tidak dijawab') : 'Tidak dijawab';
+      const prompt = `Kamu adalah Tutor Ahli Resmi TKA Pusmendik Kemendikdasmen & SNBT 2026. Jelaskan secara terstruktur, langkah demi langkah, dan mudah dipahami mengapa jawaban yang tepat untuk soal subtes ${q.subject} (${q.topic}) berikut adalah "${correctOpt}".
+${q.passage ? `Wacana Ringkas: ${q.passage.slice(0, 500)}...\n` : ''}Soal: ${q.questionText}
 Jawaban siswa: "${userOpt}"
-Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
+Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya.`;
 
       const reply = await askAiAssistant({ prompt, workspace: workspaceId });
       setAiExplanations(prev => ({ ...prev, [q.id]: reply }));
     } catch {
       setAiExplanations(prev => ({
         ...prev,
-        [q.id]: q.explanation || 'Fokus pada kata kunci soal dan eliminasi opsi yang bertentangan dengan premis utama.'
+        [q.id]: q.explanation || 'Fokus pada kata kunci soal dan eliminasi opsi yang bertentangan dengan informasi tersurat pada wacana.'
       }));
     } finally {
       setAiLoadingId(null);
@@ -309,7 +498,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
       setSyncStatus(res);
       push({
         tone: 'success',
-        title: 'TKA 2026 Tersinkronisasi ke Notifikasi!',
+        title: 'Jadwal TKA 2026 Tersinkronisasi',
         description: `Seluruh 4 hari jadwal ujian & ${res.scheduledCount} alarm otomatis telah aktif di sistem dan Kotak Masuk Notifikasi.`
       });
     } catch {
@@ -334,7 +523,7 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
       setSyncStatus(res);
       push({
         tone: 'success',
-        title: `Alarm Hari Ke-${hariKe} Aktif!`,
+        title: `Alarm Hari Ke-${hariKe} Aktif`,
         description: `Pengingat untuk ${shortTitle} telah dikirim ke perangkat dan Pusat Notifikasi.`
       });
     } catch {
@@ -352,7 +541,16 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
     setDoubtful(prev => ({ ...prev, [currentQ.id]: !prev[currentQ.id] }));
   };
 
-  // HASIL UJIAN + DIAGNOSTIK PER SUBTES
+  const fontSizeClass =
+    fontScale === 'sm'
+      ? 'text-xs leading-relaxed'
+      : fontScale === 'lg'
+        ? 'text-base sm:text-lg leading-relaxed'
+        : 'text-sm sm:text-[15px] leading-relaxed';
+
+  // =========================================================================
+  // 1. LAYAR EVALUASI HASIL UJIAN + PEMBAHASAN LENGKAP & WACANA UTUH
+  // =========================================================================
   if (isFinished) {
     let correctCount = 0;
     let wrongCount = 0;
@@ -367,9 +565,9 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
       subjectBreakdown[q.subject].total += 1;
 
       const ans = answers[q.id];
-      if (!ans) {
+      if (ans === undefined) {
         emptyCount += 1;
-      } else if (ans === q.correctAnswerId) {
+      } else if (ans === q.correctAnswer) {
         correctCount += 1;
         subjectBreakdown[q.subject].correct += 1;
       } else {
@@ -381,181 +579,232 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
     const accuracy = Math.round((correctCount / activeQuestions.length) * 100);
     const gradeInfo =
       finalScore >= 800
-        ? { grade: 'A+ (Sangat Unggul)', desc: 'Peluang lolos PTN Top 3 / Kedokteran / Teknik sangat tinggi!', tone: 'text-emerald-600 dark:text-emerald-400' }
+        ? { grade: 'Sangat Unggul (Istimewa)', desc: 'Penguasaan kompetensi TKA Pusmendik sangat matang untuk seleksi PTN utama.', tone: 'text-emerald-600 dark:text-emerald-400' }
         : finalScore >= 680
-          ? { grade: 'A (Kompetitif)', desc: 'Skor aman untuk mayoritas prodi favorit klaster Saintek/Soshum.', tone: 'text-blue-600 dark:text-blue-400' }
+          ? { grade: 'Baik (Kompetitif)', desc: 'Skor melampaui ambang batas rata-rata nasional. Pertahankan konsistensi.', tone: 'text-sky-600 dark:text-sky-400' }
           : finalScore >= 550
-            ? { grade: 'B (Menengah)', desc: 'Perkuat kembali subtes dengan akurasi di bawah 65%.', tone: 'text-amber-600 dark:text-amber-400' }
-            : { grade: 'C (Perlu Intensif)', desc: 'Pelajari pembahasan tiap soal di bawah ini dan ulangi latihan subtes.', tone: 'text-rose-600 dark:text-rose-400' };
+            ? { grade: 'Memadai (Menengah)', desc: 'Perkuat kembali subtes dengan akurasi di bawah 70%.', tone: 'text-amber-600 dark:text-amber-400' }
+            : { grade: 'Kurang (Perlu Intensif)', desc: 'Pelajari pembahasan tiap soal beserta wacananya di bawah ini.', tone: 'text-rose-600 dark:text-rose-400' };
 
     return (
-      <div className="space-y-6 max-w-4xl mx-auto pb-24 text-center mt-4 fade-up">
-        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 rounded-3xl flex items-center justify-center mx-auto mb-3 shadow-sm">
-          <Award size={40} />
-        </div>
-        <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-1">Evaluasi TryOut TKA & SNBT Selesai!</h2>
-        <p className="text-slate-500 text-sm max-w-lg mx-auto">
-          Hasil ujian telah dianalisis dengan pembobotan IRT Skala 1000 dan disinkronisasikan otomatis ke Pusat Notifikasi.
-        </p>
+      <div className="space-y-6 max-w-5xl mx-auto pb-24 mt-2 fade-up">
+        <Card className="p-6 sm:p-8 text-center border border-[var(--tf-border)] bg-[var(--tf-bg-surface)]">
+          <div className="w-16 h-16 bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Award size={32} />
+          </div>
+          <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.2em] bg-[var(--tf-bg-elevated)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)] mb-2">
+            Laporan Hasil Resmi Simulasi CBT Pusmendik
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--tf-text-primary)] mb-1" style={{ fontFamily: 'var(--tf-font-display)' }}>
+            Evaluasi Ujian TKA Selesai
+          </h2>
+          <p className="text-[var(--tf-text-secondary)] text-xs sm:text-sm max-w-xl mx-auto">
+            Skor dihitung menggunakan pembobotan standar Pusmendik Kemendikdasmen (Skala 1000) dan otomatis tersimpan pada riwayat akademikmu.
+          </p>
 
-        {/* Skor Box */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto my-6 text-center">
-          <Card className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border-blue-200">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Skor IRT</div>
-            <div className="text-4xl font-black text-blue-600 dark:text-blue-400 mt-1">{finalScore}</div>
-            <div className="text-[10px] text-blue-500 font-bold mt-1">Skala 1000</div>
-          </Card>
-          <Card className="p-5 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jawaban Benar</div>
-            <div className="text-4xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{correctCount}</div>
-            <div className="text-[10px] text-emerald-500 font-bold mt-1">Dari {activeQuestions.length} Soal</div>
-          </Card>
-          <Card className="p-5 bg-rose-50 dark:bg-rose-950/30 border-rose-200">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jawaban Salah</div>
-            <div className="text-4xl font-black text-rose-600 dark:text-rose-400 mt-1">{wrongCount}</div>
-            <div className="text-[10px] text-rose-500 font-bold mt-1">{emptyCount} Kosong</div>
-          </Card>
-          <Card className="p-5 bg-slate-50 dark:bg-slate-900 border-slate-200">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Akurasi</div>
-            <div className="text-4xl font-black text-slate-800 dark:text-slate-200 mt-1">{accuracy}%</div>
-            <div className={`text-[10px] font-bold mt-1 ${gradeInfo.tone}`}>{gradeInfo.grade}</div>
-          </Card>
-        </div>
-
-        {/* Diagnostik Per Subtes */}
-        <Card className="p-5 sm:p-6 max-w-3xl mx-auto text-left border-slate-200 dark:border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <BarChart3 size={18} className="text-indigo-600 dark:text-indigo-400" />
-              <h3 className="font-black text-sm sm:text-base text-slate-900 dark:text-white">
-                Analisis Diagnostik Penguasaan Per Subtes
-              </h3>
+          {/* Skor Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto my-6 text-center">
+            <div className="p-4 rounded-2xl bg-[#141311] text-[#F5F3EE] border border-[#C8A96E]/30">
+              <div className="text-[10px] font-semibold text-[#A39E95] uppercase tracking-[0.16em]">Skor IRT TKA</div>
+              <div className="text-3xl sm:text-4xl font-bold text-[#E5CFA0] mt-1 font-mono">{finalScore}</div>
+              <div className="text-[10px] text-[#C8A96E] font-medium mt-1">Skala 1000</div>
             </div>
-            <span className={`text-xs font-extrabold ${gradeInfo.tone}`}>{gradeInfo.desc}</span>
+            <div className="p-4 rounded-2xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)]">
+              <div className="text-[10px] font-semibold text-[var(--tf-text-muted)] uppercase tracking-[0.16em]">Jawaban Benar</div>
+              <div className="text-3xl sm:text-4xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-mono">{correctCount}</div>
+              <div className="text-[10px] text-[var(--tf-text-secondary)] font-medium mt-1">Dari {activeQuestions.length} Soal</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)]">
+              <div className="text-[10px] font-semibold text-[var(--tf-text-muted)] uppercase tracking-[0.16em]">Salah / Kosong</div>
+              <div className="text-3xl sm:text-4xl font-bold text-rose-600 dark:text-rose-400 mt-1 font-mono">{wrongCount}</div>
+              <div className="text-[10px] text-[var(--tf-text-secondary)] font-medium mt-1">{emptyCount} Tidak Dijawab</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)]">
+              <div className="text-[10px] font-semibold text-[var(--tf-text-muted)] uppercase tracking-[0.16em]">Akurasi</div>
+              <div className="text-3xl sm:text-4xl font-bold text-[var(--tf-text-primary)] mt-1 font-mono">{accuracy}%</div>
+              <div className={`text-[10px] font-semibold mt-1 ${gradeInfo.tone}`}>{gradeInfo.grade}</div>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {Object.entries(subjectBreakdown).map(([subj, stat]) => {
-              const pct = Math.round((stat.correct / stat.total) * 100);
-              return (
-                <div key={subj} className="space-y-1">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-700 dark:text-slate-200">{subj}</span>
-                    <span className="font-mono text-slate-600 dark:text-slate-300">
-                      {stat.correct}/{stat.total} Benar ({pct}%)
-                    </span>
+          {/* Diagnostik Per Subtes */}
+          <div className="p-5 rounded-2xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] max-w-3xl mx-auto text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-[var(--tf-border)]">
+              <div className="flex items-center gap-2">
+                <BarChart3 size={17} className="text-[#C8A96E]" />
+                <h3 className="font-semibold text-sm text-[var(--tf-text-primary)]">
+                  Rincian Capaian Kompetensi Per Subtes
+                </h3>
+              </div>
+              <span className={`text-xs font-semibold ${gradeInfo.tone}`}>{gradeInfo.desc}</span>
+            </div>
+
+            <div className="space-y-3">
+              {Object.entries(subjectBreakdown).map(([subj, stat]) => {
+                const pct = Math.round((stat.correct / stat.total) * 100);
+                return (
+                  <div key={subj} className="space-y-1">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-[var(--tf-text-primary)]">{subj}</span>
+                      <span className="font-mono text-[var(--tf-text-secondary)]">
+                        {stat.correct}/{stat.total} Benar ({pct}%)
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${
+                          pct >= 75 ? 'bg-emerald-500' : pct >= 50 ? 'bg-[#C8A96E]' : 'bg-rose-500'
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        pct >= 75 ? 'bg-emerald-500' : pct >= 50 ? 'bg-blue-500' : 'bg-rose-500'
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-6">
+            <Button
+              onClick={() => setReviewMode(!reviewMode)}
+              icon={<Eye size={16} />}
+            >
+              {reviewMode ? 'Sembunyikan Kunci & Pembahasan' : 'Buka Pembahasan Lengkap + Wacana & Gambar'}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsFinished(false);
+                setQuizStarted(false);
+              }}
+            >
+              Kembali ke Lobi CBT TKA
+            </Button>
           </div>
         </Card>
 
-        {/* Buttons Action */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <Button
-            onClick={() => setReviewMode(!reviewMode)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 text-sm px-6"
-            icon={<Eye size={16} />}
-          >
-            {reviewMode ? 'Sembunyikan Pembahasan' : 'Lihat Pembahasan Lengkap & AI Tutor '}
-          </Button>
-
-          <button
-            onClick={() => {
-              setIsFinished(false);
-              setQuizStarted(false);
-            }}
-            className="px-6 py-2.5 rounded-xl font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-sm transition-all"
-          >
-            Kembali ke Hub TKA
-          </button>
-        </div>
-
         {/* REVIEW MODE LIST */}
         {reviewMode && (
-          <div className="mt-10 text-left space-y-6 max-w-4xl mx-auto">
-            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <BookMarked size={20} className="text-indigo-600" /> Kunci Jawaban, Pembahasan & Analisis AI Tutor
-            </h3>
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[var(--tf-text-primary)] flex items-center gap-2">
+                <BookMarked size={19} className="text-[#C8A96E]" />
+                Kunci Jawaban, Wacana Utuh & Pembahasan Resmi ({activeQuestions.length} Soal)
+              </h3>
+            </div>
 
             {activeQuestions.map((q, idx) => {
               const userAns = answers[q.id];
-              const isCorrect = userAns === q.correctAnswerId;
-              const isSkipped = !userAns;
+              const isCorrect = userAns === q.correctAnswer;
+              const isSkipped = userAns === undefined;
+              const allImgs = Array.from(new Set([...(q.imageUrl ? [q.imageUrl] : []), ...(q.images || [])]));
 
               return (
-                <Card key={q.id} className={`p-6 border-2 ${isCorrect ? 'border-emerald-200 bg-emerald-50/10' : isSkipped ? 'border-amber-200 bg-amber-50/10' : 'border-rose-200 bg-rose-50/10'}`}>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                      Soal No. {idx + 1} ({q.subject})
-                    </span>
-                    <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${isCorrect ? 'bg-emerald-100 text-emerald-700' : isSkipped ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>
-                      {isCorrect ? 'Jawaban Benar' : isSkipped ? 'Tidak Dijawab' : 'Jawaban Salah'}
+                <Card key={q.id} className="p-5 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--tf-border)]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg bg-[var(--tf-bg-elevated)] text-[var(--tf-text-primary)] border border-[var(--tf-border)]">
+                        Nomor {idx + 1}
+                      </span>
+                      <span className="text-xs font-medium text-[var(--tf-text-secondary)]">
+                        {q.subject} • {q.topic}
+                      </span>
+                    </div>
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      isCorrect
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        : isSkipped
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                          : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                    }`}>
+                      {isCorrect ? 'Jawaban Benar' : isSkipped ? 'Tidak Dijawab' : 'Jawaban Kurang Tepat'}
                     </span>
                   </div>
 
-                  {q.imageUrl && (
-                    <div className="my-4 flex justify-center">
-                      <img src={q.imageUrl} alt="Ilustrasi" className="max-w-full max-h-[260px] object-contain rounded-xl border border-slate-200" />
+                  {/* Gambar di Pembahasan */}
+                  {allImgs.length > 0 && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {allImgs.map((imgUrl, i) => (
+                        <div key={imgUrl + i} className="rounded-xl border border-[var(--tf-border)] bg-white p-2 flex flex-col items-center">
+                          <img
+                            src={imgUrl}
+                            alt={q.imageCaption || `Gambar Soal ${idx + 1}`}
+                            className="max-h-[260px] w-auto object-contain rounded-lg cursor-zoom-in"
+                            onClick={() => setLightboxImage({ url: imgUrl, caption: q.imageCaption })}
+                          />
+                        </div>
+                      ))}
                     </div>
                   )}
 
+                  {/* Wacana di Pembahasan */}
                   {q.passage && (
-                    <div className="mb-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 text-xs leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">
+                    <div className="p-4 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] text-xs leading-relaxed max-h-60 overflow-y-auto whitespace-pre-wrap text-[var(--tf-text-secondary)]">
+                      {q.passageTitle && (
+                        <div className="font-bold text-[var(--tf-text-primary)] mb-1.5 uppercase tracking-wider">
+                          {q.passageTitle}
+                        </div>
+                      )}
                       {q.passage}
                     </div>
                   )}
 
-                  <div className="text-sm font-bold text-slate-900 dark:text-white mb-4 whitespace-pre-line">
-                    {q.text}
+                  <div className="text-sm sm:text-base font-medium text-[var(--tf-text-primary)] whitespace-pre-line leading-relaxed">
+                    {q.questionText}
                   </div>
 
-                  <div className="space-y-2 mb-4">
-                    {q.options.map((opt, optIdx) => {
-                      const isOptionCorrect = opt.id === q.correctAnswerId;
-                      const isOptionUser = opt.id === userAns;
+                  <div className="space-y-2">
+                    {q.options.map((optText, optIdx) => {
+                      const isOptionCorrect = optIdx === q.correctAnswer;
+                      const isOptionUser = optIdx === userAns;
                       const letter = String.fromCharCode(65 + optIdx);
 
                       return (
                         <div
-                          key={opt.id}
-                          className={`p-3 rounded-xl text-xs font-medium border flex items-center justify-between ${
+                          key={optIdx}
+                          className={`p-3 rounded-xl text-xs sm:text-sm border flex items-center justify-between gap-3 ${
                             isOptionCorrect
-                              ? 'border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200 font-bold'
+                              ? 'border-emerald-500/50 bg-emerald-500/10 text-[var(--tf-text-primary)] font-semibold'
                               : isOptionUser
-                              ? 'border-rose-400 bg-rose-50 text-rose-900 dark:bg-rose-950/40'
-                              : 'border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                ? 'border-rose-500/50 bg-rose-500/10 text-[var(--tf-text-primary)]'
+                                : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)]/50 text-[var(--tf-text-secondary)]'
                           }`}
                         >
-                          <span><strong>{letter}.</strong> {opt.text}</span>
-                          {isOptionCorrect && <span className="text-[10px] uppercase font-black text-emerald-600 pl-2 shrink-0">Kunci Jawaban</span>}
-                          {isOptionUser && !isOptionCorrect && <span className="text-[10px] uppercase font-black text-rose-600 pl-2 shrink-0">Pilihan Kamu</span>}
+                          <span>
+                            <strong className="font-mono mr-2">{letter}.</strong>
+                            {optText}
+                          </span>
+                          {isOptionCorrect && (
+                            <span className="text-[10px] uppercase font-semibold tracking-wider text-emerald-600 dark:text-emerald-400 shrink-0">
+                              Kunci Jawaban
+                            </span>
+                          )}
+                          {isOptionUser && !isOptionCorrect && (
+                            <span className="text-[10px] uppercase font-semibold tracking-wider text-rose-600 dark:text-rose-400 shrink-0">
+                              Pilihanmu
+                            </span>
+                          )}
                         </div>
                       );
                     })}
                   </div>
 
                   {q.explanation && (
-                    <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 text-xs text-indigo-950 dark:text-indigo-200 whitespace-pre-line leading-relaxed">
-                      <strong>Pembahasan Resmi:</strong> {q.explanation}
+                    <div className="p-4 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/30 text-xs sm:text-sm text-[var(--tf-text-primary)] whitespace-pre-line leading-relaxed">
+                      <div className="font-semibold text-[#C8A96E] uppercase tracking-wider text-[11px] mb-1">
+                        Pembahasan Resmi Pusmendik:
+                      </div>
+                      {q.explanation}
                     </div>
                   )}
 
                   {/* AI Tutor Deep Dive */}
-                  <div className="mt-3">
+                  <div>
                     {aiExplanations[q.id] ? (
-                      <div className="p-4 rounded-xl bg-fuchsia-50/70 dark:bg-fuchsia-950/25 border border-fuchsia-200 dark:border-fuchsia-900/40 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed">
-                        <div className="font-black text-fuchsia-700 dark:text-fuchsia-300 flex items-center gap-1.5 mb-1">
-                          <Brain size={14} /> Analisis Mendalam FAZET AI Tutor:
+                      <div className="p-4 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] text-xs sm:text-sm text-[var(--tf-text-primary)] whitespace-pre-line leading-relaxed">
+                        <div className="font-semibold text-[#C8A96E] flex items-center gap-1.5 mb-1.5">
+                          <Brain size={14} /> Analisis Langkah demi Langkah AI Tutor:
                         </div>
                         {aiExplanations[q.id]}
                       </div>
@@ -564,15 +813,15 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
                         type="button"
                         onClick={() => void handleAskAiTutor(q, userAns)}
                         disabled={aiLoadingId === q.id}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-fuchsia-600 dark:text-fuchsia-400 hover:underline pt-1"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C8A96E] hover:underline pt-1 cursor-pointer"
                       >
                         {aiLoadingId === q.id ? (
                           <>
-                            <Loader2 size={13} className="animate-spin" /> AI Tutor sedang menganalisis soal ini...
+                            <Loader2 size={13} className="animate-spin" /> Menganalisis soal dengan AI Tutor...
                           </>
                         ) : (
                           <>
-                            <Sparkles size={13} /> Bedah Lebih Dalam dengan FAZET AI Tutor
+                            <Sparkles size={13} /> Minta Penjelasan Tambahan AI Tutor
                           </>
                         )}
                       </button>
@@ -587,242 +836,446 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
     );
   }
 
-  // QUIZ SCREEN (PRO CBT INTERFACE)
-  if (quizStarted) {
-    const isAnswered = !!answers[currentQ.id];
+  // =========================================================================
+  // 2. LAYAR UJIAN REAL CBT PUSMENDIK KEMENDIKDASMEN (SPLIT-SCREEN WACANA & SOAL)
+  // =========================================================================
+  if (quizStarted && currentQ) {
+    const isAnswered = answers[currentQ.id] !== undefined;
     const isFlagged = !!doubtful[currentQ.id];
-    const isWarningTimer = timeLeft < 300;
+    const isWarningTimer = timeLeft < 300; // < 5 menit
     const answeredCount = Object.keys(answers).length;
+    const doubtfulCount = Object.keys(doubtful).filter(k => doubtful[k]).length;
     const progressPct = Math.round((answeredCount / activeQuestions.length) * 100);
+    const currentConfig = TKA_SUBTEST_CONFIGS[activeFilterSubject] || TKA_SUBTEST_CONFIGS['Semua'];
+    const hasStimulusLeftPane = Boolean(resolvedStimulus.passage || resolvedStimulus.images.length > 0);
 
     return (
-      <div className="max-w-5xl mx-auto pb-24">
-        {/* Header CBT */}
-        <header className="mb-6 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 p-2.5 rounded-xl">
-                <Target size={22} />
+      <div className="max-w-[1440px] mx-auto pb-20 space-y-4">
+        {/* Lightbox Zoom Gambar */}
+        {lightboxImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={() => setLightboxImage(null)}
+          >
+            <div
+              className="relative max-w-5xl w-full bg-[#141311] border border-white/15 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col items-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-full flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+                <span className="text-xs font-medium text-[#E5CFA0]">
+                  {lightboxImage.caption || 'Detail Gambar Stimulus Resmi TKA Pusmendik'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLightboxImage(null)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <div>
-                <h1 className="font-extrabold text-slate-800 dark:text-white text-base">
-                  CBT Pusmendik & SNBT 2026
-                </h1>
-                <p className="text-xs text-slate-500 font-medium">Subtes: {currentQ.subject}</p>
+              <div className="bg-white rounded-xl p-3 max-h-[78vh] overflow-auto w-full flex justify-center">
+                <img
+                  src={lightboxImage.url}
+                  alt={lightboxImage.caption || 'Stimulus TKA'}
+                  className="max-w-full h-auto object-contain"
+                />
               </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Soal {currentQuestionIndex + 1} / {activeQuestions.length} ({answeredCount} Terjawab)
-                </div>
-                <div className={`text-sm font-mono font-black flex items-center gap-1 justify-end ${isWarningTimer ? 'text-rose-600 animate-pulse' : 'text-slate-600 dark:text-slate-300'}`}>
-                  <Clock size={13} /> Sisa: {formatTimer(timeLeft)}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowConfirmModal(true)}
-                className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-colors"
-              >
-                Akhiri Ujian
-              </button>
             </div>
           </div>
+        )}
 
-          {/* Real-time Progress Bar + Keyboard Shortcut Hint */}
-          <div className="space-y-1.5 pt-1">
-            <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-300"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <div className="hidden sm:flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <Keyboard size={12} /> Pintasan Keyboard: Tekan <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono font-bold text-slate-600 dark:text-slate-300">A</kbd>-<kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono font-bold text-slate-600 dark:text-slate-300">E</kbd> pilih jawaban, <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono font-bold text-slate-600 dark:text-slate-300">←</kbd> <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono font-bold text-slate-600 dark:text-slate-300">→</kbd> pindah soal, <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono font-bold text-slate-600 dark:text-slate-300">R</kbd> ragu-ragu
-              </span>
-              <span className="font-mono font-bold">{progressPct}% Selesai</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Modal Konfirmasi Selesai */}
+        {/* Modal Konfirmasi Kumpulkan Ujian */}
         {showConfirmModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl text-center space-y-4">
-              <AlertCircle size={40} className="mx-auto text-amber-500" />
-              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">
-                Yakin ingin mengakhiri ujian?
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Kamu telah menjawab <strong>{Object.keys(answers).length}</strong> dari <strong>{activeQuestions.length}</strong> soal.
-                {Object.keys(doubtful).filter(k => doubtful[k]).length > 0 && ` Masih ada ${Object.keys(doubtful).filter(k => doubtful[k]).length} soal yang bertanda ragu-ragu.`}
-              </p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+            <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-md w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                  <AlertCircle size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base text-[var(--tf-text-primary)]">
+                    Konfirmasi Pengumpulan Jawaban CBT
+                  </h3>
+                  <p className="text-xs text-[var(--tf-text-secondary)]">
+                    Pastikan seluruh nomor soal telah diperiksa kembali.
+                  </p>
+                </div>
+              </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="p-4 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-[var(--tf-text-secondary)]">Total Soal Subtes:</span>
+                  <span className="font-mono font-semibold text-[var(--tf-text-primary)]">{activeQuestions.length} Soal</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--tf-text-secondary)]">Sudah Dijawab:</span>
+                  <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{answeredCount} Soal</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--tf-text-secondary)]">Belum Dijawab:</span>
+                  <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">{activeQuestions.length - answeredCount} Soal</span>
+                </div>
+                {doubtfulCount > 0 && (
+                  <div className="flex justify-between pt-1 border-t border-[var(--tf-border)]">
+                    <span className="text-amber-600 dark:text-amber-400 font-medium">Status Ragu-ragu:</span>
+                    <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">{doubtfulCount} Soal</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
                 <Button variant="outline" size="sm" fullWidth onClick={() => setShowConfirmModal(false)}>
-                  Lanjut Mengerjakan
+                  Kembali ke Soal
                 </Button>
-                <Button size="sm" fullWidth className="bg-rose-500 hover:bg-rose-600 text-white" onClick={() => void handleFinishExam()}>
-                  Ya, Kumpulkan
+                <Button size="sm" fullWidth onClick={() => void handleFinishExam()}>
+                  Selesai & Kumpulkan
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Question Card */}
-          <div className="lg:col-span-3 space-y-6">
-            <Card className="p-6 md:p-8 border-slate-200 dark:border-slate-800 shadow-sm text-slate-800 dark:text-slate-100">
-              {currentQ.imageUrl && (
-                <div className="mb-6 flex justify-center">
-                  <img src={currentQ.imageUrl} alt="Ilustrasi Soal" className="max-w-full max-h-[300px] object-contain rounded-xl border border-slate-100 shadow-sm" />
+        {/* TOP BAR RESMI PUSMENDIK CBT */}
+        <header className="rounded-2xl bg-[#141311] text-[#F5F3EE] border border-[var(--tf-border)] p-4 sm:px-6 shadow-md">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Identitas Aplikasi & Subtes */}
+            <div className="flex items-center gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-[#C8A96E]/15 border border-[#C8A96E]/35 flex items-center justify-center text-[#E5CFA0] shrink-0">
+                <ShieldCheck size={22} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#C8A96E]">
+                    PUSMENDIK KEMENDIKDASMEN • SISTEM CBT RESMI
+                  </span>
+                  <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-white/10 text-[#E5CFA0]">
+                    {currentConfig.blueprintCode}
+                  </span>
                 </div>
-              )}
-              {currentQ.passage && (
-                <div className="mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-                  <div className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Bacaan Soal</div>
-                  <div className="prose prose-slate dark:prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed max-h-64 overflow-y-auto p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl">
-                    {currentQ.passage}
+                <h1 className="font-semibold text-sm sm:text-base text-[#F5F3EE] tracking-tight">
+                  {currentConfig.officialName}
+                </h1>
+              </div>
+            </div>
+
+            {/* Kontrol Ukuran Font, Nomor Soal & Countdown Waktu Real */}
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 ml-auto">
+              {/* Ukuran Huruf A- A A+ */}
+              <div className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+                <span className="px-2 text-[10px] text-[#A39E95] flex items-center gap-1">
+                  <Type size={12} /> Ukuran Teks:
+                </span>
+                {(['sm', 'md', 'lg'] as const).map((sz, idx) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => setFontScale(sz)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                      fontScale === sz
+                        ? 'bg-[#C8A96E] text-[#141311]'
+                        : 'text-[#A39E95] hover:text-white'
+                    }`}
+                  >
+                    {idx === 0 ? 'A-' : idx === 1 ? 'A' : 'A+'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Box Countdown Timer Real */}
+              <div className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border font-mono ${
+                isWarningTimer
+                  ? 'bg-rose-950/80 border-rose-500/50 text-rose-200 animate-pulse'
+                  : 'bg-white/[0.06] border-white/15 text-[#F5F3EE]'
+              }`}>
+                <Clock size={16} className={isWarningTimer ? 'text-rose-400' : 'text-[#C8A96E]'} />
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.16em] text-[#A39E95] leading-none">
+                    Sisa Waktu
+                  </div>
+                  <div className="text-base sm:text-lg font-bold tracking-wider leading-tight mt-0.5">
+                    {formatTimer(timeLeft)}
                   </div>
                 </div>
-              )}
-
-              <div className="text-base font-semibold mb-6 leading-relaxed whitespace-pre-line">
-                {currentQuestionIndex + 1}. {currentQ.text}
               </div>
 
-              {/* Options */}
-              <div className="space-y-3">
-                {currentQ.options.map((opt, i) => {
-                  const isSelected = answers[currentQ.id] === opt.id;
-                  const letter = String.fromCharCode(65 + i);
-                  return (
-                    <label
-                      key={opt.id}
-                      className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 font-semibold'
-                          : 'border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900 bg-slate-50/30 dark:bg-slate-900/40'
-                      }`}
-                    >
-                      <input 
-                        type="radio" 
-                        name={`q-${currentQ.id}`} 
-                        value={opt.id}
-                        checked={isSelected}
-                        onChange={() => setAnswers(prev => ({ ...prev, [currentQ.id]: opt.id }))}
-                        className="mt-0.5 w-4 h-4 text-blue-600"
-                      />
-                      <div className="flex-1 text-sm leading-relaxed">
-                        <span className="font-bold mr-2 text-slate-500">{letter}.</span>
-                        <span>{opt.text}</span>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-
-              {/* Ragu-ragu Checkbox */}
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <input
-                    type="checkbox"
-                    checked={isFlagged}
-                    onChange={toggleDoubtful}
-                    className="w-4 h-4 accent-amber-500 rounded"
-                  />
-                  Tandai Ragu-ragu (Pintasan: R)
-                </label>
-
-                {isAnswered && (
-                  <button
-                    onClick={() => {
-                      const nextAnswers = { ...answers };
-                      delete nextAnswers[currentQ.id];
-                      setAnswers(nextAnswers);
-                    }}
-                    className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"
-                  >
-                    <RotateCcw size={12} /> Hapus Jawaban
-                  </button>
-                )}
-              </div>
-            </Card>
-
-            {/* Bottom Navigation */}
-            <div className="flex justify-between items-center">
-              <button 
-                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                disabled={currentQuestionIndex === 0}
-                className="px-6 py-2.5 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(true)}
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shrink-0"
               >
-                ← Sebelumnya
-              </button>
-
-              <button 
-                onClick={() => {
-                  if (currentQuestionIndex === activeQuestions.length - 1) {
-                    setShowConfirmModal(true);
-                  } else {
-                    setCurrentQuestionIndex(prev => Math.min(activeQuestions.length - 1, prev + 1));
-                  }
-                }}
-                className="px-7 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20"
-              >
-                {currentQuestionIndex === activeQuestions.length - 1 ? 'Selesai & Kumpulkan' : 'Selanjutnya →'}
+                Selesai Ujian
               </button>
             </div>
           </div>
 
-          {/* Grid Navigation */}
-          <div className="lg:col-span-1">
-            <Card className="p-5 sticky top-24 border-slate-200 dark:border-slate-800">
-              <h3 className="font-bold text-xs uppercase tracking-wider mb-3 text-slate-500">
-                Navigasi Soal CBT
-              </h3>
-              <div className="grid grid-cols-5 gap-2 max-h-[340px] overflow-y-auto pr-1">
+          {/* Sub-bar Progress & Info Soal */}
+          <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-[#A39E95]">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 font-mono text-[#F5F3EE] font-semibold">
+                SOAL NO. {currentQuestionIndex + 1} / {activeQuestions.length}
+              </span>
+              <span className="text-white/20">|</span>
+              <span>Topik: <strong className="text-[#E5CFA0] font-medium">{currentQ.topic}</strong></span>
+              <span className="text-white/20 hidden sm:inline">|</span>
+              <span className="hidden sm:inline">Tingkat: <strong className="text-[#F5F3EE]">{currentQ.difficulty}</strong></span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="hidden lg:flex items-center gap-1.5 text-[11px]">
+                <Keyboard size={12} className="text-[#C8A96E]" />
+                Pintasan: <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">A-E</kbd> Jawab,{' '}
+                <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">←/→</kbd> Navigasi,{' '}
+                <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">R</kbd> Ragu-ragu
+              </span>
+              <span className="font-mono text-[11px] text-[#E5CFA0]">
+                {answeredCount}/{activeQuestions.length} Terjawab ({progressPct}%)
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* WORKSPACE UTAMA CBT: SPLIT SCREEN (WACANA/GAMBAR DI KIRI, PERTANYAAN DI KANAN, DAFTAR NOMOR DI SIDEBAR) */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+          {/* AREA SOAL (9 KOLOM DI DESKTOP XL) */}
+          <div className="xl:col-span-9">
+            <div className={`grid grid-cols-1 ${hasStimulusLeftPane ? 'lg:grid-cols-12' : ''} gap-4`}>
+              {/* PANEL KIRI: WACANA BACAAN LENGKAP & GAMBAR ASLI PUSMENDIK (SELALU TAMPIL DI SETIAP NOMOR!) */}
+              {hasStimulusLeftPane && (
+                <Card className="lg:col-span-6 p-5 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] flex flex-col max-h-[78vh] overflow-y-auto">
+                  <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-[var(--tf-border)] sticky top-0 bg-[var(--tf-bg-surface)] z-10">
+                    <div className="flex items-center gap-2">
+                      <FileText size={16} className="text-[#C8A96E]" />
+                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tf-text-secondary)]">
+                        Wacana & Stimulus Soal No. {currentQuestionIndex + 1}
+                      </span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                      Teks Utuh Tersedia
+                    </span>
+                  </div>
+
+                  {/* Gambar Stimulus Pusmendik (dengan fitur Klik untuk Zoom) */}
+                  {resolvedStimulus.images.length > 0 && (
+                    <div className="space-y-3 mb-5">
+                      {resolvedStimulus.images.map((imgUrl, idx) => (
+                        <div
+                          key={imgUrl + idx}
+                          className="group relative rounded-xl border border-[var(--tf-border)] bg-white p-3 flex flex-col items-center shadow-xs"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={resolvedStimulus.imageCaption || `Stimulus Visual Nomor ${currentQuestionIndex + 1}`}
+                            className="max-h-[340px] w-auto object-contain rounded-lg cursor-zoom-in transition-transform duration-200 group-hover:scale-[1.01]"
+                            onClick={() => setLightboxImage({ url: imgUrl, caption: resolvedStimulus.imageCaption })}
+                          />
+                          <div className="mt-2 w-full flex items-center justify-between text-[11px] text-neutral-600 px-1 pt-1.5 border-t border-neutral-100">
+                            <span className="flex items-center gap-1 font-medium">
+                              <ImageIcon size={12} className="text-neutral-500" />
+                              {resolvedStimulus.imageCaption || `Ilustrasi Resmi Pusmendik (${idx + 1}/${resolvedStimulus.images.length})`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage({ url: imgUrl, caption: resolvedStimulus.imageCaption })}
+                              className="inline-flex items-center gap-1 font-semibold text-neutral-900 hover:underline cursor-pointer"
+                            >
+                              <ZoomIn size={12} /> Perbesar Gambar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Teks Bacaan Utuh */}
+                  {resolvedStimulus.passage && (
+                    <div className="space-y-2.5">
+                      {resolvedStimulus.passageTitle && (
+                        <h2
+                          className="text-base sm:text-lg font-semibold text-[var(--tf-text-primary)] leading-snug"
+                          style={{ fontFamily: 'var(--tf-font-display)' }}
+                        >
+                          {resolvedStimulus.passageTitle}
+                        </h2>
+                      )}
+                      <div className={`${fontSizeClass} text-[var(--tf-text-primary)] whitespace-pre-wrap font-normal selection:bg-[#C8A96E]/30`}>
+                        {resolvedStimulus.passage}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              )}
+
+              {/* PANEL KANAN: BUTIR PERTANYAAN & OPSI JAWABAN A-E */}
+              <Card className={`${hasStimulusLeftPane ? 'lg:col-span-6' : 'col-span-1'} p-5 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] flex flex-col justify-between`}>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--tf-border)]">
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tf-text-secondary)]">
+                      Pertanyaan Nomor {currentQuestionIndex + 1}
+                    </span>
+                    <span className="text-[11px] font-mono text-[var(--tf-text-muted)]">
+                      Pilihan Ganda (A–E)
+                    </span>
+                  </div>
+
+                  {/* Teks Pertanyaan */}
+                  <div className={`${fontSizeClass} font-medium text-[var(--tf-text-primary)] whitespace-pre-line`}>
+                    {currentQ.questionText}
+                  </div>
+
+                  {/* Daftar Opsi A - E */}
+                  <div className="space-y-2.5 pt-1">
+                    {currentQ.options.map((optText, i) => {
+                      const isSelected = answers[currentQ.id] === i;
+                      const letter = String.fromCharCode(65 + i);
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setAnswers(prev => ({ ...prev, [currentQ.id]: i }))}
+                          className={`w-full text-left flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-[#C8A96E] bg-[#C8A96E]/12 text-[var(--tf-text-primary)] shadow-xs'
+                              : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)]/50 hover:border-[#C8A96E]/50 hover:bg-[var(--tf-bg-elevated)] text-[var(--tf-text-primary)]'
+                          }`}
+                        >
+                          <span
+                            className={`w-7 h-7 rounded-lg font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                              isSelected
+                                ? 'bg-[#C8A96E] text-[#141311]'
+                                : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)]'
+                            }`}
+                          >
+                            {letter}
+                          </span>
+                          <span className={`${fontSizeClass} flex-1`}>
+                            {optText}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Footer Kontrol Soal: Ragu-ragu, Hapus Jawaban, Sebelumnya / Selanjutnya */}
+                <div className="mt-6 pt-4 border-t border-[var(--tf-border)] space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 cursor-pointer select-none text-xs font-semibold text-amber-600 dark:text-amber-400">
+                      <input
+                        type="checkbox"
+                        checked={isFlagged}
+                        onChange={toggleDoubtful}
+                        className="w-4 h-4 accent-amber-500 rounded"
+                      />
+                      <span>Ragu-ragu (Tombol R)</span>
+                    </label>
+
+                    {isAnswered && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextAnswers = { ...answers };
+                          delete nextAnswers[currentQ.id];
+                          setAnswers(nextAnswers);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[var(--tf-text-secondary)] hover:text-rose-500 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw size={13} /> Batalkan Pilihan
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                      disabled={currentQuestionIndex === 0}
+                      className="px-5 py-2.5 rounded-xl font-semibold text-xs text-[var(--tf-text-primary)] bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] hover:border-[#C8A96E]/50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-all"
+                    >
+                      ← Soal Sebelumnya
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (currentQuestionIndex === activeQuestions.length - 1) {
+                          setShowConfirmModal(true);
+                        } else {
+                          setCurrentQuestionIndex(prev => Math.min(activeQuestions.length - 1, prev + 1));
+                        }
+                      }}
+                      className="px-6 py-2.5 rounded-xl font-semibold text-xs bg-[#141311] dark:bg-[#C8A96E] text-[#F5F3EE] dark:text-[#141311] hover:opacity-90 transition-all cursor-pointer"
+                    >
+                      {currentQuestionIndex === activeQuestions.length - 1 ? 'Selesai & Kumpulkan →' : 'Soal Selanjutnya →'}
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* PANEL NAVIGASI NOMOR SOAL CBT (3 KOLOM DI DESKTOP XL) */}
+          <div className="xl:col-span-3">
+            <Card className="p-5 sticky top-20 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] space-y-4">
+              <div className="flex items-center justify-between pb-2.5 border-b border-[var(--tf-border)]">
+                <h3 className="font-semibold text-xs uppercase tracking-[0.15em] text-[var(--tf-text-secondary)]">
+                  Daftar Nomor Soal
+                </h3>
+                <span className="text-[11px] font-mono font-semibold text-[var(--tf-text-primary)]">
+                  {answeredCount}/{activeQuestions.length}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-5 gap-2 max-h-[360px] overflow-y-auto pr-1">
                 {activeQuestions.map((q, idx) => {
-                  const answered = !!answers[q.id];
+                  const ansIdx = answers[q.id];
+                  const answered = ansIdx !== undefined;
                   const flagged = !!doubtful[q.id];
                   const isActive = idx === currentQuestionIndex;
+                  const letter = answered ? String.fromCharCode(65 + ansIdx) : '';
 
                   return (
                     <button
                       key={q.id}
+                      type="button"
                       onClick={() => setCurrentQuestionIndex(idx)}
-                      className={`h-9 rounded-lg text-xs font-bold border transition-all ${
-                        isActive 
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-xs' 
+                      className={`relative h-10 rounded-xl font-mono text-xs font-bold border transition-all flex flex-col items-center justify-center cursor-pointer ${
+                        isActive
+                          ? 'border-[#C8A96E] bg-[#141311] text-[#E5CFA0] ring-2 ring-[#C8A96E]/40'
                           : flagged
-                            ? 'border-amber-400 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200'
-                            : answered 
-                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' 
-                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:border-blue-300'
+                            ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                            : answered
+                              ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                              : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)] text-[var(--tf-text-secondary)] hover:border-[#C8A96E]/40'
                       }`}
                     >
-                      {idx + 1}
+                      <span className="leading-none">{idx + 1}</span>
+                      {answered && (
+                        <span className="text-[9px] leading-none mt-0.5 opacity-85">
+                          [{letter}]
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Legend */}
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-[11px] text-slate-500 font-medium">
+              {/* Keterangan Warna Status CBT */}
+              <div className="pt-3 border-t border-[var(--tf-border)] grid grid-cols-2 gap-2 text-[11px] text-[var(--tf-text-secondary)]">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-blue-600" /> Sedang Dikerjakan
+                  <span className="w-3 h-3 rounded bg-[#141311] border border-[#C8A96E]" />
+                  <span>Soal Aktif</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-400" /> Sudah Dijawab
+                  <span className="w-3 h-3 rounded bg-emerald-500/25 border border-emerald-500" />
+                  <span>Sudah Dijawab</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-amber-200 border border-amber-400" /> Ragu-ragu
+                  <span className="w-3 h-3 rounded bg-amber-500/30 border border-amber-500" />
+                  <span>Ragu-ragu</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-white border border-slate-300" /> Belum Dijawab
+                  <span className="w-3 h-3 rounded bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)]" />
+                  <span>Belum Dijawab</span>
                 </div>
               </div>
             </Card>
@@ -832,27 +1285,28 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
     );
   }
 
-  // DEFAULT VIEW (Materi, TryOut, & Jadwal/Notifikasi Tabs)
+  // =========================================================================
+  // 3. LOBI UTAMA PUSAT SIMULASI REAL CBT TKA PUSMENDIK 2026
+  // =========================================================================
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-24">
-      <header className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 max-w-5xl mx-auto pb-24">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant="warning" className="inline-flex shadow-sm">
-              FAZET ACADEMY PRO
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <Badge variant="warning" className="inline-flex">
+              PUSMENDIK KEMENDIKDASMEN • REAL CBT 2026
             </Badge>
             {syncStatus && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <CheckCircle2 size={12} /> Alarm TKA Terhubung
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <CheckCircle2 size={12} /> Alarm Jadwal TKA Aktif
               </span>
             )}
           </div>
-          <h1 className="text-3xl font-extrabold flex items-center gap-3 text-slate-900 dark:text-white">
-            <Target className="text-rose-500" size={32} />
-            Preparation Center TKA & SNBT
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--tf-text-primary)] tracking-tight" style={{ fontFamily: 'var(--tf-font-display)' }}>
+            Simulasi TKA Nasional Berbasis Komputer (CBT)
           </h1>
-          <p className="mt-1 text-slate-500 font-medium text-sm">
-            Pusat komando pembelajaran intensif, silabus modul, jadwal TKA 2026, dan simulasi CBT berbasis IRT.
+          <p className="mt-1 text-[var(--tf-text-secondary)] text-xs sm:text-sm">
+            Bank soal asli simulasi TKA Pusmendik lengkap dengan wacana utuh di setiap nomor, gambar ilustrasi resmi, dan durasi waktu real.
           </p>
         </div>
 
@@ -860,235 +1314,235 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
           onClick={() => void handleSyncAllAlarms()}
           disabled={syncing}
           icon={syncing ? <RefreshCw size={15} className="animate-spin" /> : <BellRing size={15} />}
-          className="bg-gradient-to-r from-rose-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 text-white rounded-2xl shadow-md shrink-0"
+          className="shrink-0"
         >
-          {syncStatus ? 'Sinkronkan Ulang ke Notif' : 'Sinkronkan Jadwal ke Notif'}
+          {syncStatus ? 'Sinkronkan Ulang Alarm' : 'Aktifkan Alarm Jadwal TKA'}
         </Button>
       </header>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl w-full sm:w-fit mb-6 text-xs font-bold gap-1">
-        <button 
-          onClick={() => setActiveTab('materi')} 
-          className={`flex-1 sm:px-6 py-2.5 rounded-lg transition-all ${activeTab === 'materi' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-        >
-          Materi & Silabus Subtes
-        </button>
-        <button 
-          onClick={() => setActiveTab('tryout')} 
-          className={`flex-1 sm:px-6 py-2.5 rounded-lg transition-all ${activeTab === 'tryout' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-        >
-          Simulasi TryOut Real CBT ({tkaQuestions.length} Soal)
-        </button>
-        <button 
-          onClick={() => setActiveTab('jadwal')} 
-          className={`flex-1 sm:px-6 py-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'jadwal' ? 'bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-        >
-          <BellRing size={13} /> Jadwal & Alarm Notifikasi
-        </button>
-      </div>
-
-      {/* TAB MATERI & SILABUS */}
-      {activeTab === 'materi' && (
-        <div className="space-y-6 fade-up">
-          <div className="grid sm:grid-cols-3 gap-4 mb-4">
-            <Card className="p-5 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30">
-              <div className="text-emerald-600 mb-2"><BookMarked size={22} /></div>
-              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{tkaQuestions.length} Soal</div>
-              <div className="text-xs font-bold text-emerald-600/80">Bank Soal HOTS + Pembahasan Lengkap</div>
-            </Card>
-            <Card className="p-5 bg-blue-50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/30">
-              <div className="text-blue-600 mb-2"><CheckCircle2 size={22} /></div>
-              <div className="text-2xl font-black text-blue-700 dark:text-blue-400">74%</div>
-              <div className="text-xs font-bold text-blue-600/80">Rata-rata Penguasaan Materi</div>
-            </Card>
-            <Card className="p-5 bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30">
-              <div className="text-amber-600 mb-2"><Play size={22} /></div>
-              <div className="text-2xl font-black text-amber-700 dark:text-amber-400">5 Subtes</div>
-              <div className="text-xs font-bold text-amber-600/80">Standar Pusmendik Kemendikdasmen</div>
-            </Card>
-          </div>
-
-          <h3 className="text-lg font-bold">Silabus Subtes & Kisi-Kisi TKA / UTBK</h3>
-          <div className="grid gap-3">
-            {SUBTESTS.map((sub) => (
-              <Card 
-                key={sub.id} 
-                onClick={() => setSelectedSubtest(sub)}
-                className="p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">{sub.name}</h4>
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full">
-                      Klik untuk Detail & Latihan
-                    </span>
-                  </div>
-                  <div className="text-xs text-slate-500 mb-3">{sub.completed} dari {sub.total} sub-materi dikuasai</div>
-                  <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        sub.progress >= 80 ? 'bg-emerald-500' : sub.progress >= 50 ? 'bg-amber-500' : 'bg-rose-500'
-                      }`} 
-                      style={{ width: `${sub.progress}%` }} 
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right hidden sm:block">
-                    <div className="text-lg font-black">{sub.progress}%</div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Penguasaan</div>
-                  </div>
-                  <div className="h-9 w-9 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
-                    <ChevronRight size={18} />
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          {/* Subtest Detail Drawer/Modal */}
-          {selectedSubtest && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                    <Target size={20} className="text-rose-500" /> {selectedSubtest.name}
-                  </h3>
-                  <button onClick={() => setSelectedSubtest(null)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {selectedSubtest.description}
-                </p>
-
-                <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30">
-                  <h4 className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-2">
-                    Topik Materi Pokok:
-                  </h4>
-                  <ul className="text-xs text-slate-700 dark:text-slate-300 space-y-1 list-disc list-inside">
-                    {selectedSubtest.keyTopics.map(t => (
-                      <li key={t}>{t}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-xs text-amber-950 dark:text-amber-200">
-                  <strong>Tips & Trik Pengerjaan:</strong> {selectedSubtest.tips}
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" size="sm" onClick={() => setSelectedSubtest(null)}>
-                    Tutup
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => {
-                      const filterName = selectedSubtest.subjectFilter;
-                      setSelectedSubtest(null);
-                      handleStartExam(filterName);
-                    }}
-                  >
-                    Latihan Subtes Ini Sekarang 
-                  </Button>
-                </div>
-              </div>
+      {/* Banner Lanjutkan Sesi Ujian Jika Ada */}
+      {savedSession && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#141311] text-[#F5F3EE] border border-[#C8A96E]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+          <div className="space-y-1">
+            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#C8A96E]">
+              Sesi CBT Tersimpan Otomatis
             </div>
-          )}
+            <h3 className="text-sm sm:text-base font-semibold">
+              Lanjutkan {TKA_SUBTEST_CONFIGS[savedSession.activeFilterSubject]?.officialName || 'Simulasi TKA'}
+            </h3>
+            <p className="text-xs text-[#A39E95]">
+              Terjawab {Object.keys(savedSession.answers).length} soal • Sisa Waktu Real:{' '}
+              <span className="font-mono font-semibold text-[#E5CFA0]">{formatTimer(savedSession.timeLeft)}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleDiscardSavedSession}
+              className="px-3.5 py-2 rounded-xl text-xs font-medium bg-white/5 hover:bg-white/10 text-[#A39E95] border border-white/10 cursor-pointer"
+            >
+              Reset Sesi
+            </button>
+            <button
+              type="button"
+              onClick={handleResumeSavedSession}
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#C8A96E] hover:bg-[#D6B980] text-[#141311] cursor-pointer"
+            >
+              Lanjutkan Ujian →
+            </button>
+          </div>
         </div>
       )}
 
-      {/* TAB TRYOUT SIMULASI */}
+      {/* Navigation Tabs */}
+      <div className="flex flex-wrap bg-[var(--tf-bg-elevated)] p-1 rounded-xl border border-[var(--tf-border)] w-full sm:w-fit text-xs font-semibold gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('tryout')}
+          className={`flex-1 sm:px-5 py-2.5 rounded-lg transition-all cursor-pointer ${
+            activeTab === 'tryout'
+              ? 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] shadow-xs border border-[var(--tf-border)]'
+              : 'text-[var(--tf-text-secondary)] hover:text-[var(--tf-text-primary)]'
+          }`}
+        >
+          Simulasi Real CBT ({tkaQuestions.length} Soal Pusmendik)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('materi')}
+          className={`flex-1 sm:px-5 py-2.5 rounded-lg transition-all cursor-pointer ${
+            activeTab === 'materi'
+              ? 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] shadow-xs border border-[var(--tf-border)]'
+              : 'text-[var(--tf-text-secondary)] hover:text-[var(--tf-text-primary)]'
+          }`}
+        >
+          Kisi-Kisi & Silabus Resmi
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('jadwal')}
+          className={`flex-1 sm:px-5 py-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            activeTab === 'jadwal'
+              ? 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] shadow-xs border border-[var(--tf-border)]'
+              : 'text-[var(--tf-text-secondary)] hover:text-[var(--tf-text-primary)]'
+          }`}
+        >
+          <BellRing size={13} /> Jadwal & Alarm TKA 2026
+        </button>
+      </div>
+
+      {/* TAB 1: SIMULASI REAL CBT PUSMENDIK */}
       {activeTab === 'tryout' && (
         <div className="space-y-6 fade-up">
-          <Card className="p-8 text-center border-2 border-dashed border-blue-200 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 dark:from-slate-900 dark:to-blue-950/20 shadow-sm">
-            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-              <Lock size={30} />
-            </div>
-            <h3 className="text-2xl font-black mb-2 text-slate-900 dark:text-white">
-              Simulasi Akbar Nasional UTBK SNBT & TKA 2026
-            </h3>
-            <p className="text-slate-500 text-xs max-w-md mx-auto mb-6 leading-relaxed">
-              Paket simulasi komprehensif ({tkaQuestions.length} Soal HOTS) mencakup Bahasa Inggris, Penalaran Umum, Pengetahuan Kuantitatif, Literasi Bahasa Indonesia, dan Penalaran Matematika. Dilengkapi pintasan keyboard (A-E), analisis diagnostik per subtes, AI Tutor, serta pengiriman skor ke Pusat Notifikasi!
-            </p>
+          {/* Hero Paket Simulasi Utuh */}
+          <div className="relative overflow-hidden rounded-2xl bg-[#141311] text-[#F5F3EE] border border-[var(--tf-border)] p-6 sm:p-8 shadow-lg">
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-mono font-semibold uppercase tracking-[0.18em] bg-[#C8A96E]/20 text-[#E5CFA0] border border-[#C8A96E]/35">
+                    STANDAR RESMI PUSMENDIK KEMENDIKDASMEN
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-white/5 text-[#A39E95] border border-white/10">
+                    Split-Screen Wacana & Gambar
+                  </span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ fontFamily: 'var(--tf-font-display)' }}>
+                  Paket Simulasi Utuh TKA SMA/MA 2026 ({tkaQuestions.length} Soal Real)
+                </h2>
+                <p className="text-xs sm:text-sm text-[#A39E95] leading-relaxed">
+                  Seluruh soal dilengkapi <strong className="text-[#F5F3EE]">teks bacaan (stimulus) utuh di setiap nomor</strong> sehingga kamu tidak perlu kembali ke nomor sebelumnya, serta memuat <strong className="text-[#F5F3EE]">gambar grafik, tabel, dan infografik asli Pusmendik</strong> dengan durasi waktu real.
+                </p>
+                <div className="flex flex-wrap items-center gap-4 pt-1 text-xs font-mono text-[#E5CFA0]">
+                  <span className="flex items-center gap-1.5">
+                    <Clock size={14} className="text-[#C8A96E]" /> Durasi Real: 120 Menit (02:00:00)
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1.5">
+                    <FileText size={14} className="text-[#C8A96E]" /> 100% Wacana Mandiri per Soal
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1.5">
+                    <ImageIcon size={14} className="text-[#C8A96E]" /> Gambar & Grafik Asli Pusmendik
+                  </span>
+                </div>
+              </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button
-                onClick={() => handleStartExam('Semua')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:scale-102"
-              >
-                Mulai TryOut Lengkap Sekarang ({tkaQuestions.length} Soal • 45 Menit) 
-              </Button>
-            </div>
-          </Card>
-
-          {/* Subtest Quick Quizzes */}
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
-              <Filter size={14} /> Latihan Fokus per Subtes:
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-              {subtestCounts.map(sub => (
+              <div className="shrink-0">
                 <button
-                  key={sub.name}
-                  onClick={() => handleStartExam(sub.name)}
-                  className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-blue-400 text-left transition-all group"
+                  type="button"
+                  onClick={() => handleStartExam('Semua', TKA_SUBTEST_CONFIGS['Semua'].durationSeconds)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-xl font-semibold text-sm bg-[#C8A96E] hover:bg-[#D6B980] text-[#141311] shadow-md transition-all cursor-pointer"
                 >
-                  <div className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors line-clamp-1">
-                    {sub.name}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-1 font-mono font-semibold">
-                    {sub.count} Soal • 15 Menit
-                  </div>
+                  <Play size={16} fill="currentColor" />
+                  <span>Mulai Simulasi Full CBT (120 Menit)</span>
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Pilihan Subtes Resmi dengan Waktu Real Pusmendik (75 Menit Wajib / 60 Menit Pilihan) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-secondary)] flex items-center gap-2">
+                <Filter size={14} className="text-[#C8A96E]" />
+                Pilih Subtes Resmi TKA (Durasi Waktu Real Pusmendik)
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {subtestCards.map(sub => (
+                <Card
+                  key={sub.id}
+                  className="p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] hover:border-[#C8A96E]/60 transition-all flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase ${
+                        sub.category === 'Wajib'
+                          ? 'bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30'
+                          : 'bg-[var(--tf-bg-elevated)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)]'
+                      }`}>
+                        Mapel {sub.category}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-[var(--tf-text-primary)] flex items-center gap-1">
+                        <Clock size={13} className="text-[#C8A96E]" />
+                        {sub.durationMinutes} Menit Real
+                      </span>
+                    </div>
+
+                    <h4 className="font-semibold text-base text-[var(--tf-text-primary)]">
+                      {sub.label}
+                    </h4>
+
+                    <p className="text-xs text-[var(--tf-text-secondary)] leading-relaxed">
+                      {sub.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-[var(--tf-border)] space-y-3">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-[var(--tf-text-secondary)]">
+                      <span>{sub.actualCount} Butir Soal</span>
+                      <span>{sub.withImageCount} Soal Bergambar/Grafik</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleStartExam(sub.id as SubjectType, sub.durationSeconds)}
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-[var(--tf-bg-elevated)] hover:bg-[#141311] hover:text-[#F5F3EE] dark:hover:bg-[#C8A96E] dark:hover:text-[#141311] text-[var(--tf-text-primary)] border border-[var(--tf-border)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Play size={13} />
+                      <span>Mulai CBT {sub.label} ({sub.durationMinutes} Menit)</span>
+                    </button>
+                  </div>
+                </Card>
               ))}
             </div>
           </div>
 
-          {/* History */}
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center justify-between">
-              <span>Riwayat Ujian & Evaluasi</span>
+          {/* Riwayat Ujian & Evaluasi */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-secondary)]">
+                Riwayat Hasil Simulasi CBT
+              </h3>
               {history.length > 0 && (
                 <button
+                  type="button"
                   onClick={() => {
-                    if (window.confirm('Hapus seluruh riwayat ujian?')) {
+                    if (window.confirm('Bersihkan seluruh riwayat hasil simulasi?')) {
                       setHistory([]);
                       localStorage.removeItem(STORAGE_HISTORY);
                     }
                   }}
-                  className="text-[11px] text-rose-500 hover:underline font-semibold"
+                  className="text-xs text-rose-500 hover:underline font-medium cursor-pointer"
                 >
-                  Bersihkan Riwayat
+                  Hapus Riwayat
                 </button>
               )}
-            </h3>
+            </div>
 
             <div className="space-y-2.5">
               {history.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 border rounded-2xl">
-                  Belum ada riwayat tryout. Mulai ujian pertamamu sekarang!
-                </div>
+                <Card className="p-8 text-center text-[var(--tf-text-secondary)] border border-[var(--tf-border)]">
+                  Belum ada riwayat simulasi CBT. Pilih salah satu subtes di atas untuk memulai ujian pertamamu.
+                </Card>
               ) : (
                 history.map((h, i) => (
-                  <Card key={h.id || i} className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 rounded-xl flex items-center justify-center font-black text-sm">
+                  <Card key={h.id || i} className="p-4 flex items-center justify-between border border-[var(--tf-border)] bg-[var(--tf-bg-surface)]">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 bg-[var(--tf-bg-elevated)] text-[#C8A96E] border border-[var(--tf-border)] rounded-xl flex items-center justify-center font-mono font-bold text-xs">
                         #{history.length - i}
                       </div>
                       <div>
-                        <h4 className="font-bold text-xs text-slate-900 dark:text-white">{h.name}</h4>
-                        <div className="text-[10px] text-slate-400">
-                          {h.date} • {h.correct}/{h.total} Benar • {h.durationMinutes} menit
+                        <h4 className="font-semibold text-xs sm:text-sm text-[var(--tf-text-primary)]">{h.name}</h4>
+                        <div className="text-[11px] text-[var(--tf-text-secondary)] font-mono mt-0.5">
+                          {h.date} • {h.correct}/{h.total} Benar • Durasi {h.durationMinutes} menit
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-black text-blue-600 dark:text-blue-400">{h.score}</div>
-                      <div className="text-[9px] uppercase font-bold text-slate-400">Skor Akhir</div>
+                      <div className="text-xl font-mono font-bold text-[#C8A96E]">{h.score}</div>
+                      <div className="text-[9px] uppercase tracking-wider font-semibold text-[var(--tf-text-muted)]">Skor IRT</div>
                     </div>
                   </Card>
                 ))
@@ -1098,21 +1552,135 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
         </div>
       )}
 
-      {/* TAB JADWAL & ALARM NOTIFIKASI TKA 2026 */}
+      {/* TAB 2: KISI-KISI & SILABUS RESMI */}
+      {activeTab === 'materi' && (
+        <div className="space-y-6 fade-up">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <Card className="p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)]">
+              <div className="text-[#C8A96E] mb-2"><BookMarked size={20} /></div>
+              <div className="text-2xl font-bold font-mono text-[var(--tf-text-primary)]">{tkaQuestions.length} Soal Real</div>
+              <div className="text-xs text-[var(--tf-text-secondary)] mt-0.5">Wacana Utuh & Gambar Asli Pusmendik</div>
+            </Card>
+            <Card className="p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)]">
+              <div className="text-emerald-500 mb-2"><Clock size={20} /></div>
+              <div className="text-2xl font-bold font-mono text-[var(--tf-text-primary)]">75 & 60 Menit</div>
+              <div className="text-xs text-[var(--tf-text-secondary)] mt-0.5">Durasi Real Mapel Wajib & Pilihan</div>
+            </Card>
+            <Card className="p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)]">
+              <div className="text-sky-500 mb-2"><Target size={20} /></div>
+              <div className="text-2xl font-bold font-mono text-[var(--tf-text-primary)]">5 Subtes</div>
+              <div className="text-xs text-[var(--tf-text-secondary)] mt-0.5">Sesuai Kerangka Asesmen Kemendikdasmen</div>
+            </Card>
+          </div>
+
+          <div className="grid gap-3">
+            {SUBTESTS.map((sub) => (
+              <Card
+                key={sub.id}
+                onClick={() => setSelectedSubtest(sub)}
+                className="p-5 flex flex-col sm:flex-row sm:items-center gap-4 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] hover:border-[#C8A96E]/60 transition-all cursor-pointer"
+              >
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h4 className="font-semibold text-[var(--tf-text-primary)] text-sm sm:text-base">{sub.name}</h4>
+                    <span className="text-[10px] font-mono font-semibold text-[#C8A96E] bg-[#C8A96E]/10 px-2.5 py-0.5 rounded-full border border-[#C8A96E]/30">
+                      {sub.durationMinutes} Menit • Mapel {sub.category}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--tf-text-secondary)] mb-3">{sub.description}</p>
+                  <div className="h-1.5 w-full bg-[var(--tf-bg-elevated)] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#C8A96E] transition-all duration-700"
+                      style={{ width: `${sub.progress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-lg font-mono font-bold text-[var(--tf-text-primary)]">{sub.progress}%</div>
+                    <div className="text-[10px] uppercase font-semibold text-[var(--tf-text-muted)]">Kesiapan</div>
+                  </div>
+                  <div className="h-9 w-9 bg-[var(--tf-bg-elevated)] rounded-full flex items-center justify-center text-[var(--tf-text-secondary)]">
+                    <ChevronRight size={18} />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Modal Detail Silabus Subtes */}
+          {selectedSubtest && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+              <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-lg w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-base sm:text-lg text-[var(--tf-text-primary)] flex items-center gap-2">
+                    <Target size={18} className="text-[#C8A96E]" /> {selectedSubtest.name}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubtest(null)}
+                    className="p-1.5 rounded-lg hover:bg-[var(--tf-bg-elevated)] text-[var(--tf-text-secondary)] cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <p className="text-xs text-[var(--tf-text-secondary)] leading-relaxed">
+                  {selectedSubtest.description}
+                </p>
+
+                <div className="p-4 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)]">
+                  <h4 className="text-xs font-semibold text-[var(--tf-text-primary)] uppercase tracking-wider mb-2">
+                    Kisi-Kisi Wacana & Materi Soal:
+                  </h4>
+                  <ul className="text-xs text-[var(--tf-text-secondary)] space-y-1.5 list-disc list-inside">
+                    {selectedSubtest.keyTopics.map(t => (
+                      <li key={t}>{t}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/30 text-xs text-[var(--tf-text-primary)] leading-relaxed">
+                  <strong>Panduan Sistem CBT:</strong> {selectedSubtest.tips}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setSelectedSubtest(null)}>
+                    Tutup
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const filterName = selectedSubtest.subjectFilter;
+                      const durSec = selectedSubtest.durationMinutes * 60;
+                      setSelectedSubtest(null);
+                      handleStartExam(filterName, durSec);
+                    }}
+                  >
+                    Mulai CBT Subtes Ini ({selectedSubtest.durationMinutes} Menit)
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: JADWAL & ALARM NOTIFIKASI TKA 2026 */}
       {activeTab === 'jadwal' && (
         <div className="space-y-6 fade-up">
-          <Card className="p-5 sm:p-6 border border-rose-200 dark:border-rose-900/40 bg-gradient-to-br from-rose-50/50 via-white to-indigo-50/40 dark:from-slate-900 dark:to-rose-950/20 space-y-4">
+          <Card className="p-5 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                  <CalendarDays size={22} />
+                <div className="p-3 rounded-xl bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30">
+                  <CalendarDays size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">
-                    Sinkronisasi Alarm Jadwal TKA SMA 2026
+                  <h3 className="text-base font-semibold text-[var(--tf-text-primary)]">
+                    Jadwal Resmi & Sinkronisasi Alarm TKA SMA 2026
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    Gelombang 1 • Sesi 1 (WIB) • Senin 26 Okt s.d. Kamis 29 Okt 2026
+                  <p className="text-xs text-[var(--tf-text-secondary)]">
+                    Gelombang 1 • Sesi 1 (WIB) • Senin 26 Oktober s.d. Kamis 29 Oktober 2026
                   </p>
                 </div>
               </div>
@@ -1121,63 +1689,62 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
                 onClick={() => void handleSyncAllAlarms()}
                 disabled={syncing}
                 icon={<BellRing size={14} />}
-                className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
               >
                 Aktifkan Semua Alarm (4 Hari)
               </Button>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 flex items-start gap-2.5">
-              <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] text-xs text-[var(--tf-text-secondary)] flex items-start gap-2.5">
+              <Info size={16} className="text-[#C8A96E] shrink-0 mt-0.5" />
               <div className="leading-relaxed">
-                <strong>5 Titik Alarm Otomatis per Hari Ujian:</strong> Sistem akan membunyikan pengingat pada{' '}
-                <span className="font-mono font-bold text-rose-600 dark:text-rose-400">H-1 (19:00 WIB)</span>,{' '}
-                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">Pagi Hari-H (05:30 WIB)</span>,{' '}
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">H-30 Menit (06:30 WIB)</span>,{' '}
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">H-10 Menit (06:50 WIB)</span>, dan{' '}
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">Kickoff Ujian (07:00 WIB)</span>.
+                <strong>5 Titik Pengingat Otomatis per Hari Ujian:</strong> Sistem akan mengirim notifikasi pada{' '}
+                <span className="font-mono font-semibold text-[var(--tf-text-primary)]">H-1 (19:00 WIB)</span>,{' '}
+                <span className="font-mono font-semibold text-[var(--tf-text-primary)]">Pagi Hari-H (05:30 WIB)</span>,{' '}
+                <span className="font-mono font-semibold text-[var(--tf-text-primary)]">H-30 Menit (06:30 WIB)</span>,{' '}
+                <span className="font-mono font-semibold text-[var(--tf-text-primary)]">H-10 Menit (06:50 WIB)</span>, dan{' '}
+                <span className="font-mono font-semibold text-[var(--tf-text-primary)]">Mulai Ujian (07:00 WIB)</span>.
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               {EXAM_DAYS_2026.map((day) => (
-                <Card key={day.hariKe} className="p-4 border border-slate-200 dark:border-slate-800 space-y-3">
+                <Card key={day.hariKe} className="p-4 border border-[var(--tf-border)] bg-[var(--tf-bg-elevated)]/40 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30">
                       Hari Ke-{day.hariKe} • {day.tanggalFormatted}
                     </span>
-                    <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
-                      <Clock size={12} className="text-rose-500" />
+                    <span className="font-mono text-xs font-semibold text-[var(--tf-text-primary)] flex items-center gap-1">
+                      <Clock size={12} className="text-[#C8A96E]" />
                       {day.mulaiWib} - {day.perkiraanSelesaiWib} WIB
                     </span>
                   </div>
 
                   <div>
-                    <h4 className="font-black text-sm text-slate-900 dark:text-white">{day.shortTitle}</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">{day.rincian}</p>
+                    <h4 className="font-semibold text-sm text-[var(--tf-text-primary)]">{day.shortTitle}</h4>
+                    <p className="text-xs text-[var(--tf-text-secondary)] mt-0.5">{day.rincian}</p>
                   </div>
 
-                  <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="space-y-1 pt-2 border-t border-[var(--tf-border)]">
                     {day.steps.map((s, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                      <div key={idx} className="flex items-center justify-between text-[11px] text-[var(--tf-text-secondary)]">
                         <span>• {s.name}</span>
-                        <span className="font-mono font-bold">{s.dur}</span>
+                        <span className="font-mono font-semibold text-[var(--tf-text-primary)]">{s.dur}</span>
                       </div>
                     ))}
                   </div>
 
                   <div className="pt-2 flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
-                      <Timer size={12} /> Total {day.totalMenit} Menit
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-[#C8A96E]">
+                      <Timer size={12} /> Total {day.totalMenit} Menit Real
                     </span>
                     <button
                       type="button"
                       onClick={() => void handleSyncDay(day.hariKe, day.shortTitle)}
                       disabled={syncingDay === day.hariKe}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--tf-bg-surface)] text-[var(--tf-text-primary)] border border-[var(--tf-border)] hover:border-[#C8A96E] transition-colors cursor-pointer"
                     >
                       <BellRing size={12} className={syncingDay === day.hariKe ? 'animate-spin' : ''} />
-                      <span>Tes & Aktifkan Alarm Hari {day.hariKe}</span>
+                      <span>Aktifkan Alarm Hari {day.hariKe}</span>
                     </button>
                   </div>
                 </Card>
@@ -1185,31 +1752,31 @@ Berikan juga 1 trik cepat menjawab tipe soal ini saat ujian.`;
             </div>
           </Card>
 
-          <Card className="p-5 space-y-3">
-            <h3 className="text-sm font-black uppercase tracking-wider text-slate-500">
-              Timeline Lengkap Tahapan TKA Nasional 2026
+          <Card className="p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-secondary)]">
+              Linimasa Resmi Tahapan TKA Nasional 2026
             </h3>
             <div className="grid gap-2 sm:grid-cols-2">
               {TKA_STAGES_2026.map((stg) => (
                 <div
                   key={stg.id}
-                  className={`p-3 rounded-2xl border flex items-center justify-between text-xs ${
+                  className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
                     stg.status === 'crucial'
-                      ? 'border-rose-500/40 bg-rose-500/5 font-bold'
+                      ? 'border-[#C8A96E]/50 bg-[#C8A96E]/10 font-semibold'
                       : stg.status === 'completed'
-                      ? 'border-emerald-500/20 bg-emerald-500/5 opacity-80'
-                      : 'border-slate-200 dark:border-slate-800'
+                        ? 'border-emerald-500/25 bg-emerald-500/5 opacity-85'
+                        : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)]/40'
                   }`}
                 >
                   <div>
-                    <div className="font-bold text-slate-900 dark:text-white">{stg.nama}</div>
-                    <div className="text-[11px] text-slate-500 font-mono">{stg.rentangFormatted}</div>
+                    <div className="font-semibold text-[var(--tf-text-primary)]">{stg.nama}</div>
+                    <div className="text-[11px] text-[var(--tf-text-secondary)] font-mono">{stg.rentangFormatted}</div>
                   </div>
                   <Badge
-                    variant={stg.status === 'crucial' ? 'danger' : stg.status === 'completed' ? 'success' : 'neutral'}
+                    variant={stg.status === 'crucial' ? 'warning' : stg.status === 'completed' ? 'success' : 'neutral'}
                     size="sm"
                   >
-                    {stg.status === 'crucial' ? 'Utama' : stg.status === 'completed' ? 'Selesai' : 'Mendatang'}
+                    {stg.status === 'crucial' ? 'Utama' : stg.status === 'completed' ? 'Selesai' : 'Terjadwal'}
                   </Badge>
                 </div>
               ))}
