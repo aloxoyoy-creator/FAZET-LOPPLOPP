@@ -193,6 +193,8 @@ export default function TkaPage() {
   const [violationCount, setViolationCount] = useState(0);
   const [showViolationBanner, setShowViolationBanner] = useState(false);
   const [showExitPinModal, setShowExitPinModal] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState('');
+  const [unlockError, setUnlockError] = useState('');
 
   // CBT Comfort Features: Font Size & Image Lightbox
   const [fontScale, setFontScale] = useState<'sm' | 'md' | 'lg'>('md');
@@ -317,7 +319,27 @@ export default function TkaPage() {
         description: 'Layar ujian dikunci penuh (Full-Screen Exambrowser) dengan pelindung perpindahan tab.'
       });
     } else {
+      setUnlockPassword('');
+      setUnlockError('');
       setShowExitPinModal(true);
+    }
+  };
+
+  const handleUnlockWithPassword = async () => {
+    const trimmed = unlockPassword.trim();
+    if (trimmed === 'admin2026') {
+      await exitBrowserFullscreen();
+      setIsScreenPinned(false);
+      setShowExitPinModal(false);
+      setUnlockPassword('');
+      setUnlockError('');
+      push({
+        tone: 'neutral',
+        title: 'Layar Berhasil Dibuka',
+        description: 'Otorisasi pengawas (admin2026) terverifikasi. Layar kembali ke mode biasa.'
+      });
+    } else {
+      setUnlockError('Password otorisasi salah! Masukkan password pengawas yang valid.');
     }
   };
 
@@ -1020,52 +1042,118 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
             </div>
           )}
 
-          {/* Modal Konfirmasi Lepas Sematan Layar (Unpin Screen) */}
+          {/* Modal Konfirmasi Lepas Sematan Layar (Buka Layar dengan Password admin2026 jika belum selesai) */}
           {showExitPinModal && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
               <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-md w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30">
+                  <div className="p-2.5 rounded-xl bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30 shrink-0">
                     <Lock size={22} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-base text-[var(--tf-text-primary)]">
-                      Sistem Sematkan Layar CBT Aktif
+                      Layar CBT Sedang Terkunci
                     </h3>
                     <p className="text-xs text-[var(--tf-text-secondary)]">
-                      Mode Exambrowser Pusmendik menjaga fokus penuh selama ujian berlangsung.
+                      Sistem Sematkan Layar Pusmendik (Exambrowser Guard)
                     </p>
                   </div>
                 </div>
 
-                <p className="text-xs text-[var(--tf-text-secondary)] leading-relaxed">
-                  Apakah kamu ingin tetap menyematkan layar penuh (disarankan seperti CBT TKA sesungguhnya) atau keluar sementara dari mode layar penuh?
-                </p>
+                {answeredCount >= activeQuestions.length ? (
+                  // Kasus 1: Seluruh soal sudah selesai dijawab
+                  <div className="space-y-4">
+                    <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                      <strong>Seluruh soal telah selesai dijawab ({answeredCount}/{activeQuestions.length}).</strong> Kamu dapat melepas sematan layar atau langsung mengumpulkan ujian.
+                    </div>
+                    <div className="flex gap-2.5 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                        onClick={async () => {
+                          await exitBrowserFullscreen();
+                          setIsScreenPinned(false);
+                          setShowExitPinModal(false);
+                        }}
+                      >
+                        Buka Sematan Layar
+                      </Button>
+                      <Button
+                        size="sm"
+                        fullWidth
+                        onClick={() => {
+                          setShowExitPinModal(false);
+                          setShowConfirmModal(true);
+                        }}
+                      >
+                        Kumpulkan Ujian
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Kasus 2: Soal belum selesai -> Harus dengan password admin2026
+                  <div className="space-y-4">
+                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                      Soal belum selesai ({answeredCount} dari {activeQuestions.length} terjawab). Sesuai prosedur CBT, layar hanya dapat dibuka setelah ujian selesai atau dengan <strong>Password Pengawas / Proktor</strong>.
+                    </div>
 
-                <div className="flex gap-2.5 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    fullWidth
-                    onClick={async () => {
-                      await exitBrowserFullscreen();
-                      setIsScreenPinned(false);
-                      setShowExitPinModal(false);
-                    }}
-                  >
-                    Lepas Sematan Layar
-                  </Button>
-                  <Button
-                    size="sm"
-                    fullWidth
-                    onClick={async () => {
-                      setShowExitPinModal(false);
-                      await enterBrowserFullscreen();
-                    }}
-                  >
-                    Tetap Sematkan Layar
-                  </Button>
-                </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-[var(--tf-text-primary)] block">
+                        Password Pengawas (Proctor Authorization):
+                      </label>
+                      <input
+                        type="password"
+                        value={unlockPassword}
+                        onChange={(e) => {
+                          setUnlockPassword(e.target.value);
+                          if (unlockError) setUnlockError('');
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            void handleUnlockWithPassword();
+                          }
+                        }}
+                        placeholder="Masukkan password pengawas..."
+                        className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] text-[var(--tf-text-primary)] focus:outline-none focus:border-[#C8A96E] font-mono tracking-wider"
+                        autoFocus
+                      />
+                      {unlockError ? (
+                        <div className="text-[11px] text-rose-500 font-medium pt-0.5">
+                          {unlockError}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-[var(--tf-text-muted)] pt-0.5">
+                          Gunakan password resmi pengawas: <code className="font-mono font-semibold text-[#C8A96E]">admin2026</code>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2.5 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                        onClick={() => {
+                          setShowExitPinModal(false);
+                          setUnlockPassword('');
+                          setUnlockError('');
+                        }}
+                      >
+                        Batal (Tetap Terkunci)
+                      </Button>
+                      <Button
+                        size="sm"
+                        fullWidth
+                        onClick={() => void handleUnlockWithPassword()}
+                        disabled={!unlockPassword.trim()}
+                      >
+                        Buka Kunci Layar
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
