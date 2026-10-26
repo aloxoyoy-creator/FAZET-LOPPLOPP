@@ -154,10 +154,56 @@ interface SavedCbtSession {
   initialDuration: number;
   violationCount?: number;
   updatedAt: number;
+  sessionQuestions?: Question[];
 }
 
 const STORAGE_HISTORY = 'fazet_tka_history_v2';
 const STORAGE_ACTIVE_CBT = 'fazet_tka_active_cbt_session_v2';
+const STORAGE_UNLOCK_LOCKOUT = 'fazet_tka_unlock_lockout_until';
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function randomizeExamQuestions(sourceQuestions: Question[]): Question[] {
+  // Group questions by passageGroupId (or unique id if none) so related reading passages stay coherent
+  const groupMap = new Map<string, Question[]>();
+  sourceQuestions.forEach(q => {
+    const groupKey = q.passageGroupId || `single_${q.id}`;
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, []);
+    }
+    groupMap.get(groupKey)!.push(q);
+  });
+
+  // Shuffle order of questions within each group
+  const groupedList: Question[][] = [];
+  groupMap.forEach(groupQuestions => {
+    groupedList.push(shuffleArray(groupQuestions));
+  });
+
+  // Shuffle the groups themselves
+  const shuffledGroups = shuffleArray(groupedList);
+  const flattenedQuestions = shuffledGroups.flat();
+
+  // Randomize options for every single question and update correctAnswer index
+  return flattenedQuestions.map(q => {
+    const originalCorrectText = q.options[q.correctAnswer];
+    const shuffledOptions = shuffleArray(q.options);
+    const newCorrectIndex = shuffledOptions.indexOf(originalCorrectText);
+
+    return {
+      ...q,
+      options: shuffledOptions,
+      correctAnswer: newCorrectIndex !== -1 ? newCorrectIndex : 0,
+    };
+  });
+}
 
 export default function TkaPage() {
   const { user } = useAuth();
@@ -195,6 +241,48 @@ export default function TkaPage() {
   const [showExitPinModal, setShowExitPinModal] = useState(false);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [unlockError, setUnlockError] = useState('');
+
+  // Pembekuan Akses Otorisasi (Salah 1x Tunggu 15 Menit)
+  const [lockoutUntil, setLockoutUntil] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_UNLOCK_LOCKOUT);
+      if (stored) {
+        const val = parseInt(stored, 10);
+        if (val > Date.now()) return val;
+      }
+    } catch {}
+    return 0;
+  });
+
+  const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_UNLOCK_LOCKOUT);
+      if (stored) {
+        const val = parseInt(stored, 10);
+        return Math.max(0, Math.ceil((val - Date.now()) / 1000));
+      }
+    } catch {}
+    return 0;
+  });
+
+  useEffect(() => {
+    if (lockoutUntil <= Date.now()) {
+      setLockoutSecondsLeft(0);
+      return;
+    }
+    const updateCountdown = () => {
+      const diff = Math.max(0, Math.ceil((lockoutUntil - Date.now()) / 1000));
+      setLockoutSecondsLeft(diff);
+      if (diff <= 0) {
+        try {
+          localStorage.removeItem(STORAGE_UNLOCK_LOCKOUT);
+        } catch {}
+      }
+    };
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutUntil]);
 
   // CBT Comfort Features: Font Size & Image Lightbox
   const [fontScale, setFontScale] = useState<'sm' | 'md' | 'lg'>('md');
@@ -326,29 +414,49 @@ export default function TkaPage() {
   };
 
   const handleUnlockWithPassword = async () => {
+    if (lockoutSecondsLeft > 0) return;
     const trimmed = unlockPassword.trim();
     if (trimmed === 'admin2026') {
+      try {
+        localStorage.removeItem(STORAGE_UNLOCK_LOCKOUT);
+      } catch {}
+      setLockoutUntil(0);
+      setLockoutSecondsLeft(0);
       await exitBrowserFullscreen();
       setIsScreenPinned(false);
       setShowExitPinModal(false);
       setUnlockPassword('');
       setUnlockError('');
       push({
-        tone: 'neutral',
+        tone: 'info',
         title: 'Layar Berhasil Dibuka',
-        description: 'Otorisasi pengawas (admin2026) terverifikasi. Layar kembali ke mode biasa.'
+        description: 'Otorisasi pengawas terverifikasi. Layar kembali ke mode biasa.'
       });
     } else {
-      setUnlockError('Password otorisasi salah! Masukkan password pengawas yang valid.');
+      const penaltyTime = Date.now() + 15 * 60 * 1000;
+      try {
+        localStorage.setItem(STORAGE_UNLOCK_LOCKOUT, penaltyTime.toString());
+      } catch {}
+      setLockoutUntil(penaltyTime);
+      setLockoutSecondsLeft(15 * 60);
+      setUnlockPassword('');
+      setUnlockError('Password otorisasi salah. Sesuai protokol ketat, akses otorisasi dibekukan selama 15 menit.');
     }
   };
 
-  // Filter questions by selected subtest
-  const activeQuestions: Question[] = useMemo(() => {
-    if (activeFilterSubject === 'Semua') return tkaQuestions;
-    const filtered = tkaQuestions.filter(q => q.subject === activeFilterSubject);
-    return filtered.length > 0 ? filtered : tkaQuestions;
-  }, [activeFilterSubject]);
+  // Active questions for the CBT exam (randomized questions & randomized options A-E)
+  const [activeQuestions, setActiveQuestions] = useState<Question[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_ACTIVE_CBT);
+      if (raw) {
+        const parsed = JSON.parse(raw) as SavedCbtSession;
+        if (parsed && parsed.sessionQuestions && parsed.sessionQuestions.length > 0) {
+          return parsed.sessionQuestions;
+        }
+      }
+    } catch {}
+    return tkaQuestions;
+  });
 
   const currentQ = activeQuestions[currentQuestionIndex] || activeQuestions[0];
 
@@ -424,12 +532,13 @@ export default function TkaPage() {
       initialDuration,
       violationCount,
       updatedAt: Date.now(),
+      sessionQuestions: activeQuestions,
     };
     try {
       localStorage.setItem(STORAGE_ACTIVE_CBT, JSON.stringify(sessionData));
       setSavedSession(sessionData);
     } catch {}
-  }, [quizStarted, isFinished, activeFilterSubject, currentQuestionIndex, answers, doubtful, timeLeft, initialDuration, violationCount]);
+  }, [quizStarted, isFinished, activeFilterSubject, currentQuestionIndex, answers, doubtful, timeLeft, initialDuration, violationCount, activeQuestions]);
 
   // Active Real-Time Countdown Timer Effect
   useEffect(() => {
@@ -453,6 +562,16 @@ export default function TkaPage() {
     if (!quizStarted || isFinished) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Intercept F11 to prevent escaping screen pinning
+      if (e.key === 'F11') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!document.fullscreenElement && cbtContainerRef.current) {
+          void enterBrowserFullscreen();
+        }
+        return;
+      }
+
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === 'Escape') {
@@ -468,6 +587,8 @@ export default function TkaPage() {
           setShowExitPinModal(false);
           return;
         }
+        e.preventDefault();
+        return;
       }
 
       if (showConfirmModal || lightboxImage || showExitPinModal) return;
@@ -515,6 +636,16 @@ export default function TkaPage() {
     const config = TKA_SUBTEST_CONFIGS[subjectFilter] || TKA_SUBTEST_CONFIGS['Semua'];
     const durationSec = customSeconds ?? config.durationSeconds;
 
+    // Filter base questions by selected subtest
+    const baseQuestions = subjectFilter === 'Semua'
+      ? tkaQuestions
+      : tkaQuestions.filter(q => q.subject === subjectFilter);
+    const questionsToUse = baseQuestions.length > 0 ? baseQuestions : tkaQuestions;
+
+    // MODE KETAT CBT PUSMENDIK: Acak urutan butir soal (paket wacana) & acak opsi jawaban (A-E)
+    const randomized = randomizeExamQuestions(questionsToUse);
+
+    setActiveQuestions(randomized);
     setActiveFilterSubject(subjectFilter);
     setCurrentQuestionIndex(0);
     setAnswers({});
@@ -539,6 +670,14 @@ export default function TkaPage() {
 
   const handleResumeSavedSession = () => {
     if (!savedSession) return;
+    if (savedSession.sessionQuestions && savedSession.sessionQuestions.length > 0) {
+      setActiveQuestions(savedSession.sessionQuestions);
+    } else {
+      const base = savedSession.activeFilterSubject === 'Semua'
+        ? tkaQuestions
+        : tkaQuestions.filter(q => q.subject === savedSession.activeFilterSubject);
+      setActiveQuestions(base.length > 0 ? base : tkaQuestions);
+    }
     setActiveFilterSubject(savedSession.activeFilterSubject);
     setCurrentQuestionIndex(savedSession.currentQuestionIndex);
     setAnswers(savedSession.answers);
@@ -559,6 +698,7 @@ export default function TkaPage() {
   const handleDiscardSavedSession = () => {
     localStorage.removeItem(STORAGE_ACTIVE_CBT);
     setSavedSession(null);
+    setActiveQuestions(tkaQuestions);
   };
 
   const handleFinishExam = async () => {
@@ -1001,7 +1141,7 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
         ref={cbtContainerRef}
         className={
           isScreenPinned
-            ? 'fixed inset-0 z-[100] bg-[var(--tf-bg-primary)] overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 select-none'
+            ? 'fixed inset-0 z-[500] bg-[var(--tf-bg-primary)] overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 select-none'
             : 'max-w-[1440px] mx-auto pb-20 space-y-4 select-none'
         }
         onContextMenu={(e) => {
@@ -1044,7 +1184,7 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
 
           {/* Modal Konfirmasi Lepas Sematan Layar (Buka Layar dengan Password admin2026 jika belum selesai) */}
           {showExitPinModal && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+            <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
               <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-md w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30 shrink-0">
@@ -1061,23 +1201,19 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
                 </div>
 
                 {answeredCount >= activeQuestions.length ? (
-                  // Kasus 1: Seluruh soal sudah selesai dijawab
+                  // Kasus 1: Seluruh soal sudah selesai dijawab -> Harus kumpulkan ujian untuk keluar dari sistem
                   <div className="space-y-4">
                     <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">
-                      <strong>Seluruh soal telah selesai dijawab ({answeredCount}/{activeQuestions.length}).</strong> Kamu dapat melepas sematan layar atau langsung mengumpulkan ujian.
+                      <strong>Seluruh butir soal telah dijawab ({answeredCount}/{activeQuestions.length}).</strong> Sesuai protokol ujian CBT, untuk membuka sematan layar Anda harus mengumpulkan hasil ujian dan keluar dari sistem CBT.
                     </div>
                     <div className="flex gap-2.5 pt-1">
                       <Button
                         variant="outline"
                         size="sm"
                         fullWidth
-                        onClick={async () => {
-                          await exitBrowserFullscreen();
-                          setIsScreenPinned(false);
-                          setShowExitPinModal(false);
-                        }}
+                        onClick={() => setShowExitPinModal(false)}
                       >
-                        Buka Sematan Layar
+                        Kembali ke Ujian
                       </Button>
                       <Button
                         size="sm"
@@ -1087,48 +1223,66 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
                           setShowConfirmModal(true);
                         }}
                       >
-                        Kumpulkan Ujian
+                        Kumpulkan & Keluar Sistem
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  // Kasus 2: Soal belum selesai -> Harus dengan password admin2026
+                  // Kasus 2: Soal belum selesai -> Harus dengan password pengawas, salah 1x tunggu 15 menit
                   <div className="space-y-4">
                     <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                      Soal belum selesai ({answeredCount} dari {activeQuestions.length} terjawab). Sesuai prosedur CBT, layar hanya dapat dibuka setelah ujian selesai atau dengan <strong>Password Pengawas / Proktor</strong>.
+                      Soal belum selesai ({answeredCount} dari {activeQuestions.length} terjawab). Sesuai prosedur ketat CBT, sematan layar hanya dapat dibuka oleh <strong>Pengawas / Proktor Ruang</strong>.
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-[var(--tf-text-primary)] block">
-                        Password Pengawas (Proctor Authorization):
-                      </label>
-                      <input
-                        type="password"
-                        value={unlockPassword}
-                        onChange={(e) => {
-                          setUnlockPassword(e.target.value);
-                          if (unlockError) setUnlockError('');
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            void handleUnlockWithPassword();
-                          }
-                        }}
-                        placeholder="Masukkan password pengawas..."
-                        className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] text-[var(--tf-text-primary)] focus:outline-none focus:border-[#C8A96E] font-mono tracking-wider"
-                        autoFocus
-                      />
-                      {unlockError ? (
-                        <div className="text-[11px] text-rose-500 font-medium pt-0.5">
-                          {unlockError}
+                    {lockoutSecondsLeft > 0 ? (
+                      <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-2.5 text-xs text-rose-700 dark:text-rose-300">
+                        <div className="flex items-center gap-2 font-semibold">
+                          <ShieldAlert size={16} className="text-rose-500 shrink-0" />
+                          <span>Akses Otorisasi Dibekukan (Mode Ketat)</span>
                         </div>
-                      ) : (
-                        <div className="text-[11px] text-[var(--tf-text-muted)] pt-0.5">
-                          Gunakan password resmi pengawas: <code className="font-mono font-semibold text-[#C8A96E]">admin2026</code>
+                        <p className="leading-relaxed">
+                          Terjadi kesalahan input password otorisasi. Sistem membekukan percobaan input selama 15 menit.
+                        </p>
+                        <div className="p-2.5 rounded-lg bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] flex items-center justify-between font-mono">
+                          <span className="text-[var(--tf-text-secondary)]">Waktu Tunggu:</span>
+                          <span className="font-bold text-rose-500 text-sm">
+                            {Math.floor(lockoutSecondsLeft / 60)}:{String(lockoutSecondsLeft % 60).padStart(2, '0')}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--tf-text-primary)] block">
+                          Kode Otorisasi Pengawas:
+                        </label>
+                        <input
+                          type="password"
+                          value={unlockPassword}
+                          onChange={(e) => {
+                            setUnlockPassword(e.target.value);
+                            if (unlockError) setUnlockError('');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              void handleUnlockWithPassword();
+                            }
+                          }}
+                          placeholder="••••••••••••"
+                          className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] text-[var(--tf-text-primary)] focus:outline-none focus:border-[#C8A96E] font-mono tracking-widest text-center"
+                          autoFocus
+                        />
+                        {unlockError ? (
+                          <div className="text-[11px] text-rose-500 font-medium pt-0.5">
+                            {unlockError}
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-[var(--tf-text-muted)] pt-0.5">
+                            Peringatan: Kesalahan input password 1x akan membekukan akses otorisasi selama 15 menit.
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex gap-2.5 pt-1">
                       <Button
@@ -1141,16 +1295,18 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
                           setUnlockError('');
                         }}
                       >
-                        Batal (Tetap Terkunci)
+                        Kembali ke Ujian
                       </Button>
-                      <Button
-                        size="sm"
-                        fullWidth
-                        onClick={() => void handleUnlockWithPassword()}
-                        disabled={!unlockPassword.trim()}
-                      >
-                        Buka Kunci Layar
-                      </Button>
+                      {lockoutSecondsLeft === 0 && (
+                        <Button
+                          size="sm"
+                          fullWidth
+                          onClick={() => void handleUnlockWithPassword()}
+                          disabled={!unlockPassword.trim()}
+                        >
+                          Verifikasi & Buka Layar
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1160,7 +1316,7 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
 
           {/* Modal Konfirmasi Kumpulkan Ujian */}
           {showConfirmModal && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+            <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
               <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-md w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30">
@@ -1206,6 +1362,25 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
                   </Button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Banner Peringatan Jika Layar Keluar dari Fullscreen tapi Sematan Masih Aktif (mis. F11) */}
+          {!isFullscreenActive && isScreenPinned && (
+            <div className="rounded-xl bg-amber-500/15 border border-amber-500/40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <div className="flex items-center gap-2">
+                <ShieldAlert size={16} className="shrink-0 text-amber-500" />
+                <span>
+                  <strong>Mode Sematan Layar Ketat:</strong> Tampilan browser keluar dari mode layar penuh. Layar tetap terkunci di jendela ujian. Klik tombol di samping untuk memaksimalkan kembali.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void enterBrowserFullscreen()}
+                className="px-3 py-1 rounded-lg font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors cursor-pointer text-xs"
+              >
+                Maksimalkan Layar Penuh
+              </button>
             </div>
           )}
 
