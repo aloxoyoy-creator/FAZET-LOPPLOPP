@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
-  Target, CheckCircle2, ChevronRight, Lock, Play,
+  Target, CheckCircle2, ChevronRight, Play,
   Clock, AlertCircle, RotateCcw,
   Eye, X, Award, Filter, BookMarked, BellRing, RefreshCw, CalendarDays, Timer, Info,
-  Sparkles, BarChart3, Keyboard, Brain, Loader2, ZoomIn, Type, FileText, Image as ImageIcon, ShieldCheck
+  Sparkles, BarChart3, Keyboard, Brain, Loader2, ZoomIn, Type, FileText, Image as ImageIcon,
+  ShieldCheck, Lock, Maximize2, Minimize2, Pin, PinOff, ShieldAlert, Columns2
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -58,7 +59,7 @@ const SUBTESTS: SubtestInfo[] = [
       'Sains, Ekologi & Ekonomi Global (Riset LIPI/KLHK, Prospek IMF)',
       'Ketepatan Ejaan, Tanda Baca & Kalimat Efektif (EYD Edisi V)'
     ],
-    tips: 'Pada sistem CBT ini, wacana lengkap dan gambar selalu ditampilkan di panel kiri pada setiap nomor soal—kamu tidak perlu bolak-balik ke nomor sebelumnya.'
+    tips: 'Pada sistem CBT ini, wacana lengkap dan gambar selalu disematkan di panel kiri pada setiap nomor soal—kamu tidak perlu bolak-balik ke nomor sebelumnya.'
   },
   {
     id: 'pm',
@@ -76,7 +77,7 @@ const SUBTESTS: SubtestInfo[] = [
       'Geometri Ruang (Kubus Kamar Tidur & Selimut Kap Lampu Tabung)',
       'Permutasi Stan Bazar Sekolah & Peluang Bersyarat Kotak Undian'
     ],
-    tips: 'Perhatikan detail angka pada tabel dan gambar ilustrasi Pusmendik. Klik gambar untuk memperbesar (zoom) jika ingin melihat koordinat grafik secara presisi.'
+    tips: 'Perhatikan detail angka pada tabel dan gambar ilustrasi Pusmendik. Gunakan fitur Sematkan Layar / Split-Pin agar gambar tetap diam saat kamu menggeser pilihan jawaban.'
   },
   {
     id: 'lit_en',
@@ -151,6 +152,7 @@ interface SavedCbtSession {
   doubtful: Record<string, boolean>;
   timeLeft: number;
   initialDuration: number;
+  violationCount?: number;
   updatedAt: number;
 }
 
@@ -161,6 +163,8 @@ export default function TkaPage() {
   const { user } = useAuth();
   const { workspaceId } = useWorkspace();
   const { push } = useToast();
+
+  const cbtContainerRef = useRef<HTMLDivElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<'tryout' | 'materi' | 'jadwal'>('tryout');
   const [selectedSubtest, setSelectedSubtest] = useState<SubtestInfo | null>(null);
@@ -181,6 +185,14 @@ export default function TkaPage() {
   const [timeLeft, setTimeLeft] = useState<number>(7200);
   const [initialDuration, setInitialDuration] = useState<number>(7200);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // SISTEM SEMATKAN LAYAR (CBT KIOSK / SCREEN PINNING & STIMULUS PINNING)
+  const [isScreenPinned, setIsScreenPinned] = useState(true); // Kiosk Fixed Full-Viewport Lock
+  const [isFullscreenActive, setIsFullscreenActive] = useState(false);
+  const [isStimulusPinned, setIsStimulusPinned] = useState(true); // Sematkan Wacana & Gambar
+  const [violationCount, setViolationCount] = useState(0);
+  const [showViolationBanner, setShowViolationBanner] = useState(false);
+  const [showExitPinModal, setShowExitPinModal] = useState(false);
 
   // CBT Comfort Features: Font Size & Image Lightbox
   const [fontScale, setFontScale] = useState<'sm' | 'md' | 'lg'>('md');
@@ -222,6 +234,92 @@ export default function TkaPage() {
     window.addEventListener('fazet:tka-synced', onSynced);
     return () => window.removeEventListener('fazet:tka-synced', onSynced);
   }, []);
+
+  // Track native Fullscreen API changes & WakeLock when CBT is active
+  useEffect(() => {
+    const handleFsChange = () => {
+      const active = Boolean(document.fullscreenElement);
+      setIsFullscreenActive(active);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  // Screen WakeLock + Anti-Tab-Switch Detection (Exambrowser Proctoring) during active CBT
+  useEffect(() => {
+    if (!quizStarted || isFinished) return;
+
+    let wakeLockSentinel: WakeLockSentinel | null = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+        }
+      } catch {}
+    };
+    void requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && isScreenPinned) {
+        setViolationCount(prev => prev + 1);
+        setShowViolationBanner(true);
+        push({
+          tone: 'warning',
+          title: 'Peringatan Sistem Sematkan Layar CBT',
+          description: 'Terdeteksi perpindahan tab/jendela di luar layar ujian TKA. Tetap berada di layar CBT.'
+        });
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Ujian CBT sedang berlangsung dan layar sedang disematkan.';
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+      }
+    };
+  }, [quizStarted, isFinished, isScreenPinned, push]);
+
+  const enterBrowserFullscreen = useCallback(async () => {
+    try {
+      const el = cbtContainerRef.current || document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) {
+        await el.requestFullscreen();
+      }
+      setIsScreenPinned(true);
+    } catch {
+      setIsScreenPinned(true);
+    }
+  }, []);
+
+  const exitBrowserFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+    } catch {}
+  }, []);
+
+  const toggleScreenPinning = async () => {
+    if (!isScreenPinned || !isFullscreenActive) {
+      await enterBrowserFullscreen();
+      push({
+        tone: 'success',
+        title: 'Layar CBT Disematkan (Mode Kiosk Aktif)',
+        description: 'Layar ujian dikunci penuh (Full-Screen Exambrowser) dengan pelindung perpindahan tab.'
+      });
+    } else {
+      setShowExitPinModal(true);
+    }
+  };
 
   // Filter questions by selected subtest
   const activeQuestions: Question[] = useMemo(() => {
@@ -302,13 +400,14 @@ export default function TkaPage() {
       doubtful,
       timeLeft,
       initialDuration,
+      violationCount,
       updatedAt: Date.now(),
     };
     try {
       localStorage.setItem(STORAGE_ACTIVE_CBT, JSON.stringify(sessionData));
       setSavedSession(sessionData);
     } catch {}
-  }, [quizStarted, isFinished, activeFilterSubject, currentQuestionIndex, answers, doubtful, timeLeft, initialDuration]);
+  }, [quizStarted, isFinished, activeFilterSubject, currentQuestionIndex, answers, doubtful, timeLeft, initialDuration, violationCount]);
 
   // Active Real-Time Countdown Timer Effect
   useEffect(() => {
@@ -327,7 +426,7 @@ export default function TkaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizStarted, isFinished]);
 
-  // Pro CBT Keyboard Shortcuts (A-E to select option, Left/Right arrows to navigate, R to toggle doubtful, Esc to close modal)
+  // Pro CBT Keyboard Shortcuts (A-E to select option, Left/Right arrows to navigate, R to toggle doubtful, F to pin screen)
   useEffect(() => {
     if (!quizStarted || isFinished) return;
 
@@ -343,9 +442,13 @@ export default function TkaPage() {
           setShowConfirmModal(false);
           return;
         }
+        if (showExitPinModal) {
+          setShowExitPinModal(false);
+          return;
+        }
       }
 
-      if (showConfirmModal || lightboxImage) return;
+      if (showConfirmModal || lightboxImage || showExitPinModal) return;
 
       const key = e.key.toLowerCase();
       if (['a', 'b', 'c', 'd', 'e'].includes(key)) {
@@ -365,12 +468,15 @@ export default function TkaPage() {
         if (currentQ) {
           setDoubtful(prev => ({ ...prev, [currentQ.id]: !prev[currentQ.id] }));
         }
+      } else if (key === 'f') {
+        e.preventDefault();
+        void enterBrowserFullscreen();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [quizStarted, isFinished, showConfirmModal, lightboxImage, currentQ, activeQuestions.length]);
+  }, [quizStarted, isFinished, showConfirmModal, lightboxImage, showExitPinModal, currentQ, activeQuestions.length, enterBrowserFullscreen]);
 
   const formatTimer = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -383,7 +489,7 @@ export default function TkaPage() {
     return `00:${pad(m)}:${pad(s)}`;
   };
 
-  const handleStartExam = (subjectFilter: SubjectType | 'Semua' = 'Semua', customSeconds?: number) => {
+  const handleStartExam = (subjectFilter: SubjectType | 'Semua' = 'Semua', customSeconds?: number, autoPinScreen = true) => {
     const config = TKA_SUBTEST_CONFIGS[subjectFilter] || TKA_SUBTEST_CONFIGS['Semua'];
     const durationSec = customSeconds ?? config.durationSeconds;
 
@@ -395,7 +501,17 @@ export default function TkaPage() {
     setReviewMode(false);
     setInitialDuration(durationSec);
     setTimeLeft(durationSec);
+    setViolationCount(0);
+    setShowViolationBanner(false);
+    setIsScreenPinned(true);
+    setIsStimulusPinned(true);
     setQuizStarted(true);
+
+    if (autoPinScreen) {
+      setTimeout(() => {
+        void enterBrowserFullscreen();
+      }, 80);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -407,9 +523,14 @@ export default function TkaPage() {
     setDoubtful(savedSession.doubtful);
     setInitialDuration(savedSession.initialDuration);
     setTimeLeft(savedSession.timeLeft);
+    setViolationCount(savedSession.violationCount || 0);
     setIsFinished(false);
     setReviewMode(false);
+    setIsScreenPinned(true);
     setQuizStarted(true);
+    setTimeout(() => {
+      void enterBrowserFullscreen();
+    }, 80);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -419,6 +540,9 @@ export default function TkaPage() {
   };
 
   const handleFinishExam = async () => {
+    await exitBrowserFullscreen();
+    setIsScreenPinned(false);
+
     let correctCount = 0;
     activeQuestions.forEach(q => {
       if (answers[q.id] === q.correctAnswer) correctCount += 1;
@@ -451,6 +575,7 @@ export default function TkaPage() {
 
     setIsFinished(true);
     setShowConfirmModal(false);
+    setShowExitPinModal(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     await notifyTkaTryoutCompleted({
@@ -837,7 +962,7 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
   }
 
   // =========================================================================
-  // 2. LAYAR UJIAN REAL CBT PUSMENDIK KEMENDIKDASMEN (SPLIT-SCREEN WACANA & SOAL)
+  // 2. LAYAR UJIAN REAL CBT PUSMENDIK + SISTEM SEMATKAN LAYAR (SCREEN PINNING)
   // =========================================================================
   if (quizStarted && currentQ) {
     const isAnswered = answers[currentQ.id] !== undefined;
@@ -850,435 +975,601 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
     const hasStimulusLeftPane = Boolean(resolvedStimulus.passage || resolvedStimulus.images.length > 0);
 
     return (
-      <div className="max-w-[1440px] mx-auto pb-20 space-y-4">
-        {/* Lightbox Zoom Gambar */}
-        {lightboxImage && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
-            onClick={() => setLightboxImage(null)}
-          >
+      <div
+        ref={cbtContainerRef}
+        className={
+          isScreenPinned
+            ? 'fixed inset-0 z-[100] bg-[var(--tf-bg-primary)] overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 select-none'
+            : 'max-w-[1440px] mx-auto pb-20 space-y-4 select-none'
+        }
+        onContextMenu={(e) => {
+          if (isScreenPinned) e.preventDefault();
+        }}
+      >
+        <div className="max-w-[1480px] mx-auto space-y-3.5 pb-12">
+          {/* Lightbox Zoom Gambar */}
+          {lightboxImage && (
             <div
-              className="relative max-w-5xl w-full bg-[#141311] border border-white/15 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col items-center"
-              onClick={e => e.stopPropagation()}
+              className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+              onClick={() => setLightboxImage(null)}
             >
-              <div className="w-full flex items-center justify-between pb-3 mb-3 border-b border-white/10">
-                <span className="text-xs font-medium text-[#E5CFA0]">
-                  {lightboxImage.caption || 'Detail Gambar Stimulus Resmi TKA Pusmendik'}
+              <div
+                className="relative max-w-5xl w-full bg-[#141311] border border-white/15 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col items-center"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="w-full flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+                  <span className="text-xs font-medium text-[#E5CFA0]">
+                    {lightboxImage.caption || 'Detail Gambar Stimulus Resmi TKA Pusmendik'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxImage(null)}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                <div className="bg-white rounded-xl p-3 max-h-[78vh] overflow-auto w-full flex justify-center">
+                  <img
+                    src={lightboxImage.url}
+                    alt={lightboxImage.caption || 'Stimulus TKA'}
+                    className="max-w-full h-auto object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Konfirmasi Lepas Sematan Layar (Unpin Screen) */}
+          {showExitPinModal && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+              <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-md w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30">
+                    <Lock size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base text-[var(--tf-text-primary)]">
+                      Sistem Sematkan Layar CBT Aktif
+                    </h3>
+                    <p className="text-xs text-[var(--tf-text-secondary)]">
+                      Mode Exambrowser Pusmendik menjaga fokus penuh selama ujian berlangsung.
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[var(--tf-text-secondary)] leading-relaxed">
+                  Apakah kamu ingin tetap menyematkan layar penuh (disarankan seperti CBT TKA sesungguhnya) atau keluar sementara dari mode layar penuh?
+                </p>
+
+                <div className="flex gap-2.5 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    fullWidth
+                    onClick={async () => {
+                      await exitBrowserFullscreen();
+                      setIsScreenPinned(false);
+                      setShowExitPinModal(false);
+                    }}
+                  >
+                    Lepas Sematan Layar
+                  </Button>
+                  <Button
+                    size="sm"
+                    fullWidth
+                    onClick={async () => {
+                      setShowExitPinModal(false);
+                      await enterBrowserFullscreen();
+                    }}
+                  >
+                    Tetap Sematkan Layar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Konfirmasi Kumpulkan Ujian */}
+          {showConfirmModal && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+              <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-md w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                    <AlertCircle size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base text-[var(--tf-text-primary)]">
+                      Konfirmasi Pengumpulan Jawaban CBT
+                    </h3>
+                    <p className="text-xs text-[var(--tf-text-secondary)]">
+                      Pastikan seluruh nomor soal telah diperiksa kembali.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-[var(--tf-text-secondary)]">Total Soal Subtes:</span>
+                    <span className="font-mono font-semibold text-[var(--tf-text-primary)]">{activeQuestions.length} Soal</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--tf-text-secondary)]">Sudah Dijawab:</span>
+                    <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{answeredCount} Soal</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--tf-text-secondary)]">Belum Dijawab:</span>
+                    <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">{activeQuestions.length - answeredCount} Soal</span>
+                  </div>
+                  {doubtfulCount > 0 && (
+                    <div className="flex justify-between pt-1 border-t border-[var(--tf-border)]">
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">Status Ragu-ragu:</span>
+                      <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">{doubtfulCount} Soal</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <Button variant="outline" size="sm" fullWidth onClick={() => setShowConfirmModal(false)}>
+                    Kembali ke Soal
+                  </Button>
+                  <Button size="sm" fullWidth onClick={() => void handleFinishExam()}>
+                    Selesai & Kumpulkan
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Banner Peringatan Pelanggaran Fokus / Pindah Jendela */}
+          {showViolationBanner && (
+            <div className="rounded-xl bg-amber-500/15 border border-amber-500/40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <div className="flex items-center gap-2">
+                <ShieldAlert size={16} className="shrink-0" />
+                <span>
+                  <strong>Sistem Sematkan Layar (Exambrowser Guard):</strong> Terdeteksi {violationCount}x perpindahan fokus keluar dari jendela ujian. Pada TKA sesungguhnya, berpindah aplikasi dapat mengunci sesi ujian.
                 </span>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setLightboxImage(null)}
-                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowViolationBanner(false);
+                    void enterBrowserFullscreen();
+                  }}
+                  className="px-3 py-1 rounded-lg font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors cursor-pointer"
                 >
-                  <X size={18} />
+                  Kunci & Sematkan Kembali
                 </button>
               </div>
-              <div className="bg-white rounded-xl p-3 max-h-[78vh] overflow-auto w-full flex justify-center">
-                <img
-                  src={lightboxImage.url}
-                  alt={lightboxImage.caption || 'Stimulus TKA'}
-                  className="max-w-full h-auto object-contain"
-                />
-              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Modal Konfirmasi Kumpulkan Ujian */}
-        {showConfirmModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[var(--tf-bg-surface)] rounded-2xl p-6 max-w-md w-full border border-[var(--tf-border)] shadow-2xl space-y-4">
+          {/* TOP BAR RESMI PUSMENDIK CBT + KONTROL SEMATKAN LAYAR */}
+          <header className="rounded-2xl bg-[#141311] text-[#F5F3EE] border border-[var(--tf-border)] p-3.5 sm:px-5 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* Identitas Aplikasi & Status Sematkan Layar */}
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                  <AlertCircle size={24} />
+                <div className="h-10 w-10 rounded-xl bg-[#C8A96E]/15 border border-[#C8A96E]/35 flex items-center justify-center text-[#E5CFA0] shrink-0">
+                  <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-base text-[var(--tf-text-primary)]">
-                    Konfirmasi Pengumpulan Jawaban CBT
-                  </h3>
-                  <p className="text-xs text-[var(--tf-text-secondary)]">
-                    Pastikan seluruh nomor soal telah diperiksa kembali.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-[var(--tf-text-secondary)]">Total Soal Subtes:</span>
-                  <span className="font-mono font-semibold text-[var(--tf-text-primary)]">{activeQuestions.length} Soal</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--tf-text-secondary)]">Sudah Dijawab:</span>
-                  <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{answeredCount} Soal</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--tf-text-secondary)]">Belum Dijawab:</span>
-                  <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">{activeQuestions.length - answeredCount} Soal</span>
-                </div>
-                {doubtfulCount > 0 && (
-                  <div className="flex justify-between pt-1 border-t border-[var(--tf-border)]">
-                    <span className="text-amber-600 dark:text-amber-400 font-medium">Status Ragu-ragu:</span>
-                    <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">{doubtfulCount} Soal</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#C8A96E]">
+                      PUSMENDIK CBT EXAMBROWSER
+                    </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                      isScreenPinned
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/35'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/35'
+                    }`}>
+                      <Lock size={10} />
+                      {isScreenPinned
+                        ? (isFullscreenActive ? 'LAYAR DISEMATKAN (FULLSCREEN LOCK)' : 'LAYAR DISEMATKAN (KIOSK LOCK)')
+                        : 'MODE JENDELA BIASA'}
+                    </span>
                   </div>
-                )}
-              </div>
-
-              <div className="flex gap-2.5 pt-2">
-                <Button variant="outline" size="sm" fullWidth onClick={() => setShowConfirmModal(false)}>
-                  Kembali ke Soal
-                </Button>
-                <Button size="sm" fullWidth onClick={() => void handleFinishExam()}>
-                  Selesai & Kumpulkan
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TOP BAR RESMI PUSMENDIK CBT */}
-        <header className="rounded-2xl bg-[#141311] text-[#F5F3EE] border border-[var(--tf-border)] p-4 sm:px-6 shadow-md">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            {/* Identitas Aplikasi & Subtes */}
-            <div className="flex items-center gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-[#C8A96E]/15 border border-[#C8A96E]/35 flex items-center justify-center text-[#E5CFA0] shrink-0">
-                <ShieldCheck size={22} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#C8A96E]">
-                    PUSMENDIK KEMENDIKDASMEN • SISTEM CBT RESMI
-                  </span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-white/10 text-[#E5CFA0]">
-                    {currentConfig.blueprintCode}
-                  </span>
+                  <h1 className="font-semibold text-sm sm:text-base text-[#F5F3EE] tracking-tight">
+                    {currentConfig.officialName}
+                  </h1>
                 </div>
-                <h1 className="font-semibold text-sm sm:text-base text-[#F5F3EE] tracking-tight">
-                  {currentConfig.officialName}
-                </h1>
               </div>
-            </div>
 
-            {/* Kontrol Ukuran Font, Nomor Soal & Countdown Waktu Real */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 ml-auto">
-              {/* Ukuran Huruf A- A A+ */}
-              <div className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
-                <span className="px-2 text-[10px] text-[#A39E95] flex items-center gap-1">
-                  <Type size={12} /> Ukuran Teks:
-                </span>
-                {(['sm', 'md', 'lg'] as const).map((sz, idx) => (
+              {/* Kontrol Sematkan Layar, Ukuran Font, & Countdown Waktu Real */}
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 ml-auto">
+                {/* Tombol Utama: SEMATKAN LAYAR (Fullscreen Kiosk Pin) */}
+                <button
+                  type="button"
+                  onClick={() => void toggleScreenPinning()}
+                  title="Sematkan Layar Penuh (Pintasan: F)"
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                    isScreenPinned && isFullscreenActive
+                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25'
+                      : 'bg-[#C8A96E]/20 border-[#C8A96E]/50 text-[#E5CFA0] hover:bg-[#C8A96E] hover:text-[#141311]'
+                  }`}
+                >
+                  {isScreenPinned && isFullscreenActive ? (
+                    <>
+                      <Minimize2 size={14} />
+                      <span>Layar Tersemat</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 size={14} />
+                      <span>Sematkan Layar Penuh</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Tombol Sematkan Panel Bacaan/Gambar (Split-Screen Pin) */}
+                {hasStimulusLeftPane && (
                   <button
-                    key={sz}
                     type="button"
-                    onClick={() => setFontScale(sz)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
-                      fontScale === sz
-                        ? 'bg-[#C8A96E] text-[#141311]'
-                        : 'text-[#A39E95] hover:text-white'
+                    onClick={() => setIsStimulusPinned(prev => !prev)}
+                    className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      isStimulusPinned
+                        ? 'bg-white/10 border-[#C8A96E]/40 text-[#E5CFA0]'
+                        : 'bg-white/5 border-white/10 text-[#A39E95] hover:text-white'
                     }`}
                   >
-                    {idx === 0 ? 'A-' : idx === 1 ? 'A' : 'A+'}
+                    {isStimulusPinned ? <Pin size={13} className="text-[#C8A96E]" /> : <PinOff size={13} />}
+                    <span>{isStimulusPinned ? 'Wacana Disematkan' : 'Sematkan Wacana'}</span>
                   </button>
-                ))}
-              </div>
+                )}
 
-              {/* Box Countdown Timer Real */}
-              <div className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border font-mono ${
-                isWarningTimer
-                  ? 'bg-rose-950/80 border-rose-500/50 text-rose-200 animate-pulse'
-                  : 'bg-white/[0.06] border-white/15 text-[#F5F3EE]'
-              }`}>
-                <Clock size={16} className={isWarningTimer ? 'text-rose-400' : 'text-[#C8A96E]'} />
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.16em] text-[#A39E95] leading-none">
-                    Sisa Waktu
-                  </div>
-                  <div className="text-base sm:text-lg font-bold tracking-wider leading-tight mt-0.5">
-                    {formatTimer(timeLeft)}
+                {/* Ukuran Huruf A- A A+ */}
+                <div className="hidden lg:flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+                  <span className="px-2 text-[10px] text-[#A39E95] flex items-center gap-1">
+                    <Type size={11} />
+                  </span>
+                  {(['sm', 'md', 'lg'] as const).map((sz, idx) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setFontScale(sz)}
+                      className={`px-2 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                        fontScale === sz
+                          ? 'bg-[#C8A96E] text-[#141311]'
+                          : 'text-[#A39E95] hover:text-white'
+                      }`}
+                    >
+                      {idx === 0 ? 'A-' : idx === 1 ? 'A' : 'A+'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Box Countdown Timer Real */}
+                <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border font-mono ${
+                  isWarningTimer
+                    ? 'bg-rose-950/80 border-rose-500/50 text-rose-200 animate-pulse'
+                    : 'bg-white/[0.06] border-white/15 text-[#F5F3EE]'
+                }`}>
+                  <Clock size={15} className={isWarningTimer ? 'text-rose-400' : 'text-[#C8A96E]'} />
+                  <div>
+                    <div className="text-[9px] uppercase tracking-[0.14em] text-[#A39E95] leading-none">
+                      Waktu Real
+                    </div>
+                    <div className="text-sm sm:text-base font-bold tracking-wider leading-tight mt-0.5">
+                      {formatTimer(timeLeft)}
+                    </div>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(true)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shrink-0"
+                >
+                  Selesai Ujian
+                </button>
+              </div>
+            </div>
+
+            {/* Sub-bar Progress & Info Soal */}
+            <div className="mt-2.5 pt-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-[#A39E95]">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 font-mono text-[#F5F3EE] font-semibold">
+                  SOAL NO. {currentQuestionIndex + 1} / {activeQuestions.length}
+                </span>
+                <span className="text-white/20">|</span>
+                <span>Topik: <strong className="text-[#E5CFA0] font-medium">{currentQ.topic}</strong></span>
+                <span className="text-white/20 hidden sm:inline">|</span>
+                <span className="hidden sm:inline">Tingkat: <strong className="text-[#F5F3EE]">{currentQ.difficulty}</strong></span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(true)}
-                className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shrink-0"
-              >
-                Selesai Ujian
-              </button>
+              <div className="flex items-center gap-4">
+                <span className="hidden xl:flex items-center gap-1.5 text-[11px]">
+                  <Keyboard size={12} className="text-[#C8A96E]" />
+                  Pintasan: <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">A-E</kbd> Jawab,{' '}
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">←/→</kbd> Navigasi,{' '}
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">R</kbd> Ragu,{' '}
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">F</kbd> Sematkan Layar
+                </span>
+                <span className="font-mono text-[11px] text-[#E5CFA0]">
+                  {answeredCount}/{activeQuestions.length} Terjawab ({progressPct}%)
+                </span>
+              </div>
             </div>
-          </div>
+          </header>
 
-          {/* Sub-bar Progress & Info Soal */}
-          <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-[#A39E95]">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 font-mono text-[#F5F3EE] font-semibold">
-                SOAL NO. {currentQuestionIndex + 1} / {activeQuestions.length}
-              </span>
-              <span className="text-white/20">|</span>
-              <span>Topik: <strong className="text-[#E5CFA0] font-medium">{currentQ.topic}</strong></span>
-              <span className="text-white/20 hidden sm:inline">|</span>
-              <span className="hidden sm:inline">Tingkat: <strong className="text-[#F5F3EE]">{currentQ.difficulty}</strong></span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="hidden lg:flex items-center gap-1.5 text-[11px]">
-                <Keyboard size={12} className="text-[#C8A96E]" />
-                Pintasan: <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">A-E</kbd> Jawab,{' '}
-                <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">←/→</kbd> Navigasi,{' '}
-                <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono">R</kbd> Ragu-ragu
-              </span>
-              <span className="font-mono text-[11px] text-[#E5CFA0]">
-                {answeredCount}/{activeQuestions.length} Terjawab ({progressPct}%)
-              </span>
-            </div>
-          </div>
-        </header>
-
-        {/* WORKSPACE UTAMA CBT: SPLIT SCREEN (WACANA/GAMBAR DI KIRI, PERTANYAAN DI KANAN, DAFTAR NOMOR DI SIDEBAR) */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-          {/* AREA SOAL (9 KOLOM DI DESKTOP XL) */}
-          <div className="xl:col-span-9">
-            <div className={`grid grid-cols-1 ${hasStimulusLeftPane ? 'lg:grid-cols-12' : ''} gap-4`}>
-              {/* PANEL KIRI: WACANA BACAAN LENGKAP & GAMBAR ASLI PUSMENDIK (SELALU TAMPIL DI SETIAP NOMOR!) */}
-              {hasStimulusLeftPane && (
-                <Card className="lg:col-span-6 p-5 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] flex flex-col max-h-[78vh] overflow-y-auto">
-                  <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-[var(--tf-border)] sticky top-0 bg-[var(--tf-bg-surface)] z-10">
-                    <div className="flex items-center gap-2">
-                      <FileText size={16} className="text-[#C8A96E]" />
-                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tf-text-secondary)]">
-                        Wacana & Stimulus Soal No. {currentQuestionIndex + 1}
-                      </span>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-                      Teks Utuh Tersedia
-                    </span>
-                  </div>
-
-                  {/* Gambar Stimulus Pusmendik (dengan fitur Klik untuk Zoom) */}
-                  {resolvedStimulus.images.length > 0 && (
-                    <div className="space-y-3 mb-5">
-                      {resolvedStimulus.images.map((imgUrl, idx) => (
-                        <div
-                          key={imgUrl + idx}
-                          className="group relative rounded-xl border border-[var(--tf-border)] bg-white p-3 flex flex-col items-center shadow-xs"
-                        >
-                          <img
-                            src={imgUrl}
-                            alt={resolvedStimulus.imageCaption || `Stimulus Visual Nomor ${currentQuestionIndex + 1}`}
-                            className="max-h-[340px] w-auto object-contain rounded-lg cursor-zoom-in transition-transform duration-200 group-hover:scale-[1.01]"
-                            onClick={() => setLightboxImage({ url: imgUrl, caption: resolvedStimulus.imageCaption })}
-                          />
-                          <div className="mt-2 w-full flex items-center justify-between text-[11px] text-neutral-600 px-1 pt-1.5 border-t border-neutral-100">
-                            <span className="flex items-center gap-1 font-medium">
-                              <ImageIcon size={12} className="text-neutral-500" />
-                              {resolvedStimulus.imageCaption || `Ilustrasi Resmi Pusmendik (${idx + 1}/${resolvedStimulus.images.length})`}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setLightboxImage({ url: imgUrl, caption: resolvedStimulus.imageCaption })}
-                              className="inline-flex items-center gap-1 font-semibold text-neutral-900 hover:underline cursor-pointer"
-                            >
-                              <ZoomIn size={12} /> Perbesar Gambar
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Teks Bacaan Utuh */}
-                  {resolvedStimulus.passage && (
-                    <div className="space-y-2.5">
-                      {resolvedStimulus.passageTitle && (
-                        <h2
-                          className="text-base sm:text-lg font-semibold text-[var(--tf-text-primary)] leading-snug"
-                          style={{ fontFamily: 'var(--tf-font-display)' }}
-                        >
-                          {resolvedStimulus.passageTitle}
-                        </h2>
-                      )}
-                      <div className={`${fontSizeClass} text-[var(--tf-text-primary)] whitespace-pre-wrap font-normal selection:bg-[#C8A96E]/30`}>
-                        {resolvedStimulus.passage}
+          {/* WORKSPACE UTAMA CBT: SPLIT SCREEN DENGAN FITUR SEMATKAN WACANA & GAMBAR */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+            {/* AREA SOAL (9 KOLOM DI DESKTOP XL) */}
+            <div className="xl:col-span-9">
+              <div className={`grid grid-cols-1 ${hasStimulusLeftPane ? 'lg:grid-cols-12' : ''} gap-4 items-start`}>
+                {/* PANEL KIRI: WACANA BACAAN LENGKAP & GAMBAR ASLI PUSMENDIK (TERSEMAT / PINNED DI SETIAP NOMOR!) */}
+                {hasStimulusLeftPane && (
+                  <Card
+                    className={`lg:col-span-6 p-4 sm:p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] flex flex-col ${
+                      isStimulusPinned
+                        ? 'sticky top-2 z-20 max-h-[42vh] lg:max-h-[calc(100vh-145px)] overflow-y-auto shadow-md ring-1 ring-[#C8A96E]/25'
+                        : 'max-h-[75vh] overflow-y-auto'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2.5 mb-3.5 border-b border-[var(--tf-border)] sticky top-0 bg-[var(--tf-bg-surface)] z-10">
+                      <div className="flex items-center gap-2">
+                        <FileText size={15} className="text-[#C8A96E]" />
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--tf-text-primary)]">
+                          Wacana & Gambar Soal No. {currentQuestionIndex + 1}
+                        </span>
                       </div>
-                    </div>
-                  )}
-                </Card>
-              )}
 
-              {/* PANEL KANAN: BUTIR PERTANYAAN & OPSI JAWABAN A-E */}
-              <Card className={`${hasStimulusLeftPane ? 'lg:col-span-6' : 'col-span-1'} p-5 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] flex flex-col justify-between`}>
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between pb-3 border-b border-[var(--tf-border)]">
-                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tf-text-secondary)]">
-                      Pertanyaan Nomor {currentQuestionIndex + 1}
-                    </span>
-                    <span className="text-[11px] font-mono text-[var(--tf-text-muted)]">
-                      Pilihan Ganda (A–E)
-                    </span>
-                  </div>
-
-                  {/* Teks Pertanyaan */}
-                  <div className={`${fontSizeClass} font-medium text-[var(--tf-text-primary)] whitespace-pre-line`}>
-                    {currentQ.questionText}
-                  </div>
-
-                  {/* Daftar Opsi A - E */}
-                  <div className="space-y-2.5 pt-1">
-                    {currentQ.options.map((optText, i) => {
-                      const isSelected = answers[currentQ.id] === i;
-                      const letter = String.fromCharCode(65 + i);
-                      return (
+                      <div className="flex items-center gap-1.5">
                         <button
-                          key={i}
                           type="button"
-                          onClick={() => setAnswers(prev => ({ ...prev, [currentQ.id]: i }))}
-                          className={`w-full text-left flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'border-[#C8A96E] bg-[#C8A96E]/12 text-[var(--tf-text-primary)] shadow-xs'
-                              : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)]/50 hover:border-[#C8A96E]/50 hover:bg-[var(--tf-bg-elevated)] text-[var(--tf-text-primary)]'
+                          onClick={() => setIsStimulusPinned(prev => !prev)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-colors cursor-pointer ${
+                            isStimulusPinned
+                              ? 'bg-[#C8A96E]/15 text-[#C8A96E] border-[#C8A96E]/40'
+                              : 'bg-[var(--tf-bg-elevated)] text-[var(--tf-text-secondary)] border-[var(--tf-border)]'
                           }`}
                         >
-                          <span
-                            className={`w-7 h-7 rounded-lg font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                          {isStimulusPinned ? <Pin size={11} /> : <PinOff size={11} />}
+                          <span>{isStimulusPinned ? 'Layar Bacaan Tersemat' : 'Sematkan Bacaan'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Gambar Stimulus Pusmendik (dengan fitur Klik untuk Zoom) */}
+                    {resolvedStimulus.images.length > 0 && (
+                      <div className="space-y-3 mb-4">
+                        {resolvedStimulus.images.map((imgUrl, idx) => (
+                          <div
+                            key={imgUrl + idx}
+                            className="group relative rounded-xl border border-[var(--tf-border)] bg-white p-2.5 flex flex-col items-center shadow-xs"
+                          >
+                            <img
+                              src={imgUrl}
+                              alt={resolvedStimulus.imageCaption || `Stimulus Visual Nomor ${currentQuestionIndex + 1}`}
+                              className="max-h-[300px] w-auto object-contain rounded-lg cursor-zoom-in transition-transform duration-200 group-hover:scale-[1.01]"
+                              onClick={() => setLightboxImage({ url: imgUrl, caption: resolvedStimulus.imageCaption })}
+                            />
+                            <div className="mt-2 w-full flex items-center justify-between text-[11px] text-neutral-600 px-1 pt-1.5 border-t border-neutral-100">
+                              <span className="flex items-center gap-1 font-medium line-clamp-1">
+                                <ImageIcon size={12} className="text-neutral-500 shrink-0" />
+                                {resolvedStimulus.imageCaption || `Ilustrasi Resmi Pusmendik (${idx + 1}/${resolvedStimulus.images.length})`}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setLightboxImage({ url: imgUrl, caption: resolvedStimulus.imageCaption })}
+                                className="inline-flex items-center gap-1 font-semibold text-neutral-900 hover:underline cursor-pointer shrink-0 ml-2"
+                              >
+                                <ZoomIn size={12} /> Perbesar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Teks Bacaan Utuh */}
+                    {resolvedStimulus.passage && (
+                      <div className="space-y-2">
+                        {resolvedStimulus.passageTitle && (
+                          <h2
+                            className="text-base sm:text-lg font-semibold text-[var(--tf-text-primary)] leading-snug"
+                            style={{ fontFamily: 'var(--tf-font-display)' }}
+                          >
+                            {resolvedStimulus.passageTitle}
+                          </h2>
+                        )}
+                        <div className={`${fontSizeClass} text-[var(--tf-text-primary)] whitespace-pre-wrap font-normal selection:bg-[#C8A96E]/30`}>
+                          {resolvedStimulus.passage}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                {/* PANEL KANAN: BUTIR PERTANYAAN & OPSI JAWABAN A-E */}
+                <Card className={`${hasStimulusLeftPane ? 'lg:col-span-6' : 'col-span-1'} p-4 sm:p-6 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] flex flex-col justify-between`}>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-[var(--tf-border)]">
+                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tf-text-secondary)]">
+                        Pertanyaan Nomor {currentQuestionIndex + 1}
+                      </span>
+                      <span className="text-[11px] font-mono text-[var(--tf-text-muted)]">
+                        Pilihan Ganda (A–E)
+                      </span>
+                    </div>
+
+                    {/* Teks Pertanyaan */}
+                    <div className={`${fontSizeClass} font-medium text-[var(--tf-text-primary)] whitespace-pre-line`}>
+                      {currentQ.questionText}
+                    </div>
+
+                    {/* Daftar Opsi A - E */}
+                    <div className="space-y-2.5 pt-1">
+                      {currentQ.options.map((optText, i) => {
+                        const isSelected = answers[currentQ.id] === i;
+                        const letter = String.fromCharCode(65 + i);
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setAnswers(prev => ({ ...prev, [currentQ.id]: i }))}
+                            className={`w-full text-left flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer ${
                               isSelected
-                                ? 'bg-[#C8A96E] text-[#141311]'
-                                : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)]'
+                                ? 'border-[#C8A96E] bg-[#C8A96E]/12 text-[var(--tf-text-primary)] shadow-xs'
+                                : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)]/50 hover:border-[#C8A96E]/50 hover:bg-[var(--tf-bg-elevated)] text-[var(--tf-text-primary)]'
                             }`}
                           >
-                            {letter}
-                          </span>
-                          <span className={`${fontSizeClass} flex-1`}>
-                            {optText}
-                          </span>
-                        </button>
-                      );
-                    })}
+                            <span
+                              className={`w-7 h-7 rounded-lg font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                                isSelected
+                                  ? 'bg-[#C8A96E] text-[#141311]'
+                                  : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)] border border-[var(--tf-border)]'
+                              }`}
+                            >
+                              {letter}
+                            </span>
+                            <span className={`${fontSizeClass} flex-1`}>
+                              {optText}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
 
-                {/* Footer Kontrol Soal: Ragu-ragu, Hapus Jawaban, Sebelumnya / Selanjutnya */}
-                <div className="mt-6 pt-4 border-t border-[var(--tf-border)] space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <label className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 cursor-pointer select-none text-xs font-semibold text-amber-600 dark:text-amber-400">
-                      <input
-                        type="checkbox"
-                        checked={isFlagged}
-                        onChange={toggleDoubtful}
-                        className="w-4 h-4 accent-amber-500 rounded"
-                      />
-                      <span>Ragu-ragu (Tombol R)</span>
-                    </label>
+                  {/* Footer Kontrol Soal: Ragu-ragu, Hapus Jawaban, Sebelumnya / Selanjutnya */}
+                  <div className="mt-6 pt-4 border-t border-[var(--tf-border)] space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 cursor-pointer select-none text-xs font-semibold text-amber-600 dark:text-amber-400">
+                        <input
+                          type="checkbox"
+                          checked={isFlagged}
+                          onChange={toggleDoubtful}
+                          className="w-4 h-4 accent-amber-500 rounded"
+                        />
+                        <span>Ragu-ragu (Tombol R)</span>
+                      </label>
 
-                    {isAnswered && (
+                      {isAnswered && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextAnswers = { ...answers };
+                            delete nextAnswers[currentQ.id];
+                            setAnswers(nextAnswers);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[var(--tf-text-secondary)] hover:text-rose-500 transition-colors cursor-pointer"
+                        >
+                          <RotateCcw size={13} /> Batalkan Pilihan
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                        disabled={currentQuestionIndex === 0}
+                        className="px-5 py-2.5 rounded-xl font-semibold text-xs text-[var(--tf-text-primary)] bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] hover:border-[#C8A96E]/50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-all"
+                      >
+                        ← Soal Sebelumnya
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => {
-                          const nextAnswers = { ...answers };
-                          delete nextAnswers[currentQ.id];
-                          setAnswers(nextAnswers);
+                          if (currentQuestionIndex === activeQuestions.length - 1) {
+                            setShowConfirmModal(true);
+                          } else {
+                            setCurrentQuestionIndex(prev => Math.min(activeQuestions.length - 1, prev + 1));
+                          }
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[var(--tf-text-secondary)] hover:text-rose-500 transition-colors cursor-pointer"
+                        className="px-6 py-2.5 rounded-xl font-semibold text-xs bg-[#141311] dark:bg-[#C8A96E] text-[#F5F3EE] dark:text-[#141311] hover:opacity-90 transition-all cursor-pointer"
                       >
-                        <RotateCcw size={13} /> Batalkan Pilihan
+                        {currentQuestionIndex === activeQuestions.length - 1 ? 'Selesai & Kumpulkan →' : 'Soal Selanjutnya →'}
                       </button>
-                    )}
+                    </div>
                   </div>
+                </Card>
+              </div>
+            </div>
 
-                  <div className="flex items-center justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                      disabled={currentQuestionIndex === 0}
-                      className="px-5 py-2.5 rounded-xl font-semibold text-xs text-[var(--tf-text-primary)] bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] hover:border-[#C8A96E]/50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-all"
-                    >
-                      ← Soal Sebelumnya
-                    </button>
+            {/* PANEL NAVIGASI NOMOR SOAL CBT (3 KOLOM DI DESKTOP XL) */}
+            <div className="xl:col-span-3">
+              <Card className="p-4 sm:p-5 sticky top-2 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] space-y-4">
+                <div className="flex items-center justify-between pb-2.5 border-b border-[var(--tf-border)]">
+                  <h3 className="font-semibold text-xs uppercase tracking-[0.15em] text-[var(--tf-text-secondary)]">
+                    Daftar Nomor Soal
+                  </h3>
+                  <span className="text-[11px] font-mono font-semibold text-[var(--tf-text-primary)]">
+                    {answeredCount}/{activeQuestions.length}
+                  </span>
+                </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (currentQuestionIndex === activeQuestions.length - 1) {
-                          setShowConfirmModal(true);
-                        } else {
-                          setCurrentQuestionIndex(prev => Math.min(activeQuestions.length - 1, prev + 1));
-                        }
-                      }}
-                      className="px-6 py-2.5 rounded-xl font-semibold text-xs bg-[#141311] dark:bg-[#C8A96E] text-[#F5F3EE] dark:text-[#141311] hover:opacity-90 transition-all cursor-pointer"
-                    >
-                      {currentQuestionIndex === activeQuestions.length - 1 ? 'Selesai & Kumpulkan →' : 'Soal Selanjutnya →'}
-                    </button>
+                <div className="grid grid-cols-5 gap-2 max-h-[340px] overflow-y-auto pr-1">
+                  {activeQuestions.map((q, idx) => {
+                    const ansIdx = answers[q.id];
+                    const answered = ansIdx !== undefined;
+                    const flagged = !!doubtful[q.id];
+                    const isActive = idx === currentQuestionIndex;
+                    const letter = answered ? String.fromCharCode(65 + ansIdx) : '';
+
+                    return (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => setCurrentQuestionIndex(idx)}
+                        className={`relative h-10 rounded-xl font-mono text-xs font-bold border transition-all flex flex-col items-center justify-center cursor-pointer ${
+                          isActive
+                            ? 'border-[#C8A96E] bg-[#141311] text-[#E5CFA0] ring-2 ring-[#C8A96E]/40'
+                            : flagged
+                              ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                              : answered
+                                ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)] text-[var(--tf-text-secondary)] hover:border-[#C8A96E]/40'
+                        }`}
+                      >
+                        <span className="leading-none">{idx + 1}</span>
+                        {answered && (
+                          <span className="text-[9px] leading-none mt-0.5 opacity-85">
+                            [{letter}]
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Keterangan Warna Status CBT */}
+                <div className="pt-3 border-t border-[var(--tf-border)] grid grid-cols-2 gap-2 text-[11px] text-[var(--tf-text-secondary)]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-[#141311] border border-[#C8A96E]" />
+                    <span>Soal Aktif</span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-emerald-500/25 border border-emerald-500" />
+                    <span>Sudah Dijawab</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-amber-500/30 border border-amber-500" />
+                    <span>Ragu-ragu</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)]" />
+                    <span>Belum Dijawab</span>
+                  </div>
+                </div>
+
+                {/* Info Sistem Sematkan Layar di Sidebar */}
+                <div className="p-3 rounded-xl bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)] space-y-2 text-[11px]">
+                  <div className="flex items-center justify-between font-semibold text-[var(--tf-text-primary)]">
+                    <span className="flex items-center gap-1.5">
+                      <Columns2 size={13} className="text-[#C8A96E]" />
+                      Sistem Sematkan Layar
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">AKTIF</span>
+                  </div>
+                  <p className="text-[var(--tf-text-secondary)] leading-relaxed">
+                    Layar ujian dikunci penuh (Kiosk Pin) dan panel wacana/gambar disematkan otomatis di setiap nomor soal.
+                  </p>
                 </div>
               </Card>
             </div>
-          </div>
-
-          {/* PANEL NAVIGASI NOMOR SOAL CBT (3 KOLOM DI DESKTOP XL) */}
-          <div className="xl:col-span-3">
-            <Card className="p-5 sticky top-20 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)] space-y-4">
-              <div className="flex items-center justify-between pb-2.5 border-b border-[var(--tf-border)]">
-                <h3 className="font-semibold text-xs uppercase tracking-[0.15em] text-[var(--tf-text-secondary)]">
-                  Daftar Nomor Soal
-                </h3>
-                <span className="text-[11px] font-mono font-semibold text-[var(--tf-text-primary)]">
-                  {answeredCount}/{activeQuestions.length}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-5 gap-2 max-h-[360px] overflow-y-auto pr-1">
-                {activeQuestions.map((q, idx) => {
-                  const ansIdx = answers[q.id];
-                  const answered = ansIdx !== undefined;
-                  const flagged = !!doubtful[q.id];
-                  const isActive = idx === currentQuestionIndex;
-                  const letter = answered ? String.fromCharCode(65 + ansIdx) : '';
-
-                  return (
-                    <button
-                      key={q.id}
-                      type="button"
-                      onClick={() => setCurrentQuestionIndex(idx)}
-                      className={`relative h-10 rounded-xl font-mono text-xs font-bold border transition-all flex flex-col items-center justify-center cursor-pointer ${
-                        isActive
-                          ? 'border-[#C8A96E] bg-[#141311] text-[#E5CFA0] ring-2 ring-[#C8A96E]/40'
-                          : flagged
-                            ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300'
-                            : answered
-                              ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                              : 'border-[var(--tf-border)] bg-[var(--tf-bg-elevated)] text-[var(--tf-text-secondary)] hover:border-[#C8A96E]/40'
-                      }`}
-                    >
-                      <span className="leading-none">{idx + 1}</span>
-                      {answered && (
-                        <span className="text-[9px] leading-none mt-0.5 opacity-85">
-                          [{letter}]
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Keterangan Warna Status CBT */}
-              <div className="pt-3 border-t border-[var(--tf-border)] grid grid-cols-2 gap-2 text-[11px] text-[var(--tf-text-secondary)]">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded bg-[#141311] border border-[#C8A96E]" />
-                  <span>Soal Aktif</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded bg-emerald-500/25 border border-emerald-500" />
-                  <span>Sudah Dijawab</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded bg-amber-500/30 border border-amber-500" />
-                  <span>Ragu-ragu</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded bg-[var(--tf-bg-elevated)] border border-[var(--tf-border)]" />
-                  <span>Belum Dijawab</span>
-                </div>
-              </div>
-            </Card>
           </div>
         </div>
       </div>
@@ -1296,6 +1587,9 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
             <Badge variant="warning" className="inline-flex">
               PUSMENDIK KEMENDIKDASMEN • REAL CBT 2026
             </Badge>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30">
+              <Lock size={11} /> Sistem Sematkan Layar (Exambrowser Lock)
+            </span>
             {syncStatus && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <CheckCircle2 size={12} /> Alarm Jadwal TKA Aktif
@@ -1306,7 +1600,7 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
             Simulasi TKA Nasional Berbasis Komputer (CBT)
           </h1>
           <p className="mt-1 text-[var(--tf-text-secondary)] text-xs sm:text-sm">
-            Bank soal asli simulasi TKA Pusmendik lengkap dengan wacana utuh di setiap nomor, gambar ilustrasi resmi, dan durasi waktu real.
+            Dilengkapi Sistem Sematkan Layar (Kiosk Exambrowser Lock), wacana & gambar tersemat di setiap nomor soal, dan waktu ujian real Pusmendik.
           </p>
         </div>
 
@@ -1348,7 +1642,7 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
               onClick={handleResumeSavedSession}
               className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#C8A96E] hover:bg-[#D6B980] text-[#141311] cursor-pointer"
             >
-              Lanjutkan Ujian →
+              Sematkan Layar & Lanjutkan →
             </button>
           </div>
         </div>
@@ -1402,15 +1696,15 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
                   <span className="px-3 py-1 rounded-full text-[10px] font-mono font-semibold uppercase tracking-[0.18em] bg-[#C8A96E]/20 text-[#E5CFA0] border border-[#C8A96E]/35">
                     STANDAR RESMI PUSMENDIK KEMENDIKDASMEN
                   </span>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-white/5 text-[#A39E95] border border-white/10">
-                    Split-Screen Wacana & Gambar
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                    <Pin size={11} /> Sistem Sematkan Layar & Wacana Aktif
                   </span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ fontFamily: 'var(--tf-font-display)' }}>
                   Paket Simulasi Utuh TKA SMA/MA 2026 ({tkaQuestions.length} Soal Real)
                 </h2>
                 <p className="text-xs sm:text-sm text-[#A39E95] leading-relaxed">
-                  Seluruh soal dilengkapi <strong className="text-[#F5F3EE]">teks bacaan (stimulus) utuh di setiap nomor</strong> sehingga kamu tidak perlu kembali ke nomor sebelumnya, serta memuat <strong className="text-[#F5F3EE]">gambar grafik, tabel, dan infografik asli Pusmendik</strong> dengan durasi waktu real.
+                  Saat ujian dimulai, sistem otomatis mengaktifkan <strong className="text-[#F5F3EE]">Sematkan Layar Penuh (Exambrowser Lock)</strong> serta <strong className="text-[#F5F3EE]">menyematkan teks bacaan & gambar di panel kiri</strong> sehingga tetap diam saat kamu menggeser soal di kanan atau di HP.
                 </p>
                 <div className="flex flex-wrap items-center gap-4 pt-1 text-xs font-mono text-[#E5CFA0]">
                   <span className="flex items-center gap-1.5">
@@ -1418,11 +1712,11 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1.5">
-                    <FileText size={14} className="text-[#C8A96E]" /> 100% Wacana Mandiri per Soal
+                    <Maximize2 size={14} className="text-[#C8A96E]" /> Auto Screen-Pinning (Kiosk)
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1.5">
-                    <ImageIcon size={14} className="text-[#C8A96E]" /> Gambar & Grafik Asli Pusmendik
+                    <ImageIcon size={14} className="text-[#C8A96E]" /> Gambar & Wacana Tersemat
                   </span>
                 </div>
               </div>
@@ -1430,11 +1724,11 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
               <div className="shrink-0">
                 <button
                   type="button"
-                  onClick={() => handleStartExam('Semua', TKA_SUBTEST_CONFIGS['Semua'].durationSeconds)}
+                  onClick={() => handleStartExam('Semua', TKA_SUBTEST_CONFIGS['Semua'].durationSeconds, true)}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-xl font-semibold text-sm bg-[#C8A96E] hover:bg-[#D6B980] text-[#141311] shadow-md transition-all cursor-pointer"
                 >
-                  <Play size={16} fill="currentColor" />
-                  <span>Mulai Simulasi Full CBT (120 Menit)</span>
+                  <Lock size={16} />
+                  <span>Sematkan Layar & Mulai Full CBT (120 Menit)</span>
                 </button>
               </div>
             </div>
@@ -1445,7 +1739,7 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--tf-text-secondary)] flex items-center gap-2">
                 <Filter size={14} className="text-[#C8A96E]" />
-                Pilih Subtes Resmi TKA (Durasi Waktu Real Pusmendik)
+                Pilih Subtes Resmi TKA (Otomatis Sematkan Layar & Waktu Real)
               </h3>
             </div>
 
@@ -1487,11 +1781,11 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
 
                     <button
                       type="button"
-                      onClick={() => handleStartExam(sub.id as SubjectType, sub.durationSeconds)}
+                      onClick={() => handleStartExam(sub.id as SubjectType, sub.durationSeconds, true)}
                       className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-[var(--tf-bg-elevated)] hover:bg-[#141311] hover:text-[#F5F3EE] dark:hover:bg-[#C8A96E] dark:hover:text-[#141311] text-[var(--tf-text-primary)] border border-[var(--tf-border)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Play size={13} />
-                      <span>Mulai CBT {sub.label} ({sub.durationMinutes} Menit)</span>
+                      <span>Mulai & Sematkan Layar ({sub.durationMinutes} Menit)</span>
                     </button>
                   </div>
                 </Card>
@@ -1567,9 +1861,9 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
               <div className="text-xs text-[var(--tf-text-secondary)] mt-0.5">Durasi Real Mapel Wajib & Pilihan</div>
             </Card>
             <Card className="p-5 border border-[var(--tf-border)] bg-[var(--tf-bg-surface)]">
-              <div className="text-sky-500 mb-2"><Target size={20} /></div>
-              <div className="text-2xl font-bold font-mono text-[var(--tf-text-primary)]">5 Subtes</div>
-              <div className="text-xs text-[var(--tf-text-secondary)] mt-0.5">Sesuai Kerangka Asesmen Kemendikdasmen</div>
+              <div className="text-sky-500 mb-2"><Lock size={20} /></div>
+              <div className="text-2xl font-bold font-mono text-[var(--tf-text-primary)]">Screen Pinning</div>
+              <div className="text-xs text-[var(--tf-text-secondary)] mt-0.5">Sistem Sematkan Layar & Wacana</div>
             </Card>
           </div>
 
@@ -1654,10 +1948,10 @@ Berikan juga 1 strategi cepat menjawab tipe soal ini saat ujian CBT sesungguhnya
                       const filterName = selectedSubtest.subjectFilter;
                       const durSec = selectedSubtest.durationMinutes * 60;
                       setSelectedSubtest(null);
-                      handleStartExam(filterName, durSec);
+                      handleStartExam(filterName, durSec, true);
                     }}
                   >
-                    Mulai CBT Subtes Ini ({selectedSubtest.durationMinutes} Menit)
+                    Sematkan Layar & Mulai ({selectedSubtest.durationMinutes} Menit)
                   </Button>
                 </div>
               </div>
