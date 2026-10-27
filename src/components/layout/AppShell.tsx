@@ -60,6 +60,7 @@ import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import LiveStatusBar from "./LiveStatusBar";
 import Watermark from "./Watermark";
+import { VibeBadge, VibePage } from "../vibe/HourlyVibe";
 import { useWorkspace } from "../../context/WorkspaceContext";
 import AutoUpdateButton from "../ui/AutoUpdateButton";
 import SystemUpdatePopup, { triggerSystemUpdatePopup, SYSTEM_RELEASE_VERSION } from "../ui/SystemUpdatePopup";
@@ -429,6 +430,7 @@ export default function AppShell({ children }: AppShellProps) {
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <VibeBadge />
               <button
                 type="button"
                 onClick={() => void toggleTheme()}
@@ -571,7 +573,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         )}
         <main className="mx-auto w-full max-w-[1480px] flex-1 min-w-0 overflow-x-clip px-4 py-6 pb-10 sm:px-6 md:py-8 lg:px-10 lg:pb-12">
-          {children}
+          <VibePage routeKey={location.pathname}>{children}</VibePage>
         </main>
 
         {showLiveBar ? <LiveStatusBar /> : null}

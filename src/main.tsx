@@ -11,6 +11,7 @@ import App from './App';
 import RuntimeErrorBoundary from './components/ui/RuntimeErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
 import { registerPWA } from './pwa';
+import { HourlyVibeProvider } from './components/vibe/HourlyVibe';
 import { ThemeProvider } from './vendor/schoolhub-ui/context/ThemeContext';
 
 registerPWA();
@@ -24,7 +25,9 @@ createRoot(root).render(
     <RuntimeErrorBoundary>
       <ThemeProvider>
         <ToastProvider>
-          <App />
+          <HourlyVibeProvider>
+            <App />
+          </HourlyVibeProvider>
         </ToastProvider>
       </ThemeProvider>
     </RuntimeErrorBoundary>
